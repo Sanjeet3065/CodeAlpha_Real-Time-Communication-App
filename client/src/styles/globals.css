@@ -1,0 +1,73 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: var(--cly-type-font-ui);
+    color: var(--cly-text-primary);
+    background-color: var(--cly-color-surface-canvas);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Accessible focus indicators: WCAG 2.2 Level AA compliance */
+  :focus-visible {
+    outline: var(--cly-focus-outline);
+    outline-offset: var(--cly-focus-offset);
+  }
+
+  /* Headings typography default */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--cly-type-font-display);
+    color: var(--cly-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  /* Code and monospace default */
+  code, pre, kbd, samp {
+    font-family: var(--cly-type-font-mono);
+  }
+}
+
+/* Reduced motion preference override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .font-display {
+    font-family: var(--cly-type-font-display);
+  }
+
+  .font-ui {
+    font-family: var(--cly-type-font-ui);
+  }
+
+  .font-mono {
+    font-family: var(--cly-type-font-mono);
+  }
+}

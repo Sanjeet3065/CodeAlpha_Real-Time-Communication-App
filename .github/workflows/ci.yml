@@ -1,0 +1,123 @@
+name: CONNECTLY CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    name: Test, Lint, Typecheck & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Start Standalone (27017) & Replica Set (27018) MongoDB
+        run: |
+          docker run -d --name connectly-mongo-standalone \
+            -p 127.0.0.1:27017:27017 \
+            mongo:7.0 --bind_ip_all
+
+          docker run -d --name connectly-mongo-rs \
+            -p 127.0.0.1:27018:27018 \
+            mongo:7.0 --replSet rs0 --port 27018 --bind_ip_all
+
+          echo "Waiting for MongoDB instances (27017 standalone & 27018 replica set)..."
+          for i in $(seq 1 30); do
+            if docker exec connectly-mongo-standalone mongosh --quiet --eval "db.adminCommand('ping').ok" >/dev/null 2>&1 \
+              && docker exec connectly-mongo-rs mongosh --port 27018 --quiet --eval "db.adminCommand('ping').ok" >/dev/null 2>&1; then
+              echo "Both MongoDB instances are reachable."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Timed out waiting for MongoDB containers." >&2
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "Initiating replica set rs0 on 127.0.0.1:27018..."
+          docker exec connectly-mongo-rs mongosh --port 27018 --quiet --eval \
+            "try { rs.initiate({_id: 'rs0', members: [{_id: 0, host: '127.0.0.1:27018'}]}); } catch (e) { if (e.codeName !== 'AlreadyInitialized') throw e; }"
+
+          for i in $(seq 1 30); do
+            if docker exec connectly-mongo-rs mongosh --port 27018 --quiet --eval "quit(db.hello().isWritablePrimary ? 0 : 1)" >/dev/null 2>&1; then
+              echo "MongoDB Replica Set rs0 primary is ready on 127.0.0.1:27018."
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Timed out waiting for Replica Set rs0 primary." >&2
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify code style & linting
+        run: npm run lint
+
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Run full automated test suite
+        run: npm test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/connectly_test
+          MONGODB_URI_RS: mongodb://127.0.0.1:27018/connectly_test?directConnection=true
+          REDIS_URL: redis://127.0.0.1:6379
+          ENABLE_FILE_SHARING: "true"
+          STORAGE_PROVIDER: memory
+
+      - name: Build client and server bundles
+        run: npm run build
+
+      - name: Verify production readiness preflight script
+        run: npm run verify:ci-production --workspace=server
+        env:
+          NODE_ENV: production
+          PORT: 5000
+          CLIENT_ORIGIN: https://connectly.example.com
+          TRUST_PROXY: "1"
+          PROXY_SECRET: a9d4f2c8e1b73056c2a8f4e9d1b63708e5a1c3f7b9d20468a1c5e7f9b3d10246
+          MONGODB_URI: mongodb://127.0.0.1:27018/connectly_test?replicaSet=rs0&directConnection=true
+          REQUIRE_TRANSACTIONS: "true"
+          REDIS_URL: redis://127.0.0.1:6379
+          SOCKET_IO_ADAPTER: redis
+          SOCKET_IO_MULTI_INSTANCE: "true"
+          JWT_ACCESS_SECRET: ci_synth_jwt_access_key_9f8e7d6c5b4a39281706
+          JWT_REFRESH_SECRET: ci_synth_jwt_refresh_key_1728394a5b6c7d8e9f
+          CONNECTLY_ENCRYPTION_KEY_V1: 8f4e2a9c1b7d5e3f0a8c6e4d2b1f9a7c5e3d1b9f7e5c3a1d9b7f5e3c1a9d7b5f
+          LIVEKIT_PUBLIC_URL: wss://connectly.example.com/livekit-signal
+          LIVEKIT_SIGNAL_GATEWAY_ENABLED: "true"
+          LIVEKIT_API_KEY: API_CI_SYNTH_KEY_918273
+          LIVEKIT_API_SECRET: CiSynthLiveKitSecretKey9876543210abcd
+          ENABLE_FILE_SHARING: "false"
+          STORAGE_PROVIDER: disabled
+
+      - name: Cleanup MongoDB test containers
+        if: always()
+        run: docker rm -f connectly-mongo-standalone connectly-mongo-rs >/dev/null 2>&1 || true

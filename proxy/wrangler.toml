@@ -1,0 +1,14 @@
+# =================================================================
+# CONNECTLY — Cloudflare Worker Reverse Proxy Configuration
+# Phase 18 Sprint 03: Single-Origin Topology
+# =================================================================
+
+name = "connectly-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Default environment variables (override with production values via wrangler secret or dashboard)
+[vars]
+BACKEND_ORIGIN = "https://connectly-backend.koyeb.app"
+FRONTEND_ORIGIN = "https://connectly-frontend.pages.dev"

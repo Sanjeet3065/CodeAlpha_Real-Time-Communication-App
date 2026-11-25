@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Local Database, Runtime Uploads & Dev Binaries
+data/
+tools/
+uploads/
+uploads_test/
+server/uploads/
+server/uploads_test/
+.tmp_phase*/
+scratch/
+coverage/
+tmp/
+*.tmp
+*.log
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+*.tsbuildinfo
+.eslintcache
+
+# Environment variables, Private Keys & Credentials
+.env
+.env.*
+!**/.env.example
+!**/.env.*.example
+proxy/.dev.vars
+proxy/.dev.vars.*
+!proxy/.dev.vars.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*credentials*.json
+*service-account*.json
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor & OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,4428 @@
+################################################################################
+# CONNECTLY — PHASE 09 SOURCE CODE & SECURITY AUDIT BUNDLE (PLAIN TEXT EXPORT)
+# Exported verbatim from CONNECTLY_PHASE_09_AUDIT_BUNDLE.zip (0 files modified)
+# Requested: 9 | Included: 8 source/audit files + MANIFEST.md | Missing: 1 (LiveKitRevocationCounter.model.ts)
+################################################################################
+
+================================================================================
+BEGIN FILE: MANIFEST.md (3630 bytes)
+================================================================================
+# CONNECTLY — Phase 09 Audit Bundle Manifest
+
+**Export Timestamp:** 2026-11-18T09:38:02+05:30
+**Bundle Name:** `CONNECTLY_PHASE_09_AUDIT_BUNDLE.zip`
+**Export Mode:** Read-only exact copy (no repository source files were modified, formatted, renamed, or altered).
+
+---
+
+## Exported & Missing File Inventory (9 Requested Files)
+
+| File Name | Original Repository-Relative Path | File Type | Export Status | Integrity Confirmation | Redactions |
+| --- | --- | --- | --- | --- | --- |
+| livekitSignalGateway.ts | `server/src/realtime/livekitSignalGateway.ts` | TypeScript source (.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 46086 bytes, `6129B36FD38351F7EB7809C7415507305E4C46DFF3924BF6FE139759789057DE`) | None |
+| livekitRevocationCoordinator.ts | `server/src/realtime/livekitRevocationCoordinator.ts` | TypeScript source (.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 18085 bytes, `8B969F96CBC83EAE30ADD7389ABAB468E8F4FF78D4436F6CAF257F57B4BFF602`) | None |
+| LiveKitRevocationEvent.model.ts | `server/src/models/LiveKitRevocationEvent.model.ts` | TypeScript Mongoose model (.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 3000 bytes, `2CD46EA622A2CBC5B28622E3657D4D0109BDBC63737D7369900EDAA6AA7EF4FF`) | None |
+| LiveKitRevocationCounter.model.ts | *(Not present in repository)* | TypeScript Mongoose model (.ts) | **MISSING** | File does not exist as a standalone file in the repository (not fabricated or substituted). Note: `LiveKitRevocationCounter` is defined inside `server/src/models/LiveKitRevocationEvent.model.ts`. | N/A |
+| livekit.service.ts | `server/src/services/livekit.service.ts` | TypeScript service (.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 20975 bytes, `4D1CE1831E357B6F708C4E4F85F4374979327D0483C09787277E84071BA1CAB5`) | None |
+| MeetingParticipant.model.ts | `server/src/models/MeetingParticipant.model.ts` | TypeScript Mongoose model (.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 3616 bytes, `BE9D275117369586AD0912BB13F1D12652841ED21A095B1BDB7D58D83C0D0F57`) | None |
+| livekitPostSyncFencing.test.ts | `server/src/tests/livekitPostSyncFencing.test.ts` | TypeScript test suite (.test.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 23960 bytes, `4B3085DE0A83422E125922ABC51D48BC01B548ABE684D421E44DEB847D006A08`) | None |
+| livekitCrossInstanceRevocation.test.ts | `server/src/tests/livekitCrossInstanceRevocation.test.ts` | TypeScript test suite (.test.ts) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 24896 bytes, `CF2CC6E33A9A259ED2FF19087ABB980F38A5FB522A88AD019E4D0D30256DA8AB`) | None |
+| PHASE_09_SECURITY_AUDIT.md | `docs/PHASE_09_SECURITY_AUDIT.md` | Markdown security audit report (.md) | Found & Exported | Exact match (byte-for-byte SHA-256 verified, 26654 bytes, `8A4202FB3CA32CC78B301FD83787146D479037355305952DFE750BB9878F697B`) | None |
+
+---
+
+## Security & Privacy Verification
+
+- **Secrets Excluded:** No `.env` files, production API keys, live access tokens, private certificates, or database credentials are included in this archive.
+- **Redactions Required:** **0** files required redaction. The two test suites (`livekitPostSyncFencing.test.ts` and `livekitCrossInstanceRevocation.test.ts`) contain only synthetic, non-production unit-test fixture constants (`TEST_API_KEY`, `TEST_API_SECRET`, and synthetic test user password hashes).
+- **Exact Repository Match:** All 8 exported files were verified byte-for-byte via SHA-256 checksums against the current repository versions immediately prior to archiving.
+
+================================================================================
+END FILE: MANIFEST.md
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/realtime/livekitSignalGateway.ts (46086 bytes)
+================================================================================
+import http, { type IncomingMessage, type Server as HttpServer } from 'node:http';
+import https from 'node:https';
+import type { Duplex } from 'node:stream';
+import { Router, type Request, type Response } from 'express';
+import { TokenVerifier } from 'livekit-server-sdk';
+import { Meeting } from '../models/Meeting.model.js';
+import { MeetingParticipant } from '../models/MeetingParticipant.model.js';
+import {
+  livekitService,
+  parseLiveKitParticipantUserId,
+  parseLiveKitRoomMeetingId,
+  toLiveKitHttpUrl,
+  type LiveKitConfig,
+  type LiveKitService,
+} from '../services/livekit.service.js';
+import {
+  livekitRevocationCoordinator,
+  type DistributedRevocationPayload,
+  type LiveKitRevocationCoordinator,
+} from './livekitRevocationCoordinator.js';
+import { logger } from '../utils/logger.js';
+
+export const LIVEKIT_SIGNAL_GATEWAY_PATH = '/livekit-signal';
+
+export type SignalAuthResult =
+  | {
+      allowed: true;
+      meetingId: string;
+      userId: string;
+      roomName: string;
+      identity: string;
+      tokenEpoch: number;
+      tokenNbf?: number;
+      upstreamConfig: LiveKitConfig;
+    }
+  | {
+      allowed: false;
+      statusCode: number;
+      code: string;
+      message: string;
+    };
+
+export type RevalidationResult =
+  | { allowed: true }
+  | { allowed: false; statusCode: number; code: string; message: string };
+
+export interface LiveKitSignalGatewayHooks {
+  beforeAuthorize?: () => Promise<void>;
+  afterAuthorize?: () => Promise<void>;
+  beforeUpstreamConnect?: () => Promise<void>;
+  duringUpstreamHandshake?: () => Promise<void>;
+  afterUpstreamHandshake?: () => Promise<void>;
+  duringSocketRegister?: () => Promise<void>;
+  /** Fires AFTER post-handshake MongoDB revalidation succeeded, BEFORE syncNow() & atomic fence. */
+  beforeWrite101?: () => Promise<void>;
+  /** Fires AFTER syncNow() AND final read check succeeded, immediately BEFORE atomic claimSignalingAdmissionFence(). */
+  afterSyncBeforeAtomicFence?: () => Promise<void>;
+  /** Fires AFTER atomic claimSignalingAdmissionFence() linearized as ADMITTED, immediately BEFORE clientSocket.write(HTTP 101). */
+  afterAtomicFenceBeforeSocketWrite101?: () => Promise<void>;
+  /** Fires IMMEDIATELY AFTER HTTP 101 Switching Protocols has been written to the client socket. */
+  afterWrite101?: () => Promise<void>;
+  afterSocketRegister?: () => Promise<void>;
+}
+
+interface PendingUpgradeHandle {
+  aborted: boolean;
+  abortStatusCode: number;
+  abortMessage: string;
+  tokenEpoch: number;
+  proxyReq?: http.ClientRequest;
+  abort: (statusCode?: number, message?: string) => void;
+}
+
+interface TrackedSocketEntry {
+  meetingId: string;
+  userId: string;
+  tokenEpoch: number;
+  clientSocket: Duplex;
+  proxySocket: Duplex;
+}
+
+function extractBearerOrQueryToken(rawUrl: string, authHeader?: string): string | null {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (token) return token;
+  }
+  try {
+    const parsed = new URL(rawUrl, 'http://localhost');
+    const qToken = parsed.searchParams.get('access_token');
+    if (qToken && qToken.trim()) {
+      return qToken.trim();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function parseTokenMetadata(
+  metadata?: string
+): { epoch: number; meetingId: string } | null {
+  if (!metadata) return null;
+  try {
+    const parsed = JSON.parse(metadata) as { epoch?: unknown; meetingId?: unknown };
+    if (
+      typeof parsed.epoch === 'number' &&
+      Number.isInteger(parsed.epoch) &&
+      parsed.epoch >= 1 &&
+      typeof parsed.meetingId === 'string' &&
+      /^[a-f0-9]{24}$/i.test(parsed.meetingId)
+    ) {
+      return {
+        epoch: parsed.epoch,
+        meetingId: parsed.meetingId.toLowerCase(),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Authoritative MongoDB revalidation of meeting & participant state.
+ * Strictly fails CLOSED (`503 LIVEKIT_AUTH_UNAVAILABLE`) on any database error.
+ */
+export async function revalidateParticipantAccess(
+  meetingId: string,
+  userId: string,
+  tokenEpoch: number,
+  tokenNbf?: number
+): Promise<RevalidationResult> {
+  let meeting: { status: string; expiresAt: Date } | null;
+  let participant: {
+    admissionStatus: string;
+    tokenEpoch?: number;
+    tokenRevokedBefore?: Date | null;
+  } | null;
+
+  try {
+    [meeting, participant] = await Promise.all([
+      Meeting.findById(meetingId).select('status expiresAt'),
+      MeetingParticipant.findOne({ meetingId, userId }).select(
+        'admissionStatus tokenEpoch tokenRevokedBefore'
+      ),
+    ]);
+  } catch (err) {
+    logger.error('[LiveKitGateway] MongoDB authorization check failed (fail-closed)', {
+      meetingId,
+      userId,
+      errorCategory: 'LIVEKIT_AUTH_UNAVAILABLE',
+      message: err instanceof Error ? err.message : 'Database lookup failed',
+    });
+    return {
+      allowed: false,
+      statusCode: 503,
+      code: 'LIVEKIT_AUTH_UNAVAILABLE',
+      message: 'Authorization service is temporarily unavailable.',
+    };
+  }
+
+  if (!meeting) {
+    return {
+      allowed: false,
+      statusCode: 404,
+      code: 'MEETING_NOT_FOUND',
+      message: 'Meeting no longer exists.',
+    };
+  }
+
+  const now = new Date();
+  if (meeting.status === 'ENDED' || meeting.status === 'EXPIRED' || now >= meeting.expiresAt) {
+    return {
+      allowed: false,
+      statusCode: 410,
+      code: 'LIVEKIT_MEETING_ENDED',
+      message: 'This meeting has ended and no longer accepts media signaling connections.',
+    };
+  }
+
+  if (!participant) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_ACCESS_DENIED',
+      message: 'Participant is not authorized for this meeting.',
+    };
+  }
+
+  if (participant.admissionStatus === 'REMOVED') {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'PARTICIPANT_REMOVED',
+      message: 'Participant has been removed from this meeting; token access revoked.',
+    };
+  }
+
+  if (participant.admissionStatus !== 'ADMITTED') {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_ACCESS_DENIED',
+      message: 'Participant is not currently admitted to this meeting.',
+    };
+  }
+
+  const expectedEpoch =
+    typeof participant.tokenEpoch === 'number' && participant.tokenEpoch >= 1
+      ? participant.tokenEpoch
+      : 1;
+  if (tokenEpoch !== expectedEpoch) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_TOKEN_REVOKED',
+      message: 'LiveKit access token has been revoked.',
+    };
+  }
+
+  if (participant.tokenRevokedBefore && typeof tokenNbf === 'number') {
+    const cutoffSec = Math.floor(participant.tokenRevokedBefore.getTime() / 1000);
+    if (tokenNbf < cutoffSec) {
+      return {
+        allowed: false,
+        statusCode: 403,
+        code: 'LIVEKIT_TOKEN_REVOKED',
+        message: 'LiveKit access token predates revocation cutoff.',
+      };
+    }
+  }
+
+  return { allowed: true };
+}
+
+export type AtomicFenceResult =
+  | { allowed: true; fenceVersion: number }
+  | { allowed: false; statusCode: number; code: string; message: string };
+
+/**
+ * MongoDB-backed atomic admission linearization point.
+ *
+ * Serializes signaling admission against concurrent `removeParticipant` / `leaveMeeting`
+ * on the exact same `MeetingParticipant` document via single-document conditional
+ * `findOneAndUpdate`:
+ * - If removal commits first (`admissionStatus = REMOVED`, `tokenEpoch` incremented),
+ *   this conditional update atomically returns `null` (loses the race) and the gateway
+ *   NEVER emits HTTP 101.
+ * - If admission commits first (`$inc: { signalFenceVersion: 1 }`), admission linearized
+ *   before removal; any subsequent removal publishes a durable `LiveKitRevocationEvent`
+ *   that terminates the already-registered socket pair via `LiveKitRevocationCoordinator`.
+ * - Fails strictly CLOSED (`503 LIVEKIT_FENCE_UNAVAILABLE`) on any MongoDB error.
+ */
+export async function claimSignalingAdmissionFence(
+  meetingId: string,
+  userId: string,
+  tokenEpoch: number,
+  tokenNbf?: number
+): Promise<AtomicFenceResult> {
+  try {
+    const now = new Date();
+    const meeting = await Meeting.findById(meetingId).select('status expiresAt').lean();
+    if (!meeting) {
+      return {
+        allowed: false,
+        statusCode: 404,
+        code: 'MEETING_NOT_FOUND',
+        message: 'Meeting no longer exists.',
+      };
+    }
+    if (meeting.status === 'ENDED' || meeting.status === 'EXPIRED' || now >= meeting.expiresAt) {
+      return {
+        allowed: false,
+        statusCode: 410,
+        code: 'LIVEKIT_MEETING_ENDED',
+        message: 'This meeting has ended and no longer accepts media signaling connections.',
+      };
+    }
+
+    const filter: Record<string, unknown> = {
+      meetingId,
+      userId,
+      admissionStatus: 'ADMITTED',
+      tokenEpoch,
+    };
+    if (typeof tokenNbf === 'number') {
+      // Allow tokens whose nbf (seconds) >= floor(tokenRevokedBefore / 1000)
+      filter.$or = [
+        { tokenRevokedBefore: null },
+        { tokenRevokedBefore: { $exists: false } },
+        { tokenRevokedBefore: { $lt: new Date((tokenNbf + 1) * 1000) } },
+      ];
+    }
+
+    const claimed = await MeetingParticipant.findOneAndUpdate(
+      filter,
+      { $inc: { signalFenceVersion: 1 } },
+      { new: true, projection: { signalFenceVersion: 1 } }
+    ).lean();
+
+    if (!claimed) {
+      // Admission lost the atomic document race; determine exact authoritative denial reason
+      const diag = await revalidateParticipantAccess(meetingId, userId, tokenEpoch, tokenNbf);
+      if (!diag.allowed) {
+        return diag;
+      }
+      return {
+        allowed: false,
+        statusCode: 403,
+        code: 'LIVEKIT_TOKEN_REVOKED',
+        message: 'Signaling admission lost atomic authorization fence.',
+      };
+    }
+
+    return {
+      allowed: true,
+      fenceVersion: typeof claimed.signalFenceVersion === 'number' ? claimed.signalFenceVersion : 1,
+    };
+  } catch (err) {
+    logger.error('[LiveKitGateway] Atomic admission fence failed (fail-closed)', {
+      meetingId,
+      userId,
+      errorCategory: 'LIVEKIT_FENCE_UNAVAILABLE',
+      message: err instanceof Error ? err.message : 'Atomic fence database error',
+    });
+    return {
+      allowed: false,
+      statusCode: 503,
+      code: 'LIVEKIT_FENCE_UNAVAILABLE',
+      message: 'Signaling admission fencing service is temporarily unavailable.',
+    };
+  }
+}
+
+/**
+ * Authoritative pre-admission verification executed BEFORE any HTTP validate
+ * or WebSocket signaling upgrade is forwarded to the self-hosted LiveKit SFU.
+ */
+export async function authorizeLiveKitSignalHandshake(
+  rawUrl: string,
+  authHeader?: string,
+  livekitSvc: LiveKitService = livekitService,
+  revocationCoordinator?: LiveKitRevocationCoordinator
+): Promise<SignalAuthResult> {
+  if (revocationCoordinator && !revocationCoordinator.isHealthy()) {
+    return {
+      allowed: false,
+      statusCode: 503,
+      code: 'LIVEKIT_REVOCATION_UNAVAILABLE',
+      message: 'Signaling revocation service is temporarily unavailable.',
+    };
+  }
+
+  const token = extractBearerOrQueryToken(rawUrl, authHeader);
+  if (!token) {
+    return {
+      allowed: false,
+      statusCode: 401,
+      code: 'LIVEKIT_MISSING_TOKEN',
+      message: 'Missing LiveKit access token.',
+    };
+  }
+
+  let cfg: LiveKitConfig;
+  try {
+    cfg = livekitSvc.assertConfigured();
+  } catch {
+    return {
+      allowed: false,
+      statusCode: 503,
+      code: 'LIVEKIT_NOT_CONFIGURED',
+      message: 'LiveKit signaling infrastructure is not configured.',
+    };
+  }
+
+  let claims: Awaited<ReturnType<TokenVerifier['verify']>>;
+  try {
+    const verifier = new TokenVerifier(cfg.apiKey, cfg.apiSecret);
+    claims = await verifier.verify(token);
+  } catch {
+    return {
+      allowed: false,
+      statusCode: 401,
+      code: 'LIVEKIT_INVALID_TOKEN',
+      message: 'Invalid or expired LiveKit access token.',
+    };
+  }
+
+  const roomName = claims.video?.room || '';
+  const identity = claims.sub || '';
+  if (!claims.video?.roomJoin || !roomName || !identity) {
+    return {
+      allowed: false,
+      statusCode: 401,
+      code: 'LIVEKIT_INVALID_TOKEN',
+      message: 'LiveKit access token lacks valid roomJoin claims.',
+    };
+  }
+
+  const meetingId = parseLiveKitRoomMeetingId(roomName);
+  const userId = parseLiveKitParticipantUserId(identity);
+  if (!meetingId || !userId) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_ACCESS_DENIED',
+      message: 'Token room or identity does not match CONNECTLY authorization policy.',
+    };
+  }
+
+  const meta = parseTokenMetadata(claims.metadata);
+  if (!meta) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_TOKEN_REVOKED',
+      message: 'LiveKit access token lacks valid signed epoch metadata.',
+    };
+  }
+
+  if (meta.meetingId !== meetingId) {
+    return {
+      allowed: false,
+      statusCode: 403,
+      code: 'LIVEKIT_ACCESS_DENIED',
+      message: 'Token meeting metadata does not match room grant.',
+    };
+  }
+
+  const recheck = await revalidateParticipantAccess(
+    meetingId,
+    userId,
+    meta.epoch,
+    typeof claims.nbf === 'number' ? claims.nbf : undefined
+  );
+  if (!recheck.allowed) {
+    return recheck;
+  }
+
+  return {
+    allowed: true,
+    meetingId,
+    userId,
+    roomName,
+    identity,
+    tokenEpoch: meta.epoch,
+    tokenNbf: typeof claims.nbf === 'number' ? claims.nbf : undefined,
+    upstreamConfig: cfg,
+  };
+}
+
+function writeSocketHttpError(socket: Duplex, statusCode: number, message: string): void {
+  if (socket.destroyed) return;
+  const statusText = http.STATUS_CODES[statusCode] || 'Error';
+  const body = message;
+  const response =
+    `HTTP/1.1 ${statusCode} ${statusText}\r\n` +
+    `Content-Type: text/plain; charset=utf-8\r\n` +
+    `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+    `Connection: close\r\n` +
+    `\r\n` +
+    body;
+  try {
+    socket.end(response);
+  } catch {
+    socket.destroy();
+  }
+}
+
+function buildUpstreamHeaders(
+  req: IncomingMessage,
+  upstreamHost: string
+): Record<string, string | string[]> {
+  const headers: Record<string, string | string[]> = {
+    host: upstreamHost,
+    connection: 'Upgrade',
+    upgrade: 'websocket',
+  };
+  const forwardNames = [
+    'sec-websocket-key',
+    'sec-websocket-version',
+    'sec-websocket-extensions',
+    'sec-websocket-protocol',
+    'origin',
+    'user-agent',
+    'authorization',
+    'x-forwarded-for',
+  ];
+  for (const name of forwardNames) {
+    const val = req.headers[name];
+    if (val !== undefined) {
+      headers[name] = val;
+    }
+  }
+  return headers;
+}
+
+function normalizeUpgradePath(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl, 'http://localhost');
+    const normalized = parsed.pathname.replace(/\/+$/, '') || '/';
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+export class LiveKitSignalGateway {
+  private readonly livekit: LiveKitService;
+  private readonly hooks: LiveKitSignalGatewayHooks;
+  private readonly coordinator: LiveKitRevocationCoordinator;
+  private readonly entriesByParticipant = new Map<string, Set<TrackedSocketEntry>>();
+  private readonly entriesByMeeting = new Map<string, Set<TrackedSocketEntry>>();
+  private readonly pendingByParticipant = new Map<string, Set<PendingUpgradeHandle>>();
+  private readonly pendingByMeeting = new Map<string, Set<PendingUpgradeHandle>>();
+  private readonly unsubEvent: () => void;
+  private readonly unsubHealth: () => void;
+  private isClosing = false;
+
+  constructor(
+    livekitSvc: LiveKitService = livekitService,
+    hooks: LiveKitSignalGatewayHooks = {},
+    coordinator: LiveKitRevocationCoordinator = livekitRevocationCoordinator
+  ) {
+    this.livekit = livekitSvc;
+    this.hooks = hooks;
+    this.coordinator = coordinator;
+
+    this.unsubEvent = this.coordinator.subscribe((event) => {
+      this.applyRevocationEvent(event);
+    });
+    this.unsubHealth = this.coordinator.onHealthChange((healthy, reason) => {
+      if (!healthy) {
+        this.failClosedOnCoordinatorOutage(reason);
+      }
+    });
+  }
+
+  private participantKey(meetingId: string, userId: string): string {
+    return `${meetingId}:${userId}`;
+  }
+
+  public getActiveSocketCount(): number {
+    let total = 0;
+    for (const set of this.entriesByMeeting.values()) {
+      total += set.size * 2; // client + upstream pair per tracked connection
+    }
+    return total;
+  }
+
+  public getPendingUpgradeCount(): number {
+    let total = 0;
+    for (const set of this.pendingByMeeting.values()) {
+      total += set.size;
+    }
+    return total;
+  }
+
+  /**
+   * Applies a distributed cross-instance revocation event received via MongoDB
+   * Change Stream or durable cursor sweep. Terminates ONLY affected pending
+   * handshakes and active sockets whose tokenEpoch predates `revokedEpoch`
+   * (or all sockets for MEETING_ENDED), leaving Host and unrelated peers untouched.
+   */
+  public applyRevocationEvent(event: DistributedRevocationPayload): number {
+    if (event.kind === 'MEETING_ENDED' || !event.userId) {
+      return this.disconnectMeetingSockets(event.meetingId);
+    }
+
+    const cutoffEpoch =
+      typeof event.revokedEpoch === 'number' && event.revokedEpoch >= 1
+        ? event.revokedEpoch
+        : null;
+    return this.disconnectParticipantSockets(event.meetingId, event.userId, cutoffEpoch);
+  }
+
+  private failClosedOnCoordinatorOutage(reason?: string): number {
+    let closed = 0;
+    const msg = reason || 'Signaling revocation service unavailable; failing closed.';
+
+    for (const set of Array.from(this.pendingByMeeting.values())) {
+      for (const handle of Array.from(set)) {
+        handle.abort(503, msg);
+        closed += 1;
+      }
+    }
+    this.pendingByParticipant.clear();
+    this.pendingByMeeting.clear();
+
+    for (const set of Array.from(this.entriesByMeeting.values())) {
+      for (const entry of Array.from(set)) {
+        closed += this.destroySocketEntry(entry);
+      }
+    }
+    this.entriesByParticipant.clear();
+    this.entriesByMeeting.clear();
+
+    return closed;
+  }
+
+  private destroySocketEntry(entry: TrackedSocketEntry): number {
+    let closed = 0;
+    try {
+      if (!entry.clientSocket.destroyed) {
+        entry.clientSocket.destroy();
+        closed += 1;
+      }
+    } catch {
+      // ignore
+    }
+    try {
+      if (!entry.proxySocket.destroyed) {
+        entry.proxySocket.destroy();
+        closed += 1;
+      }
+    } catch {
+      // ignore
+    }
+    return closed;
+  }
+
+  private trackPendingUpgrade(
+    meetingId: string,
+    userId: string,
+    handle: PendingUpgradeHandle
+  ): () => void {
+    const pKey = this.participantKey(meetingId, userId);
+    let pSet = this.pendingByParticipant.get(pKey);
+    if (!pSet) {
+      pSet = new Set();
+      this.pendingByParticipant.set(pKey, pSet);
+    }
+    let mSet = this.pendingByMeeting.get(meetingId);
+    if (!mSet) {
+      mSet = new Set();
+      this.pendingByMeeting.set(meetingId, mSet);
+    }
+
+    pSet.add(handle);
+    mSet.add(handle);
+
+    let cleaned = false;
+    return () => {
+      if (cleaned) return;
+      cleaned = true;
+      pSet?.delete(handle);
+      if (pSet && pSet.size === 0) this.pendingByParticipant.delete(pKey);
+      mSet?.delete(handle);
+      if (mSet && mSet.size === 0) this.pendingByMeeting.delete(meetingId);
+    };
+  }
+
+  private trackSocketEntry(entry: TrackedSocketEntry): () => void {
+    const pKey = this.participantKey(entry.meetingId, entry.userId);
+    let pSet = this.entriesByParticipant.get(pKey);
+    if (!pSet) {
+      pSet = new Set();
+      this.entriesByParticipant.set(pKey, pSet);
+    }
+    let mSet = this.entriesByMeeting.get(entry.meetingId);
+    if (!mSet) {
+      mSet = new Set();
+      this.entriesByMeeting.set(entry.meetingId, mSet);
+    }
+
+    pSet.add(entry);
+    mSet.add(entry);
+
+    let cleaned = false;
+    return () => {
+      if (cleaned) return;
+      cleaned = true;
+      pSet?.delete(entry);
+      if (pSet && pSet.size === 0) this.entriesByParticipant.delete(pKey);
+      mSet?.delete(entry);
+      if (mSet && mSet.size === 0) this.entriesByMeeting.delete(entry.meetingId);
+    };
+  }
+
+  /**
+   * Immediately aborts matching pending handshakes AND terminates active proxied
+   * signaling sockets for ONLY the specified participant, without affecting
+   * Host or any other admitted participant in the room.
+   *
+   * If `revokedEpoch` is provided, only connections whose `tokenEpoch < revokedEpoch`
+   * are terminated (preventing delayed events from disrupting newer re-admitted sessions).
+   */
+  public disconnectParticipantSockets(
+    meetingId: string,
+    userId: string,
+    revokedEpoch: number | null = null
+  ): number {
+    const pKey = this.participantKey(meetingId, userId);
+    let closed = 0;
+
+    const pending = this.pendingByParticipant.get(pKey);
+    const meetingPending = this.pendingByMeeting.get(meetingId);
+    if (pending && pending.size > 0) {
+      for (const handle of Array.from(pending)) {
+        if (revokedEpoch !== null && handle.tokenEpoch >= revokedEpoch) {
+          continue;
+        }
+        handle.abort(403, 'Participant has been removed from this meeting; token access revoked.');
+        pending.delete(handle);
+        meetingPending?.delete(handle);
+        closed += 1;
+      }
+      if (pending.size === 0) this.pendingByParticipant.delete(pKey);
+      if (meetingPending && meetingPending.size === 0) {
+        this.pendingByMeeting.delete(meetingId);
+      }
+    }
+
+    const entries = this.entriesByParticipant.get(pKey);
+    const meetingEntries = this.entriesByMeeting.get(meetingId);
+    if (entries && entries.size > 0) {
+      for (const entry of Array.from(entries)) {
+        if (revokedEpoch !== null && entry.tokenEpoch >= revokedEpoch) {
+          continue;
+        }
+        entries.delete(entry);
+        meetingEntries?.delete(entry);
+        closed += this.destroySocketEntry(entry);
+      }
+      if (entries.size === 0) this.entriesByParticipant.delete(pKey);
+      if (meetingEntries && meetingEntries.size === 0) {
+        this.entriesByMeeting.delete(meetingId);
+      }
+    }
+
+    return closed;
+  }
+
+  /**
+   * Aborts all pending handshakes and terminates all active proxied signaling
+   * sockets belonging to an ended meeting.
+   */
+  public disconnectMeetingSockets(meetingId: string): number {
+    let closed = 0;
+
+    const pending = this.pendingByMeeting.get(meetingId);
+    if (pending && pending.size > 0) {
+      for (const handle of Array.from(pending)) {
+        handle.abort(410, 'This meeting has ended and no longer accepts media signaling connections.');
+        closed += 1;
+      }
+      this.pendingByMeeting.delete(meetingId);
+    }
+    for (const [pKey, pSet] of Array.from(this.pendingByParticipant.entries())) {
+      if (pKey.startsWith(`${meetingId}:`)) {
+        pSet.clear();
+        this.pendingByParticipant.delete(pKey);
+      }
+    }
+
+    const entries = this.entriesByMeeting.get(meetingId);
+    if (entries && entries.size > 0) {
+      for (const entry of Array.from(entries)) {
+        closed += this.destroySocketEntry(entry);
+      }
+      this.entriesByMeeting.delete(meetingId);
+    }
+    for (const [pKey, pSet] of Array.from(this.entriesByParticipant.entries())) {
+      if (pKey.startsWith(`${meetingId}:`)) {
+        pSet.clear();
+        this.entriesByParticipant.delete(pKey);
+      }
+    }
+
+    return closed;
+  }
+
+  /**
+   * Gracefully shuts down the Signaling Admission Gateway: unsubscribes from
+   * revocation events, rejects new upgrades, aborts all pending handshakes,
+   * and closes all active proxied sockets.
+   */
+  public close(): number {
+    this.isClosing = true;
+    this.unsubEvent();
+    this.unsubHealth();
+
+    let closed = 0;
+    for (const set of Array.from(this.pendingByMeeting.values())) {
+      for (const handle of Array.from(set)) {
+        handle.abort(503, 'Signaling gateway shutting down.');
+        closed += 1;
+      }
+    }
+    this.pendingByParticipant.clear();
+    this.pendingByMeeting.clear();
+
+    for (const set of Array.from(this.entriesByMeeting.values())) {
+      for (const entry of Array.from(set)) {
+        closed += this.destroySocketEntry(entry);
+      }
+    }
+    this.entriesByParticipant.clear();
+    this.entriesByMeeting.clear();
+
+    return closed;
+  }
+
+  /**
+   * Express router handling `HEAD /livekit-signal`, `OPTIONS`, and
+   * authoritative pre-admission validation for `/rtc/validate` and `/rtc/v1/validate`.
+   */
+  public createRouter(): Router {
+    const router = Router();
+
+    router.use((_req: Request, res: Response, next) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      next();
+    });
+
+    router.options('*', (_req: Request, res: Response) => {
+      res.status(204).end();
+    });
+
+    router.head('/', (_req: Request, res: Response) => {
+      if (this.isClosing || !this.coordinator.isHealthy()) {
+        res.status(503).end();
+        return;
+      }
+      res.status(200).end();
+    });
+
+    router.get('/', (_req: Request, res: Response) => {
+      if (this.isClosing || !this.coordinator.isHealthy()) {
+        res.status(503).type('text/plain').send('Signaling gateway unavailable.');
+        return;
+      }
+      res.status(200).type('text/plain').send('OK');
+    });
+
+    const handleValidate = async (req: Request, res: Response): Promise<void> => {
+      if (this.isClosing) {
+        res.status(503).type('text/plain').send('Signaling gateway shutting down.');
+        return;
+      }
+
+      const auth = await authorizeLiveKitSignalHandshake(
+        req.originalUrl,
+        req.headers.authorization,
+        this.livekit,
+        this.coordinator
+      );
+
+      if (!auth.allowed) {
+        logger.warn('[LiveKitGateway] Rejected signaling validate request', {
+          statusCode: auth.statusCode,
+          code: auth.code,
+        });
+        res.status(auth.statusCode).type('text/plain').send(auth.message);
+        return;
+      }
+
+      const upstreamHttpBase = toLiveKitHttpUrl(auth.upstreamConfig.url);
+      const strippedUrl = req.originalUrl.slice(LIVEKIT_SIGNAL_GATEWAY_PATH.length) || '/rtc/validate';
+      const targetUrl = `${upstreamHttpBase}${strippedUrl}`;
+
+      try {
+        const upstreamRes = await fetch(targetUrl, {
+          method: 'GET',
+          headers: req.headers.authorization
+            ? { Authorization: req.headers.authorization }
+            : undefined,
+        });
+        const text = await upstreamRes.text();
+        res.status(upstreamRes.status).type('text/plain').send(text);
+      } catch {
+        res.status(503).type('text/plain').send('LiveKit signaling server is unavailable.');
+      }
+    };
+
+    router.get('/rtc/validate', (req, res, next) => {
+      handleValidate(req, res).catch(next);
+    });
+    router.get('/rtc/v1/validate', (req, res, next) => {
+      handleValidate(req, res).catch(next);
+    });
+
+    // Explicitly block any alternate or malformed sub-routes under /livekit-signal/*
+    router.all('*', (_req: Request, res: Response) => {
+      res.status(404).type('text/plain').send('Unknown LiveKit signaling route.');
+    });
+
+    return router;
+  }
+
+  /**
+   * Attaches an HTTP Upgrade interceptor for `/livekit-signal/rtc` and `/livekit-signal/rtc/v1`.
+   * Leaves Socket.IO (`/socket.io`) untouched and rejects any unauthorized or alternate
+   * `/rtc*` or `/livekit-signal/*` upgrade paths cleanly.
+   */
+  public attach(httpServer: HttpServer): void {
+    httpServer.on('upgrade', (req: IncomingMessage, clientSocket: Duplex, head: Buffer) => {
+      const rawUrl = req.url || '';
+      const normalizedPath = normalizeUpgradePath(rawUrl);
+      if (!normalizedPath) {
+        writeSocketHttpError(clientSocket, 400, 'Malformed signaling request URL.');
+        return;
+      }
+
+      if (normalizedPath.startsWith('/socket.io')) {
+        return;
+      }
+
+      clientSocket.on('error', () => {
+        // Prevent uncaught socket reset exceptions
+      });
+
+      if (
+        normalizedPath !== `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc` &&
+        normalizedPath !== `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1`
+      ) {
+        writeSocketHttpError(clientSocket, 404, 'Unknown WebSocket signaling route.');
+        return;
+      }
+
+      if (this.isClosing) {
+        writeSocketHttpError(clientSocket, 503, 'Signaling gateway shutting down.');
+        return;
+      }
+
+      if (!this.coordinator.isHealthy()) {
+        writeSocketHttpError(clientSocket, 503, 'Signaling revocation service is temporarily unavailable.');
+        return;
+      }
+
+      this.handleWebSocketUpgrade(req, clientSocket, head).catch((err) => {
+        logger.error('[LiveKitGateway] Unexpected signaling upgrade error', {
+          message: err instanceof Error ? err.message : 'Unknown upgrade error',
+        });
+        writeSocketHttpError(clientSocket, 500, 'Signaling gateway error.');
+      });
+    });
+  }
+
+  private async handleWebSocketUpgrade(
+    req: IncomingMessage,
+    clientSocket: Duplex,
+    head: Buffer
+  ): Promise<void> {
+    const rawUrl = req.url || '';
+
+    if (this.hooks.beforeAuthorize) {
+      await this.hooks.beforeAuthorize();
+    }
+    if (this.isClosing || !this.coordinator.isHealthy() || clientSocket.destroyed) {
+      writeSocketHttpError(clientSocket, 503, 'Signaling gateway unavailable.');
+      return;
+    }
+
+    const auth = await authorizeLiveKitSignalHandshake(
+      rawUrl,
+      req.headers.authorization,
+      this.livekit,
+      this.coordinator
+    );
+
+    if (!auth.allowed) {
+      logger.warn('[LiveKitGateway] Blocked unauthorized/revoked WebSocket upgrade', {
+        statusCode: auth.statusCode,
+        code: auth.code,
+      });
+      writeSocketHttpError(clientSocket, auth.statusCode, auth.message);
+      return;
+    }
+
+    const pendingHandle: PendingUpgradeHandle = {
+      aborted: false,
+      abortStatusCode: 403,
+      abortMessage: 'Participant access revoked.',
+      tokenEpoch: auth.tokenEpoch,
+      abort: (statusCode = 403, message = 'Participant access revoked.') => {
+        if (pendingHandle.aborted) return;
+        pendingHandle.aborted = true;
+        pendingHandle.abortStatusCode = statusCode;
+        pendingHandle.abortMessage = message;
+        try {
+          pendingHandle.proxyReq?.destroy();
+        } catch {
+          // ignore
+        }
+        writeSocketHttpError(clientSocket, statusCode, message);
+      },
+    };
+    const untrackPending = this.trackPendingUpgrade(auth.meetingId, auth.userId, pendingHandle);
+
+    const onClientAbortEarly = () => {
+      pendingHandle.aborted = true;
+      untrackPending();
+      try {
+        pendingHandle.proxyReq?.destroy();
+      } catch {
+        // ignore
+      }
+    };
+    clientSocket.once('close', onClientAbortEarly);
+
+    if (this.hooks.afterAuthorize) {
+      await this.hooks.afterAuthorize();
+    }
+    if (pendingHandle.aborted || this.isClosing || !this.coordinator.isHealthy() || clientSocket.destroyed) {
+      untrackPending();
+      writeSocketHttpError(
+        clientSocket,
+        !this.coordinator.isHealthy() ? 503 : pendingHandle.abortStatusCode,
+        !this.coordinator.isHealthy() ? 'Signaling revocation service unavailable.' : pendingHandle.abortMessage
+      );
+      return;
+    }
+
+    if (this.hooks.beforeUpstreamConnect) {
+      await this.hooks.beforeUpstreamConnect();
+    }
+    if (pendingHandle.aborted || this.isClosing || !this.coordinator.isHealthy() || clientSocket.destroyed) {
+      untrackPending();
+      writeSocketHttpError(
+        clientSocket,
+        !this.coordinator.isHealthy() ? 503 : pendingHandle.abortStatusCode,
+        !this.coordinator.isHealthy() ? 'Signaling revocation service unavailable.' : pendingHandle.abortMessage
+      );
+      return;
+    }
+
+    const preUpstreamCheck = await revalidateParticipantAccess(
+      auth.meetingId,
+      auth.userId,
+      auth.tokenEpoch,
+      auth.tokenNbf
+    );
+    if (
+      !preUpstreamCheck.allowed ||
+      pendingHandle.aborted ||
+      this.isClosing ||
+      !this.coordinator.isHealthy() ||
+      clientSocket.destroyed
+    ) {
+      untrackPending();
+      const status = !this.coordinator.isHealthy()
+        ? 503
+        : preUpstreamCheck.allowed
+          ? pendingHandle.abortStatusCode
+          : preUpstreamCheck.statusCode;
+      const msg = !this.coordinator.isHealthy()
+        ? 'Signaling revocation service unavailable.'
+        : preUpstreamCheck.allowed
+          ? pendingHandle.abortMessage
+          : preUpstreamCheck.message;
+      writeSocketHttpError(clientSocket, status, msg);
+      return;
+    }
+
+    const upstreamBase = new URL(toLiveKitHttpUrl(auth.upstreamConfig.url));
+    const parsedClientUrl = new URL(rawUrl, 'http://localhost');
+    const normalizedPath = parsedClientUrl.pathname.replace(/\/+$/, '');
+    const strippedPathname = normalizedPath.slice(LIVEKIT_SIGNAL_GATEWAY_PATH.length) || '/rtc';
+    const strippedPathWithQuery = `${strippedPathname}${parsedClientUrl.search}`;
+    const isTls = upstreamBase.protocol === 'https:';
+    const transport = isTls ? https : http;
+
+    const proxyReq = transport.request({
+      protocol: upstreamBase.protocol,
+      hostname: upstreamBase.hostname,
+      port: upstreamBase.port || (isTls ? 443 : 80),
+      method: 'GET',
+      path: strippedPathWithQuery,
+      headers: buildUpstreamHeaders(req, upstreamBase.host),
+    });
+    pendingHandle.proxyReq = proxyReq;
+
+    const duringHandshakePromise = this.hooks.duringUpstreamHandshake
+      ? this.hooks.duringUpstreamHandshake()
+      : Promise.resolve();
+
+    proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+      proxySocket.pause();
+      proxySocket.on('error', () => {
+        // prevent uncaught upstream socket errors
+      });
+
+      const finalizeUpgrade = async () => {
+        await duringHandshakePromise;
+
+        if (this.hooks.afterUpstreamHandshake) {
+          await this.hooks.afterUpstreamHandshake();
+        }
+
+        if (
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackPending();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          writeSocketHttpError(
+            clientSocket,
+            !this.coordinator.isHealthy() ? 503 : pendingHandle.abortStatusCode,
+            !this.coordinator.isHealthy() ? 'Signaling revocation service unavailable.' : pendingHandle.abortMessage
+          );
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        if (this.hooks.duringSocketRegister) {
+          await this.hooks.duringSocketRegister();
+        }
+
+        if (
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackPending();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          writeSocketHttpError(
+            clientSocket,
+            !this.coordinator.isHealthy() ? 503 : pendingHandle.abortStatusCode,
+            !this.coordinator.isHealthy() ? 'Signaling revocation service unavailable.' : pendingHandle.abortMessage
+          );
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        // Register socket entry BEFORE post-handshake revalidation and BEFORE 101
+        // so both local disconnectParticipantSockets() AND cross-instance coordinator
+        // events can terminate the socket pair at any point before, during, or after 101.
+        clientSocket.off('close', onClientAbortEarly);
+        const socketEntry: TrackedSocketEntry = {
+          meetingId: auth.meetingId,
+          userId: auth.userId,
+          tokenEpoch: auth.tokenEpoch,
+          clientSocket,
+          proxySocket,
+        };
+        const untrackSockets = this.trackSocketEntry(socketEntry);
+
+        const cleanupBoth = () => {
+          untrackPending();
+          untrackSockets();
+          if (!clientSocket.destroyed) clientSocket.destroy();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+        };
+
+        clientSocket.once('error', cleanupBoth);
+        proxySocket.once('error', cleanupBoth);
+        clientSocket.once('end', cleanupBoth);
+        proxySocket.once('end', cleanupBoth);
+        clientSocket.once('close', cleanupBoth);
+        proxySocket.once('close', cleanupBoth);
+
+        // Post-handshake authoritative MongoDB revalidation
+        const postHandshakeCheck = await revalidateParticipantAccess(
+          auth.meetingId,
+          auth.userId,
+          auth.tokenEpoch,
+          auth.tokenNbf
+        );
+
+        if (
+          !postHandshakeCheck.allowed ||
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackPending();
+          untrackSockets();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          const status = !this.coordinator.isHealthy()
+            ? 503
+            : postHandshakeCheck.allowed
+              ? pendingHandle.abortStatusCode
+              : postHandshakeCheck.statusCode;
+          const msg = !this.coordinator.isHealthy()
+            ? 'Signaling revocation service unavailable.'
+            : postHandshakeCheck.allowed
+              ? pendingHandle.abortMessage
+              : postHandshakeCheck.message;
+          logger.warn('[LiveKitGateway] Post-handshake revalidation rejected upgraded socket', {
+            meetingId: auth.meetingId,
+            userId: auth.userId,
+            statusCode: status,
+            code: postHandshakeCheck.allowed ? 'GATEWAY_ABORTED' : postHandshakeCheck.code,
+          });
+          writeSocketHttpError(clientSocket, status, msg);
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        // Deterministic hook boundary: AFTER postHandshakeCheck succeeded, BEFORE syncNow() & atomic fence
+        if (this.hooks.beforeWrite101) {
+          await this.hooks.beforeWrite101();
+        }
+
+        // Pre-101 Distributed Sync & Atomic Linearization Fence:
+        // 1. Fail closed if coordinator became unhealthy/stalled.
+        // 2. Synchronize distributed revocation cursor (`syncNow`).
+        // 3. Complete final MongoDB authorization read (`finalReadCheck`).
+        // 4. Execute atomic MongoDB single-document linearization point (`claimSignalingAdmissionFence`)
+        //    strictly serialized against `removeParticipant` / `leaveMeeting` on `MeetingParticipant`.
+        if (!this.coordinator.isHealthy() || this.isClosing) {
+          untrackPending();
+          untrackSockets();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          writeSocketHttpError(clientSocket, 503, 'Signaling revocation service unavailable.');
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        if (this.coordinator.isRunning()) {
+          const synced = await this.coordinator.syncNow();
+          if (!synced || !this.coordinator.isHealthy()) {
+            untrackPending();
+            untrackSockets();
+            if (!proxySocket.destroyed) proxySocket.destroy();
+            writeSocketHttpError(clientSocket, 503, 'Signaling revocation sync failed (fail-closed).');
+            void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+            return;
+          }
+        }
+
+        const finalReadCheck = await revalidateParticipantAccess(
+          auth.meetingId,
+          auth.userId,
+          auth.tokenEpoch,
+          auth.tokenNbf
+        );
+
+        if (
+          !finalReadCheck.allowed ||
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackPending();
+          untrackSockets();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          const status = !this.coordinator.isHealthy()
+            ? 503
+            : finalReadCheck.allowed
+              ? pendingHandle.abortStatusCode
+              : finalReadCheck.statusCode;
+          const msg = !this.coordinator.isHealthy()
+            ? 'Signaling revocation service unavailable.'
+            : finalReadCheck.allowed
+              ? pendingHandle.abortMessage
+              : finalReadCheck.message;
+          logger.warn('[LiveKitGateway] Pre-101 read check rejected upgraded socket', {
+            meetingId: auth.meetingId,
+            userId: auth.userId,
+            statusCode: status,
+            code: finalReadCheck.allowed ? 'GATEWAY_ABORTED' : finalReadCheck.code,
+          });
+          writeSocketHttpError(clientSocket, status, msg);
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        // Deterministic barrier AFTER syncNow() AND AFTER final MongoDB read, BEFORE atomic fence
+        if (this.hooks.afterSyncBeforeAtomicFence) {
+          await this.hooks.afterSyncBeforeAtomicFence();
+        }
+
+        // ATOMIC LINEARIZATION POINT: conditional single-document findOneAndUpdate on MeetingParticipant
+        const fenceClaim = await claimSignalingAdmissionFence(
+          auth.meetingId,
+          auth.userId,
+          auth.tokenEpoch,
+          auth.tokenNbf
+        );
+
+        if (
+          !fenceClaim.allowed ||
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackPending();
+          untrackSockets();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          const status = !this.coordinator.isHealthy()
+            ? 503
+            : fenceClaim.allowed
+              ? pendingHandle.abortStatusCode
+              : fenceClaim.statusCode;
+          const msg = !this.coordinator.isHealthy()
+            ? 'Signaling revocation service unavailable.'
+            : fenceClaim.allowed
+              ? pendingHandle.abortMessage
+              : fenceClaim.message;
+          logger.warn('[LiveKitGateway] Atomic admission fence rejected upgraded socket', {
+            meetingId: auth.meetingId,
+            userId: auth.userId,
+            statusCode: status,
+            code: fenceClaim.allowed ? 'GATEWAY_ABORTED' : fenceClaim.code,
+          });
+          writeSocketHttpError(clientSocket, status, msg);
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        // Deterministic barrier AFTER atomic linearization point, immediately BEFORE clientSocket.write(HTTP 101)
+        if (this.hooks.afterAtomicFenceBeforeSocketWrite101) {
+          await this.hooks.afterAtomicFenceBeforeSocketWrite101();
+        }
+
+        untrackPending();
+
+        if (
+          pendingHandle.aborted ||
+          this.isClosing ||
+          !this.coordinator.isHealthy() ||
+          clientSocket.destroyed ||
+          proxySocket.destroyed
+        ) {
+          untrackSockets();
+          if (!proxySocket.destroyed) proxySocket.destroy();
+          writeSocketHttpError(
+            clientSocket,
+            !this.coordinator.isHealthy() ? 503 : pendingHandle.abortStatusCode,
+            !this.coordinator.isHealthy()
+              ? 'Signaling revocation service unavailable.'
+              : pendingHandle.abortMessage
+          );
+          void this.livekit.removeParticipant(auth.meetingId, auth.userId);
+          return;
+        }
+
+        const statusLine = `HTTP/1.1 ${proxyRes.statusCode || 101} ${proxyRes.statusMessage || 'Switching Protocols'}\r\n`;
+        const headerLines: string[] = [];
+        for (const [key, val] of Object.entries(proxyRes.headers)) {
+          if (val === undefined) continue;
+          if (Array.isArray(val)) {
+            for (const v of val) {
+              headerLines.push(`${key}: ${v}\r\n`);
+            }
+          } else {
+            headerLines.push(`${key}: ${val}\r\n`);
+          }
+        }
+
+        clientSocket.write(`${statusLine}${headerLines.join('')}\r\n`);
+        if (proxyHead && proxyHead.length > 0) {
+          clientSocket.write(proxyHead);
+        }
+        if (head && head.length > 0) {
+          proxySocket.write(head);
+        }
+
+        proxySocket.resume();
+        clientSocket.pipe(proxySocket);
+        proxySocket.pipe(clientSocket);
+
+        if (this.hooks.afterWrite101) {
+          await this.hooks.afterWrite101();
+        }
+        if (this.hooks.afterSocketRegister) {
+          await this.hooks.afterSocketRegister();
+        }
+      };
+
+      finalizeUpgrade().catch((err) => {
+        untrackPending();
+        if (!proxySocket.destroyed) proxySocket.destroy();
+        logger.error('[LiveKitGateway] Error during post-handshake upgrade finalization', {
+          meetingId: auth.meetingId,
+          userId: auth.userId,
+          message: err instanceof Error ? err.message : 'Unknown upgrade finalization error',
+        });
+        writeSocketHttpError(clientSocket, 500, 'Signaling handshake finalization error.');
+      });
+    });
+
+    proxyReq.on('response', (proxyRes) => {
+      untrackPending();
+      const chunks: Buffer[] = [];
+      proxyRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+      proxyRes.on('end', () => {
+        const body =
+          Buffer.concat(chunks).toString('utf8') || 'Upstream signaling rejected connection.';
+        writeSocketHttpError(clientSocket, proxyRes.statusCode || 502, body);
+      });
+    });
+
+    proxyReq.on('error', () => {
+      untrackPending();
+      if (!pendingHandle.aborted) {
+        writeSocketHttpError(clientSocket, 503, 'LiveKit signaling server is unavailable.');
+      }
+    });
+
+    proxyReq.end();
+  }
+}
+
+export const livekitSignalGateway = new LiveKitSignalGateway();
+
+================================================================================
+END FILE: server/src/realtime/livekitSignalGateway.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/realtime/livekitRevocationCoordinator.ts (18085 bytes)
+================================================================================
+import { Types } from 'mongoose';
+import {
+  allocateNextRevocationSeq,
+  LiveKitRevocationEvent,
+  type LiveKitRevocationKind,
+} from '../models/LiveKitRevocationEvent.model.js';
+import { logger } from '../utils/logger.js';
+
+export interface DistributedRevocationPayload {
+  eventId: string;
+  seq: number;
+  meetingId: string;
+  userId: string | null;
+  kind: LiveKitRevocationKind;
+  revokedEpoch: number | null;
+  fenceVersion: number | null;
+  reason: string | null;
+  createdAt: Date;
+}
+
+export type RevocationListener = (event: DistributedRevocationPayload) => void;
+export type RevocationHealthListener = (healthy: boolean, reason?: string) => void;
+
+export interface LiveKitRevocationCoordinatorOptions {
+  /** Poll interval (ms) for durable cursor catch-up / standalone MongoDB fallback. */
+  pollIntervalMs?: number;
+  /** Attempt to attach a MongoDB Change Stream (requires Replica Set in production). */
+  enableChangeStream?: boolean;
+  /** Consecutive DB poll failures before transitioning to fail-closed unhealthy state. */
+  maxConsecutiveFailures?: number;
+  /**
+   * Maximum elapsed ms without a successful delivery sync before marking
+   * the coordinator stalled/unhealthy (fail-closed).
+   */
+  maxStaleDeliveryMs?: number;
+  /** Grace period (ms) to wait for an in-flight out-of-order lower `seq` before advancing past an aborted gap. */
+  gapSkipGraceMs?: number;
+  /** Optional initial durable cursor `seq` (for deterministic restart/recovery tests). */
+  initialCursorSeq?: number;
+}
+
+/**
+ * Publishes an authoritative, durable cross-instance revocation event into MongoDB
+ * with a globally monotonic, clock-skew-independent `seq` allocated atomically.
+ */
+export async function publishLiveKitRevocation(params: {
+  meetingId: string;
+  userId?: string | null;
+  kind: LiveKitRevocationKind;
+  revokedEpoch?: number | null;
+  fenceVersion?: number | null;
+  reason?: string | null;
+}): Promise<DistributedRevocationPayload> {
+  const seq = await allocateNextRevocationSeq();
+  const doc = await LiveKitRevocationEvent.create({
+    seq,
+    meetingId: new Types.ObjectId(params.meetingId),
+    userId: params.userId ? new Types.ObjectId(params.userId) : null,
+    kind: params.kind,
+    revokedEpoch: params.revokedEpoch ?? null,
+    fenceVersion: params.fenceVersion ?? null,
+    reason: params.reason ?? null,
+    createdAt: new Date(),
+  });
+
+  return {
+    eventId: doc._id.toString(),
+    seq: doc.seq,
+    meetingId: doc.meetingId.toString(),
+    userId: doc.userId ? doc.userId.toString() : null,
+    kind: doc.kind,
+    revokedEpoch: doc.revokedEpoch ?? null,
+    fenceVersion: doc.fenceVersion ?? null,
+    reason: doc.reason ?? null,
+    createdAt: doc.createdAt,
+  };
+}
+
+/**
+ * Distributed cross-instance revocation coordinator backed by MongoDB.
+ *
+ * Guarantees & Properties:
+ * - Global Monotonic Cursor (`seq`): Immune to cross-host ObjectId clock skew.
+ * - Zero Skipped Events: `lastContiguousSeq` advances only across contiguous `seq`
+ *   values (holding a bounded grace window for in-flight out-of-order commits while
+ *   still dispatching newly observed higher-`seq` events immediately).
+ * - Deduplication & Out-of-Order Safety: Duplicate events are dropped via `dispatchedSeqs`;
+ *   out-of-order events are delivered safely without advancing past missing lower `seq`s.
+ * - Change Stream Resume & Fallback: Captures `resumeAfter` tokens on Replica Sets,
+ *   reconnects with `resumeAfter`, and executes immediate durable cursor catch-up on error.
+ * - TTL Retention Guard: 24-hour event TTL (24x max 1-hour JWT TTL) plus explicit
+ *   retention-gap detection (`oldestAvailableSeq > lastContiguousSeq + 1` -> fail-closed).
+ * - Stalled Delivery Detection: `isHealthy()` checks both DB failure count AND
+ *   `Date.now() - lastSuccessfulSyncAt > maxStaleDeliveryMs` so stalled delivery
+ *   triggers fail-closed protection even when no DB exception is thrown.
+ */
+export class LiveKitRevocationCoordinator {
+  private readonly pollIntervalMs: number;
+  private readonly enableChangeStream: boolean;
+  private readonly maxConsecutiveFailures: number;
+  private readonly maxStaleDeliveryMs: number;
+  private readonly gapSkipGraceMs: number;
+  private readonly initialCursorSeq?: number;
+
+  private readonly eventListeners = new Set<RevocationListener>();
+  private readonly healthListeners = new Set<RevocationHealthListener>();
+
+  private running = false;
+  private healthy = true;
+  private deliveryPaused = false;
+  private unavailableReason: string | null = null;
+  private transportMode: 'stopped' | 'change_stream' | 'cursor_poll' = 'stopped';
+  private consecutiveFailures = 0;
+  private lastSuccessfulSyncAt = Date.now();
+
+  private lastContiguousSeq = 0;
+  private readonly dispatchedSeqs = new Set<number>();
+  private readonly gapFirstSeenAt = new Map<number, number>();
+  private lastResumeToken: unknown = null;
+
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private changeStream: { close: () => Promise<void> } | null = null;
+  private inflightSync: Promise<boolean> | null = null;
+
+  constructor(options: LiveKitRevocationCoordinatorOptions = {}) {
+    this.pollIntervalMs = options.pollIntervalMs ?? 250;
+    this.enableChangeStream = options.enableChangeStream ?? true;
+    this.maxConsecutiveFailures = options.maxConsecutiveFailures ?? 2;
+    this.maxStaleDeliveryMs =
+      options.maxStaleDeliveryMs ?? Math.max(5_000, this.pollIntervalMs * 10);
+    this.gapSkipGraceMs = options.gapSkipGraceMs ?? 5_000;
+    this.initialCursorSeq = options.initialCursorSeq;
+    if (typeof options.initialCursorSeq === 'number' && options.initialCursorSeq >= 0) {
+      this.lastContiguousSeq = options.initialCursorSeq;
+    }
+  }
+
+  public isRunning(): boolean {
+    return this.running;
+  }
+
+  public getLastContiguousSeq(): number {
+    return this.lastContiguousSeq;
+  }
+
+  public getTransportMode(): 'stopped' | 'change_stream' | 'cursor_poll' {
+    return this.transportMode;
+  }
+
+  public getUnavailableReason(): string | null {
+    return this.unavailableReason;
+  }
+
+  public getLastResumeToken(): unknown {
+    return this.lastResumeToken;
+  }
+
+  /**
+   * Checks BOTH explicit health state AND delivery-staleness watchdog.
+   * If running and delivery has stalled beyond `maxStaleDeliveryMs`, transitions
+   * immediately to UNHEALTHY (fail-closed) and notifies subscribed gateways.
+   */
+  public isHealthy(): boolean {
+    if (!this.healthy) return false;
+    if (this.running && Date.now() - this.lastSuccessfulSyncAt > this.maxStaleDeliveryMs) {
+      this.setHealth(false, 'Revocation delivery stalled beyond staleness threshold.');
+      return false;
+    }
+    return true;
+  }
+
+  public subscribe(listener: RevocationListener): () => void {
+    this.eventListeners.add(listener);
+    return () => {
+      this.eventListeners.delete(listener);
+    };
+  }
+
+  public onHealthChange(listener: RevocationHealthListener): () => void {
+    this.healthListeners.add(listener);
+    return () => {
+      this.healthListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Pauses background notification delivery (used by deterministic security tests
+   * to simulate delayed cross-instance revocation delivery without arbitrary sleeps).
+   */
+  public pauseDelivery(): void {
+    this.deliveryPaused = true;
+  }
+
+  public resumeDelivery(): void {
+    this.deliveryPaused = false;
+  }
+
+  private setHealth(nextHealthy: boolean, reason?: string): void {
+    const prev = this.healthy;
+    this.healthy = nextHealthy;
+    this.unavailableReason = nextHealthy ? null : reason || 'Revocation coordinator unavailable.';
+    if (prev !== nextHealthy) {
+      if (!nextHealthy) {
+        logger.error('[LiveKitRevocation] Coordinator transitioned to UNHEALTHY (fail-closed)', {
+          reason: this.unavailableReason,
+        });
+      } else {
+        logger.info('[LiveKitRevocation] Coordinator recovered to HEALTHY');
+      }
+      for (const listener of Array.from(this.healthListeners)) {
+        try {
+          listener(nextHealthy, this.unavailableReason ?? undefined);
+        } catch {
+          // isolate subscriber errors
+        }
+      }
+    }
+  }
+
+  public markUnavailable(reason = 'Revocation notification channel disconnected.'): void {
+    this.setHealth(false, reason);
+  }
+
+  /**
+   * Manually forces a staleness timestamp for deterministic watchdog tests.
+   */
+  public setLastSuccessfulSyncAtForTest(timestampMs: number): void {
+    this.lastSuccessfulSyncAt = timestampMs;
+  }
+
+  /**
+   * Delivers a single revocation event with exact deduplication and monotonic
+   * contiguous-sequence tracking (safe against duplicate and out-of-order arrival).
+   */
+  public ingestEvent(payload: DistributedRevocationPayload): boolean {
+    if (this.dispatchedSeqs.has(payload.seq)) {
+      return false;
+    }
+    this.dispatchedSeqs.add(payload.seq);
+    this.gapFirstSeenAt.delete(payload.seq);
+
+    // Advance contiguous cursor strictly across consecutive observed sequences
+    while (this.dispatchedSeqs.has(this.lastContiguousSeq + 1)) {
+      this.lastContiguousSeq += 1;
+    }
+
+    // Bound memory of dispatchedSeqs by pruning entries strictly behind lastContiguousSeq
+    if (this.dispatchedSeqs.size > 4000) {
+      for (const s of Array.from(this.dispatchedSeqs)) {
+        if (s <= this.lastContiguousSeq) {
+          this.dispatchedSeqs.delete(s);
+        }
+      }
+    }
+
+    for (const listener of Array.from(this.eventListeners)) {
+      try {
+        listener(payload);
+      } catch (err) {
+        logger.error('[LiveKitRevocation] Listener error while applying revocation', {
+          eventId: payload.eventId,
+          seq: payload.seq,
+          message: err instanceof Error ? err.message : 'Unknown listener error',
+        });
+      }
+    }
+    return true;
+  }
+
+  private advanceExpiredGaps(maxObservedSeq: number): void {
+    const now = Date.now();
+    for (let missing = this.lastContiguousSeq + 1; missing < maxObservedSeq; missing += 1) {
+      if (this.dispatchedSeqs.has(missing)) continue;
+      const firstSeen = this.gapFirstSeenAt.get(missing);
+      if (firstSeen === undefined) {
+        this.gapFirstSeenAt.set(missing, now);
+      } else if (now - firstSeen >= this.gapSkipGraceMs) {
+        // Gap exceeded in-flight commit grace period (aborted counter allocation); advance past it
+        this.gapFirstSeenAt.delete(missing);
+        this.dispatchedSeqs.add(missing);
+      }
+    }
+    while (this.dispatchedSeqs.has(this.lastContiguousSeq + 1)) {
+      this.lastContiguousSeq += 1;
+    }
+  }
+
+  public async start(): Promise<void> {
+    if (this.running) return;
+    this.running = true;
+    this.consecutiveFailures = 0;
+
+    try {
+      if (typeof this.initialCursorSeq === 'number' && this.initialCursorSeq >= 0) {
+        this.lastContiguousSeq = this.initialCursorSeq;
+      } else {
+        const latest = await LiveKitRevocationEvent.findOne({})
+          .sort({ seq: -1 })
+          .select('seq')
+          .lean();
+        this.lastContiguousSeq = latest && typeof latest.seq === 'number' ? latest.seq : 0;
+      }
+      this.lastSuccessfulSyncAt = Date.now();
+      this.setHealth(true);
+    } catch (err) {
+      this.setHealth(
+        false,
+        err instanceof Error ? err.message : 'Unable to initialize revocation cursor.'
+      );
+    }
+
+    if (this.enableChangeStream) {
+      await this.tryAttachChangeStream();
+    } else {
+      this.transportMode = 'cursor_poll';
+    }
+
+    this.pollTimer = setInterval(() => {
+      if (this.deliveryPaused) {
+        // Still run staleness watchdog while delivery is paused
+        this.isHealthy();
+        return;
+      }
+      void this.syncNow();
+    }, this.pollIntervalMs);
+    if (typeof this.pollTimer.unref === 'function') {
+      this.pollTimer.unref();
+    }
+  }
+
+  private async tryAttachChangeStream(): Promise<void> {
+    try {
+      const db = LiveKitRevocationEvent.db;
+      const admin = db?.db?.admin();
+      if (admin) {
+        const hello = await admin.command({ hello: 1 });
+        if (!hello?.setName) {
+          this.transportMode = 'cursor_poll';
+          return;
+        }
+      }
+
+      const watchOpts: Record<string, unknown> = { fullDocument: 'updateLookup' };
+      if (this.lastResumeToken) {
+        watchOpts.resumeAfter = this.lastResumeToken;
+      }
+
+      const stream = LiveKitRevocationEvent.watch(
+        [{ $match: { operationType: 'insert' } }],
+        watchOpts
+      );
+
+      stream.on('change', (change: any) => {
+        if (change?._id) {
+          this.lastResumeToken = change._id;
+        }
+        if (this.deliveryPaused) return;
+        const doc = change?.fullDocument;
+        if (!doc || !doc._id || !doc.meetingId || !doc.kind || typeof doc.seq !== 'number') return;
+        this.consecutiveFailures = 0;
+        this.lastSuccessfulSyncAt = Date.now();
+        this.setHealth(true);
+        this.ingestEvent({
+          eventId: String(doc._id),
+          seq: doc.seq,
+          meetingId: String(doc.meetingId),
+          userId: doc.userId ? String(doc.userId) : null,
+          kind: doc.kind,
+          revokedEpoch: typeof doc.revokedEpoch === 'number' ? doc.revokedEpoch : null,
+          fenceVersion: typeof doc.fenceVersion === 'number' ? doc.fenceVersion : null,
+          reason: typeof doc.reason === 'string' ? doc.reason : null,
+          createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
+        });
+      });
+
+      stream.on('error', (err: any) => {
+        logger.warn(
+          '[LiveKitRevocation] Change stream interrupted; running durable cursor catch-up and scheduling resume',
+          {
+            message: err instanceof Error ? err.message : String(err || 'Change stream error'),
+          }
+        );
+        this.transportMode = 'cursor_poll';
+        this.changeStream = null;
+        if (!this.deliveryPaused) {
+          void this.syncNow();
+        }
+        if (this.running && !this.reconnectTimer) {
+          this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (this.running) {
+              void this.tryAttachChangeStream();
+            }
+          }, 1_000);
+          if (typeof this.reconnectTimer.unref === 'function') {
+            this.reconnectTimer.unref();
+          }
+        }
+      });
+
+      this.changeStream = stream;
+      this.transportMode = 'change_stream';
+    } catch {
+      this.transportMode = 'cursor_poll';
+      this.changeStream = null;
+    }
+  }
+
+  /**
+   * Synchronously sweeps all durable `LiveKitRevocationEvent` records with
+   * `seq > lastContiguousSeq`, checks TTL retention continuity (fail-closed if
+   * undelivered events expired during an extended outage), and dispatches events
+   * in exact sequence order.
+   */
+  public async syncNow(): Promise<boolean> {
+    if (this.inflightSync) {
+      return this.inflightSync;
+    }
+
+    const run = async (): Promise<boolean> => {
+      try {
+        const events = await LiveKitRevocationEvent.find({
+          seq: { $gt: this.lastContiguousSeq },
+        })
+          .sort({ seq: 1 })
+          .limit(500)
+          .lean();
+
+        this.consecutiveFailures = 0;
+        this.lastSuccessfulSyncAt = Date.now();
+
+        if (events.length > 0) {
+          // Retention discontinuity guard: if the oldest event in DB is strictly
+          // older than expected AND created before our retention window, detect
+          // potential TTL expiry of an undelivered event and fail closed.
+          const firstSeq = events[0].seq;
+          if (
+            this.lastContiguousSeq > 0 &&
+            firstSeq > this.lastContiguousSeq + 1 &&
+            Date.now() - new Date(events[0].createdAt).getTime() > this.gapSkipGraceMs * 4
+          ) {
+            this.setHealth(
+              false,
+              `Revocation cursor discontinuity detected (expected seq ${this.lastContiguousSeq + 1}, oldest available ${firstSeq}); failing closed.`
+            );
+            return false;
+          }
+
+          let maxObservedSeq = this.lastContiguousSeq;
+          for (const doc of events) {
+            if (typeof doc.seq !== 'number') continue;
+            if (doc.seq > maxObservedSeq) maxObservedSeq = doc.seq;
+            this.ingestEvent({
+              eventId: String(doc._id),
+              seq: doc.seq,
+              meetingId: String(doc.meetingId),
+              userId: doc.userId ? String(doc.userId) : null,
+              kind: doc.kind,
+              revokedEpoch: typeof doc.revokedEpoch === 'number' ? doc.revokedEpoch : null,
+              fenceVersion: typeof doc.fenceVersion === 'number' ? doc.fenceVersion : null,
+              reason: typeof doc.reason === 'string' ? doc.reason : null,
+              createdAt: doc.createdAt ? new Date(doc.createdAt) : new Date(),
+            });
+          }
+          this.advanceExpiredGaps(maxObservedSeq);
+        }
+
+        if (this.running) {
+          this.setHealth(true);
+        }
+        return true;
+      } catch (err) {
+        this.consecutiveFailures += 1;
+        if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+          this.setHealth(
+            false,
+            err instanceof Error ? err.message : 'Revocation cursor sync failed.'
+          );
+        }
+        return false;
+      }
+    };
+
+    this.inflightSync = run().finally(() => {
+      this.inflightSync = null;
+    });
+    return this.inflightSync;
+  }
+
+  public async stop(): Promise<void> {
+    this.running = false;
+    this.deliveryPaused = false;
+    this.transportMode = 'stopped';
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.changeStream) {
+      const stream = this.changeStream;
+      this.changeStream = null;
+      await stream.close().catch(() => {});
+    }
+    this.eventListeners.clear();
+    this.healthListeners.clear();
+  }
+}
+
+export const livekitRevocationCoordinator = new LiveKitRevocationCoordinator();
+
+================================================================================
+END FILE: server/src/realtime/livekitRevocationCoordinator.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/models/LiveKitRevocationEvent.model.ts (3000 bytes)
+================================================================================
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+
+export type LiveKitRevocationKind =
+  | 'PARTICIPANT_REMOVED'
+  | 'PARTICIPANT_LEFT'
+  | 'MEETING_ENDED';
+
+/**
+ * Global monotonic sequence counter stored in MongoDB so multi-instance
+ * revocation events have a clock-skew-independent total order (`seq = 1, 2, 3, ...`).
+ */
+export interface ILiveKitRevocationCounter extends Document<string> {
+  _id: string;
+  seq: number;
+}
+
+const LiveKitRevocationCounterSchema = new Schema<ILiveKitRevocationCounter>(
+  {
+    _id: { type: String, required: true },
+    seq: { type: Number, required: true, default: 0 },
+  },
+  { timestamps: false, versionKey: false }
+);
+
+export const LiveKitRevocationCounter: Model<ILiveKitRevocationCounter> =
+  mongoose.models.LiveKitRevocationCounter ||
+  mongoose.model<ILiveKitRevocationCounter>(
+    'LiveKitRevocationCounter',
+    LiveKitRevocationCounterSchema
+  );
+
+export async function allocateNextRevocationSeq(): Promise<number> {
+  const counter = await LiveKitRevocationCounter.findOneAndUpdate(
+    { _id: 'livekit_revocation_global_seq' },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true }
+  ).lean();
+  return counter ? counter.seq : 1;
+}
+
+export interface ILiveKitRevocationEvent extends Document {
+  seq: number;
+  meetingId: Types.ObjectId;
+  userId?: Types.ObjectId | null;
+  kind: LiveKitRevocationKind;
+  revokedEpoch?: number | null;
+  fenceVersion?: number | null;
+  reason?: string | null;
+  createdAt: Date;
+}
+
+const LiveKitRevocationEventSchema = new Schema<ILiveKitRevocationEvent>(
+  {
+    seq: {
+      type: Number,
+      required: true,
+      unique: true,
+      min: 1,
+    },
+    meetingId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Meeting',
+      required: true,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    kind: {
+      type: String,
+      required: true,
+      enum: ['PARTICIPANT_REMOVED', 'PARTICIPANT_LEFT', 'MEETING_ENDED'],
+    },
+    revokedEpoch: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
+    fenceVersion: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    reason: {
+      type: String,
+      maxlength: 200,
+      default: null,
+    },
+    createdAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: false,
+    versionKey: false,
+  }
+);
+
+// Fast lookup for cursor sweeps & per-participant fencing queries
+LiveKitRevocationEventSchema.index({ meetingId: 1, userId: 1, seq: -1 });
+// 24-hour TTL (24x max 1-hour configurable JWT TTL, 144x default 10-min TTL)
+// ensures no active unexpired JWT can ever outlive its revocation event.
+LiveKitRevocationEventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+
+export const LiveKitRevocationEvent: Model<ILiveKitRevocationEvent> =
+  mongoose.models.LiveKitRevocationEvent ||
+  mongoose.model<ILiveKitRevocationEvent>(
+    'LiveKitRevocationEvent',
+    LiveKitRevocationEventSchema
+  );
+
+================================================================================
+END FILE: server/src/models/LiveKitRevocationEvent.model.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/services/livekit.service.ts (20975 bytes)
+================================================================================
+import { AccessToken, RoomServiceClient, type VideoGrant } from 'livekit-server-sdk';
+import { env } from '../config/env.js';
+import type { ParticipantRole } from '../models/MeetingParticipant.model.js';
+import { AppError, ServiceUnavailableError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
+
+export interface LiveKitConfig {
+  url: string;
+  publicUrl?: string;
+  signalGatewayEnabled?: 'auto' | 'true' | 'false';
+  apiKey: string;
+  apiSecret: string;
+  tokenTtlSeconds: number;
+}
+
+export interface LiveKitTokenPermissions {
+  roomJoin: boolean;
+  canPublish: boolean;
+  canSubscribe: boolean;
+  canPublishData: boolean;
+}
+
+export interface LiveKitTokenBundle {
+  livekitUrl: string;
+  token: string;
+  roomName: string;
+  participantIdentity: string;
+  expiresAt: string;
+  ttlSeconds: number;
+  role: ParticipantRole;
+  permissions: LiveKitTokenPermissions;
+}
+
+export interface LiveKitRoomClientAdapter {
+  createRoom(options: { name: string; maxParticipants?: number; emptyTimeout?: number }): Promise<unknown>;
+  removeParticipant(
+    room: string,
+    identity: string,
+    options?: { revokeTokenTs?: bigint }
+  ): Promise<unknown>;
+  deleteRoom(room: string): Promise<unknown>;
+}
+
+const ROOM_NAME_PREFIX = 'cly_room_';
+const PARTICIPANT_IDENTITY_PREFIX = 'usr_';
+const DEFAULT_EMPTY_ROOM_TIMEOUT_SECONDS = 300;
+const PLACEHOLDER_PREFIXES = ['replace_with_', 'your_livekit_', 'changeme'];
+
+/**
+ * Parses a CONNECTLY internal MongoDB meeting ID from an opaque LiveKit room name.
+ */
+export function parseLiveKitRoomMeetingId(roomName: string): string | null {
+  const match = /^cly_room_([a-f0-9]{24})$/.exec(roomName.trim());
+  return match ? match[1] : null;
+}
+
+/**
+ * Parses a CONNECTLY internal MongoDB user ID from an opaque LiveKit participant identity.
+ */
+export function parseLiveKitParticipantUserId(identity: string): string | null {
+  const match = /^usr_([a-f0-9]{24})$/.exec(identity.trim());
+  return match ? match[1] : null;
+}
+
+export function isLiveKitCloudHost(rawUrl: string): boolean {
+  try {
+    return new URL(rawUrl).hostname.toLowerCase().endsWith('.livekit.cloud');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Determines whether browser signaling should route through CONNECTLY's
+ * authoritative Signaling Admission Gateway before reaching LiveKit SFU.
+ *
+ * Self-hosted LiveKit OSS (including v1.13.11) does not enforce server-side
+ * JWT revocation (`revokeTokenTs`), so routing signaling through CONNECTLY's
+ * admission gateway guarantees immediate pre-handshake rejection of removed
+ * or revoked participants. Managed LiveKit Cloud (`*.livekit.cloud`) enforces
+ * `revokeTokenTs` natively on its control plane.
+ */
+export function shouldUseLiveKitSignalGateway(
+  livekitUrl: string,
+  mode: 'auto' | 'true' | 'false' = env.LIVEKIT_SIGNAL_GATEWAY_ENABLED
+): boolean {
+  if (mode === 'true') return true;
+  if (mode === 'false') return false;
+  try {
+    new URL(livekitUrl);
+    return !isLiveKitCloudHost(livekitUrl);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Deterministic, opaque mapping from CONNECTLY internal MongoDB meeting ID
+ * to a LiveKit SFU room name. Never embeds titles, emails, or client input.
+ */
+export function getLiveKitRoomName(meetingId: string): string {
+  const clean = meetingId.trim();
+  if (!clean || !/^[a-fA-F0-9]{24}$/.test(clean)) {
+    throw new AppError('Invalid meeting identifier for LiveKit room mapping.', 400, 'INVALID_IDENTIFIER');
+  }
+  return `${ROOM_NAME_PREFIX}${clean.toLowerCase()}`;
+}
+
+/**
+ * Deterministic, privacy-preserving opaque LiveKit participant identity derived
+ * strictly from CONNECTLY's internal user ObjectId (never email or phone).
+ */
+export function getLiveKitParticipantIdentity(userId: string): string {
+  const clean = userId.trim();
+  if (!clean || !/^[a-fA-F0-9]{24}$/.test(clean)) {
+    throw new AppError('Invalid user identifier for LiveKit identity mapping.', 400, 'INVALID_IDENTIFIER');
+  }
+  return `${PARTICIPANT_IDENTITY_PREFIX}${clean.toLowerCase()}`;
+}
+
+/**
+ * Converts ws:// -> http:// and wss:// -> https:// for LiveKit server REST/Twirp calls.
+ */
+export function toLiveKitHttpUrl(rawUrl: string): string {
+  const parsed = new URL(rawUrl);
+  if (parsed.protocol === 'ws:') {
+    parsed.protocol = 'http:';
+  } else if (parsed.protocol === 'wss:') {
+    parsed.protocol = 'https:';
+  }
+  return parsed.toString().replace(/\/+$/, '');
+}
+
+/**
+ * Converts http:// -> ws:// and https:// -> wss:// for browser WebSocket signaling.
+ */
+export function toLiveKitWsUrl(rawUrl: string): string {
+  const parsed = new URL(rawUrl);
+  if (parsed.protocol === 'http:') {
+    parsed.protocol = 'ws:';
+  } else if (parsed.protocol === 'https:') {
+    parsed.protocol = 'wss:';
+  }
+  return parsed.toString().replace(/\/+$/, '');
+}
+
+/**
+ * Validates LiveKit configuration strictly without ever logging secret material.
+ */
+export function validateLiveKitConfig(
+  config: Partial<LiveKitConfig>,
+  nodeEnv: string = env.NODE_ENV
+): { valid: true; resolved: LiveKitConfig } | { valid: false; reason: string } {
+  const url = (config.url || '').trim();
+  const publicUrl = (config.publicUrl || '').trim();
+  const rawSignalMode = config.signalGatewayEnabled ?? 'auto';
+  if (rawSignalMode !== 'auto' && rawSignalMode !== 'true' && rawSignalMode !== 'false') {
+    return {
+      valid: false,
+      reason: 'LIVEKIT_SIGNAL_GATEWAY_ENABLED must be one of auto, true, or false.',
+    };
+  }
+  const signalGatewayEnabled: 'auto' | 'true' | 'false' = rawSignalMode;
+  const apiKey = (config.apiKey || '').trim();
+  const apiSecret = (config.apiSecret || '').trim();
+  const tokenTtlSeconds =
+    typeof config.tokenTtlSeconds === 'number' && Number.isFinite(config.tokenTtlSeconds)
+      ? Math.floor(config.tokenTtlSeconds)
+      : 600;
+
+  if (!url || !apiKey || !apiSecret) {
+    return {
+      valid: false,
+      reason: 'Missing LIVEKIT_URL, LIVEKIT_API_KEY, or LIVEKIT_API_SECRET.',
+    };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { valid: false, reason: 'LIVEKIT_URL is not a valid URL.' };
+  }
+
+  const hostLower = parsed.hostname.toLowerCase();
+  const isCloud = hostLower.endsWith('.livekit.cloud');
+  const isLoopback = hostLower === '127.0.0.1' || hostLower === 'localhost' || hostLower === '::1';
+
+  if (publicUrl) {
+    let parsedPub: URL;
+    try {
+      parsedPub = new URL(publicUrl);
+    } catch {
+      return { valid: false, reason: 'LIVEKIT_PUBLIC_URL is not a valid URL.' };
+    }
+    const allowedPubProtocols =
+      nodeEnv === 'production' ? ['wss:', 'https:'] : ['ws:', 'wss:', 'http:', 'https:'];
+    if (!allowedPubProtocols.includes(parsedPub.protocol)) {
+      return {
+        valid: false,
+        reason:
+          nodeEnv === 'production'
+            ? 'Production LIVEKIT_PUBLIC_URL must use a secure wss:// or https:// scheme.'
+            : 'LIVEKIT_PUBLIC_URL must use ws://, wss://, http://, or https://.',
+      };
+    }
+  }
+
+  if (nodeEnv === 'production' && !isCloud && signalGatewayEnabled === 'false') {
+    return {
+      valid: false,
+      reason:
+        'Production self-hosted LiveKit cannot disable LIVEKIT_SIGNAL_GATEWAY_ENABLED (would bypass authoritative JWT revocation).',
+    };
+  }
+
+  const allowedProtocols =
+    nodeEnv === 'production'
+      ? publicUrl && isLoopback
+        ? ['ws:', 'wss:', 'http:', 'https:']
+        : ['wss:', 'https:']
+      : ['ws:', 'wss:', 'http:', 'https:'];
+  if (!allowedProtocols.includes(parsed.protocol)) {
+    return {
+      valid: false,
+      reason:
+        nodeEnv === 'production'
+          ? 'Production LIVEKIT_URL must use a secure wss:// or https:// scheme (or private loopback paired with a wss:// LIVEKIT_PUBLIC_URL).'
+          : 'LIVEKIT_URL must use ws://, wss://, http://, or https://.',
+    };
+  }
+
+  const keyLower = apiKey.toLowerCase();
+  const secretLower = apiSecret.toLowerCase();
+  if (
+    PLACEHOLDER_PREFIXES.some(
+      (prefix) => keyLower.startsWith(prefix) || secretLower.startsWith(prefix)
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'LiveKit credentials contain unconfigured placeholder values.',
+    };
+  }
+
+  if (nodeEnv === 'production' && (keyLower === 'devkey' || secretLower === 'secret')) {
+    return {
+      valid: false,
+      reason: 'Production deployment cannot use default LiveKit dev credentials.',
+    };
+  }
+
+  if (tokenTtlSeconds < 60 || tokenTtlSeconds > 3600) {
+    return {
+      valid: false,
+      reason: 'LIVEKIT_TOKEN_TTL_SECONDS must be between 60 and 3600 seconds.',
+    };
+  }
+
+  return {
+    valid: true,
+    resolved: {
+      url: toLiveKitWsUrl(url),
+      publicUrl: publicUrl ? toLiveKitWsUrl(publicUrl) : undefined,
+      signalGatewayEnabled,
+      apiKey,
+      apiSecret,
+      tokenTtlSeconds,
+    },
+  };
+}
+
+function isNotFoundLiveKitError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: number; code?: string | number; message?: string };
+  if (e.status === 404 || e.code === 'not_found' || e.code === 404) return true;
+  const msg = String(e.message || '').toLowerCase();
+  return msg.includes('not found') || msg.includes('does not exist') || msg.includes('room not found');
+}
+
+function isAlreadyExistsLiveKitError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: number; code?: string | number; message?: string };
+  if (e.status === 409 || e.code === 'already_exists') return true;
+  const msg = String(e.message || '').toLowerCase();
+  return msg.includes('already exists');
+}
+
+export class LiveKitService {
+  private readonly customConfig?: Partial<LiveKitConfig>;
+  private readonly nodeEnvOverride?: string;
+  private readonly roomClientFactory?: (httpUrl: string, apiKey: string, apiSecret: string) => LiveKitRoomClientAdapter;
+  private cachedClientKey: string | null = null;
+  private cachedClient: LiveKitRoomClientAdapter | null = null;
+
+  constructor(options?: {
+    config?: Partial<LiveKitConfig>;
+    nodeEnv?: string;
+    roomClientFactory?: (httpUrl: string, apiKey: string, apiSecret: string) => LiveKitRoomClientAdapter;
+  }) {
+    this.customConfig = options?.config;
+    this.nodeEnvOverride = options?.nodeEnv;
+    this.roomClientFactory = options?.roomClientFactory;
+  }
+
+  private readCurrentConfig(): Partial<LiveKitConfig> {
+    if (this.customConfig) {
+      return this.customConfig;
+    }
+    const rawMode = (
+      process.env.LIVEKIT_SIGNAL_GATEWAY_ENABLED ?? env.LIVEKIT_SIGNAL_GATEWAY_ENABLED
+    ) as 'auto' | 'true' | 'false';
+    return {
+      url: process.env.LIVEKIT_URL ?? env.LIVEKIT_URL,
+      publicUrl: process.env.LIVEKIT_PUBLIC_URL ?? env.LIVEKIT_PUBLIC_URL,
+      signalGatewayEnabled: rawMode,
+      apiKey: process.env.LIVEKIT_API_KEY ?? env.LIVEKIT_API_KEY,
+      apiSecret: process.env.LIVEKIT_API_SECRET ?? env.LIVEKIT_API_SECRET,
+      tokenTtlSeconds: env.LIVEKIT_TOKEN_TTL_SECONDS,
+    };
+  }
+
+  public isConfigured(): boolean {
+    const check = validateLiveKitConfig(this.readCurrentConfig(), this.nodeEnvOverride ?? env.NODE_ENV);
+    return check.valid;
+  }
+
+  public assertConfigured(): LiveKitConfig {
+    const check = validateLiveKitConfig(this.readCurrentConfig(), this.nodeEnvOverride ?? env.NODE_ENV);
+    if (!check.valid) {
+      logger.warn('[LiveKit] Configuration check failed', {
+        errorCategory: 'LIVEKIT_NOT_CONFIGURED',
+        reason: check.reason,
+      });
+      throw new ServiceUnavailableError(
+        'Real-time media infrastructure (LiveKit) is not configured on this server.',
+        'LIVEKIT_NOT_CONFIGURED'
+      );
+    }
+    return check.resolved;
+  }
+
+  private getRoomClient(cfg: LiveKitConfig): LiveKitRoomClientAdapter {
+    const httpUrl = toLiveKitHttpUrl(cfg.url);
+    const cacheKey = `${httpUrl}|${cfg.apiKey}`;
+    if (this.cachedClient && this.cachedClientKey === cacheKey) {
+      return this.cachedClient;
+    }
+    const client: LiveKitRoomClientAdapter = this.roomClientFactory
+      ? this.roomClientFactory(httpUrl, cfg.apiKey, cfg.apiSecret)
+      : new RoomServiceClient(httpUrl, cfg.apiKey, cfg.apiSecret);
+    this.cachedClient = client;
+    this.cachedClientKey = cacheKey;
+    return client;
+  }
+
+  /**
+   * Lazily ensures the LiveKit SFU room exists for an authorized CONNECTLY meeting.
+   * Safe under concurrent calls (idempotent if the room already exists).
+   */
+  public async ensureRoomExists(
+    meetingId: string,
+    maxParticipants: number,
+    requestId?: string
+  ): Promise<string> {
+    const cfg = this.assertConfigured();
+    const roomName = getLiveKitRoomName(meetingId);
+    const client = this.getRoomClient(cfg);
+
+    try {
+      await client.createRoom({
+        name: roomName,
+        maxParticipants,
+        emptyTimeout: DEFAULT_EMPTY_ROOM_TIMEOUT_SECONDS,
+      });
+      return roomName;
+    } catch (err) {
+      if (isAlreadyExistsLiveKitError(err)) {
+        return roomName;
+      }
+      logger.error('[LiveKit] Failed to reach LiveKit server while provisioning room', {
+        requestId,
+        meetingId,
+        roomName,
+        errorCategory: 'LIVEKIT_UNAVAILABLE',
+        message: err instanceof Error ? err.message : 'Unknown LiveKit transport error',
+      });
+      throw new ServiceUnavailableError(
+        'LiveKit media server is currently unreachable. Please try reconnecting shortly.',
+        'LIVEKIT_UNAVAILABLE'
+      );
+    }
+  }
+
+  /**
+   * Issues a short-lived, least-privilege LiveKit JWT for a verified ADMITTED participant.
+   *
+   * Strict Phase 09 Permission Boundary:
+   * - roomJoin: true (room connection & signaling only)
+   * - canPublish: false, canSubscribe: false, canPublishData: false (Phase 10 owns media tracks)
+   * - roomAdmin / roomCreate / roomList / roomRecord: ALWAYS false for every role
+   */
+  public async generateParticipantToken(params: {
+    meetingId: string;
+    userId: string;
+    displayName: string;
+    role: ParticipantRole;
+    maxParticipants: number;
+    tokenEpoch?: number;
+    gatewayUrl?: string;
+    requestId?: string;
+    provisionRoom?: boolean;
+  }): Promise<LiveKitTokenBundle> {
+    const cfg = this.assertConfigured();
+    const roomName = getLiveKitRoomName(params.meetingId);
+    const participantIdentity = getLiveKitParticipantIdentity(params.userId);
+    const tokenEpoch =
+      typeof params.tokenEpoch === 'number' && Number.isInteger(params.tokenEpoch) && params.tokenEpoch >= 1
+        ? params.tokenEpoch
+        : 1;
+
+    if (params.provisionRoom !== false) {
+      await this.ensureRoomExists(params.meetingId, params.maxParticipants, params.requestId);
+    }
+
+    const permissions: LiveKitTokenPermissions = {
+      roomJoin: true,
+      canPublish: false,
+      canSubscribe: false,
+      canPublishData: false,
+    };
+
+    const grant: VideoGrant = {
+      roomJoin: permissions.roomJoin,
+      room: roomName,
+      canPublish: permissions.canPublish,
+      canSubscribe: permissions.canSubscribe,
+      canPublishData: permissions.canPublishData,
+      roomAdmin: false,
+      roomCreate: false,
+      roomList: false,
+      roomRecord: false,
+    };
+
+    const activeNodeEnv = this.nodeEnvOverride ?? env.NODE_ENV;
+    const publicOverride = (cfg.publicUrl || '').trim();
+    const signalMode: 'auto' | 'true' | 'false' = cfg.signalGatewayEnabled ?? 'auto';
+    const requiresGateway = shouldUseLiveKitSignalGateway(cfg.url, signalMode);
+    let clientLivekitUrl = cfg.url;
+
+    if (publicOverride) {
+      clientLivekitUrl = toLiveKitWsUrl(publicOverride);
+    } else if (requiresGateway && params.gatewayUrl) {
+      const candidateGatewayUrl = toLiveKitWsUrl(params.gatewayUrl);
+      if (activeNodeEnv === 'production' && !candidateGatewayUrl.startsWith('wss://')) {
+        throw new ServiceUnavailableError(
+          'Production LiveKit Signaling Admission Gateway requires a secure wss:// URL.',
+          'LIVEKIT_NOT_CONFIGURED'
+        );
+      }
+      clientLivekitUrl = candidateGatewayUrl;
+    } else if (requiresGateway && activeNodeEnv === 'production') {
+      // Fail closed in production: NEVER fall back silently to raw self-hosted LiveKit signaling
+      throw new ServiceUnavailableError(
+        'Production self-hosted LiveKit requires LIVEKIT_PUBLIC_URL or an HTTPS/WSS Signaling Admission Gateway.',
+        'LIVEKIT_NOT_CONFIGURED'
+      );
+    }
+
+    try {
+      const accessToken = new AccessToken(cfg.apiKey, cfg.apiSecret, {
+        identity: participantIdentity,
+        name: params.displayName,
+        ttl: cfg.tokenTtlSeconds,
+        metadata: JSON.stringify({
+          role: params.role,
+          meetingId: params.meetingId,
+          epoch: tokenEpoch,
+        }),
+      });
+      accessToken.addGrant(grant);
+
+      const jwt = await accessToken.toJwt();
+      const expiresAt = new Date(Date.now() + cfg.tokenTtlSeconds * 1000).toISOString();
+
+      logger.info('[LiveKit] Issued short-lived room access token', {
+        requestId: params.requestId,
+        meetingId: params.meetingId,
+        roomName,
+        participantIdentity,
+        role: params.role,
+        tokenEpoch,
+        ttlSeconds: cfg.tokenTtlSeconds,
+        viaSignalGateway: clientLivekitUrl !== cfg.url,
+      });
+
+      return {
+        livekitUrl: clientLivekitUrl,
+        token: jwt,
+        roomName,
+        participantIdentity,
+        expiresAt,
+        ttlSeconds: cfg.tokenTtlSeconds,
+        role: params.role,
+        permissions,
+      };
+    } catch (err) {
+      logger.error('[LiveKit] Token signing failed', {
+        requestId: params.requestId,
+        meetingId: params.meetingId,
+        participantIdentity,
+        errorCategory: 'LIVEKIT_TOKEN_GENERATION_FAILED',
+        message: err instanceof Error ? err.message : 'Token signing error',
+      });
+      throw new AppError(
+        'Unable to generate secure media session token.',
+        500,
+        'LIVEKIT_TOKEN_GENERATION_FAILED'
+      );
+    }
+  }
+
+  /**
+   * Disconnects a removed or departed participant from the LiveKit SFU room.
+   * Best-effort with sanitized error logging so CONNECTLY DB state remains authoritative.
+   */
+  public async removeParticipant(
+    meetingId: string,
+    userId: string,
+    requestId?: string
+  ): Promise<boolean> {
+    if (!this.isConfigured()) {
+      return false;
+    }
+
+    const cfg = this.assertConfigured();
+    const roomName = getLiveKitRoomName(meetingId);
+    const participantIdentity = getLiveKitParticipantIdentity(userId);
+    const client = this.getRoomClient(cfg);
+
+    // Pass revokeTokenTs (now + 1s) so LiveKit Cloud natively invalidates any
+    // token whose nbf <= now (including same-second tokens). Self-hosted OSS
+    // LiveKit Server v1.13.11 ignores revokeTokenTs and only disconnects active
+    // sessions; pre-admission revocation on self-hosted is enforced by
+    // livekitSignalGateway against authoritative MongoDB state + tokenEpoch.
+    const revokeTokenTs = BigInt(Math.floor(Date.now() / 1000) + 1);
+
+    try {
+      await client.removeParticipant(roomName, participantIdentity, { revokeTokenTs });
+      logger.info('[LiveKit] Evicted participant from SFU room', {
+        requestId,
+        meetingId,
+        roomName,
+        participantIdentity,
+        revokeTokenTs: revokeTokenTs.toString(),
+      });
+      return true;
+    } catch (err) {
+      if (isNotFoundLiveKitError(err)) {
+        return true;
+      }
+      logger.warn('[LiveKit] Failed to evict participant from SFU room (non-fatal)', {
+        requestId,
+        meetingId,
+        roomName,
+        participantIdentity,
+        errorCategory: 'LIVEKIT_UNAVAILABLE',
+        message: err instanceof Error ? err.message : 'Unknown eviction error',
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Closes/deletes the LiveKit SFU room when a CONNECTLY meeting ends.
+   * Performs 1 bounded retry on transient failure; falls back safely to LiveKit's
+   * emptyTimeout reconciliation while logging safe diagnostic metadata.
+   */
+  public async deleteRoom(meetingId: string, requestId?: string): Promise<boolean> {
+    if (!this.isConfigured()) {
+      return false;
+    }
+
+    const cfg = this.assertConfigured();
+    const roomName = getLiveKitRoomName(meetingId);
+    const client = this.getRoomClient(cfg);
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await client.deleteRoom(roomName);
+        logger.info('[LiveKit] Deleted SFU room upon meeting termination', {
+          requestId,
+          meetingId,
+          roomName,
+          attempt,
+        });
+        return true;
+      } catch (err) {
+        if (isNotFoundLiveKitError(err)) {
+          return true;
+        }
+        logger.warn('[LiveKit] Room cleanup attempt failed', {
+          requestId,
+          meetingId,
+          roomName,
+          attempt,
+          errorCategory: 'LIVEKIT_UNAVAILABLE',
+          message: err instanceof Error ? err.message : 'Unknown room deletion error',
+        });
+      }
+    }
+
+    return false;
+  }
+}
+
+export const livekitService = new LiveKitService();
+
+================================================================================
+END FILE: server/src/services/livekit.service.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/models/MeetingParticipant.model.ts (3616 bytes)
+================================================================================
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+
+export type ParticipantRole = 'host' | 'co-host' | 'participant';
+
+export type AdmissionStatus =
+  | 'WAITING'
+  | 'ADMITTED'
+  | 'REJECTED'
+  | 'LEFT'
+  | 'REMOVED'
+  | 'CANCELLED';
+
+export type PresenceStatus = 'ONLINE' | 'OFFLINE';
+
+export interface IMeetingParticipant extends Document {
+  meetingId: Types.ObjectId;
+  userId: Types.ObjectId;
+  displayName: string;
+  email: string;
+  avatarUrl?: string | null;
+  role: ParticipantRole;
+  admissionStatus: AdmissionStatus;
+  presenceStatus: PresenceStatus;
+  requestedAt: Date;
+  admittedAt?: Date | null;
+  joinedAt?: Date | null;
+  leftAt?: Date | null;
+  decidedBy?: Types.ObjectId | null;
+  decidedAt?: Date | null;
+  rejectionReason?: string | null;
+  removalReason?: string | null;
+  tokenEpoch: number;
+  tokenRevokedBefore?: Date | null;
+  signalFenceVersion: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const MeetingParticipantSchema = new Schema<IMeetingParticipant>(
+  {
+    meetingId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Meeting',
+      required: true,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    displayName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 100,
+    },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
+    avatarUrl: {
+      type: String,
+      default: null,
+    },
+    role: {
+      type: String,
+      required: true,
+      enum: ['host', 'co-host', 'participant'],
+      default: 'participant',
+    },
+    admissionStatus: {
+      type: String,
+      required: true,
+      enum: ['WAITING', 'ADMITTED', 'REJECTED', 'LEFT', 'REMOVED', 'CANCELLED'],
+      default: 'WAITING',
+    },
+    presenceStatus: {
+      type: String,
+      required: true,
+      enum: ['ONLINE', 'OFFLINE'],
+      default: 'OFFLINE',
+    },
+    requestedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    admittedAt: {
+      type: Date,
+      default: null,
+    },
+    joinedAt: {
+      type: Date,
+      default: null,
+    },
+    leftAt: {
+      type: Date,
+      default: null,
+    },
+    decidedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    decidedAt: {
+      type: Date,
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      maxlength: 200,
+      default: null,
+    },
+    removalReason: {
+      type: String,
+      maxlength: 200,
+      default: null,
+    },
+    tokenEpoch: {
+      type: Number,
+      required: true,
+      default: 1,
+      min: 1,
+    },
+    tokenRevokedBefore: {
+      type: Date,
+      default: null,
+    },
+    signalFenceVersion: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    collection: 'meeting_participants',
+    timestamps: true,
+  }
+);
+
+// Unique compound index strictly enforces 1 active/tracked record per user per meeting,
+// preventing duplicate participant entries under concurrent joins or reconnections.
+MeetingParticipantSchema.index({ meetingId: 1, userId: 1 }, { unique: true });
+MeetingParticipantSchema.index({ meetingId: 1, admissionStatus: 1, joinedAt: 1 });
+MeetingParticipantSchema.index({ meetingId: 1, admissionStatus: 1, requestedAt: 1 });
+MeetingParticipantSchema.index({ userId: 1, admissionStatus: 1 });
+
+export const MeetingParticipant: Model<IMeetingParticipant> =
+  mongoose.models.MeetingParticipant ||
+  mongoose.model<IMeetingParticipant>('MeetingParticipant', MeetingParticipantSchema);
+
+================================================================================
+END FILE: server/src/models/MeetingParticipant.model.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/tests/livekitPostSyncFencing.test.ts (23960 bytes)
+================================================================================
+import { describe, it, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import crypto from 'node:crypto';
+import type { Duplex } from 'node:stream';
+import mongoose from 'mongoose';
+import { createApp } from '../app.js';
+import { User } from '../models/User.model.js';
+import { Meeting } from '../models/Meeting.model.js';
+import { MeetingParticipant } from '../models/MeetingParticipant.model.js';
+import { LiveKitRevocationEvent } from '../models/LiveKitRevocationEvent.model.js';
+import { MeetingRealtimeHub } from '../realtime/meetingSocket.js';
+import {
+  LiveKitRevocationCoordinator,
+  type DistributedRevocationPayload,
+} from '../realtime/livekitRevocationCoordinator.js';
+import {
+  claimSignalingAdmissionFence,
+  LiveKitSignalGateway,
+  LIVEKIT_SIGNAL_GATEWAY_PATH,
+  type LiveKitSignalGatewayHooks,
+} from '../realtime/livekitSignalGateway.js';
+import { MeetingService } from '../services/meeting.service.js';
+import {
+  LiveKitService,
+  type LiveKitRoomClientAdapter,
+} from '../services/livekit.service.js';
+import { hashPassword } from '../utils/password.js';
+
+const TEST_API_KEY = 'APIconnectlyFenceKey01';
+const TEST_API_SECRET = 'SuperSecurePostSyncFencingAuditSecretKey2026987654321';
+
+function createBarrier() {
+  let markArrived!: () => void;
+  let releaseWaiter!: () => void;
+  const arrived = new Promise<void>((r) => {
+    markArrived = r;
+  });
+  const gate = new Promise<void>((r) => {
+    releaseWaiter = r;
+  });
+  return {
+    arrived,
+    release: () => releaseWaiter(),
+    pause: async () => {
+      markArrived();
+      await gate;
+    },
+  };
+}
+
+interface WsAttemptResult {
+  statusCode: number;
+  socket?: Duplex;
+  closedPromise?: Promise<void>;
+}
+
+function attemptWsUpgrade(port: number, reqPath: string): Promise<WsAttemptResult> {
+  return new Promise((resolve) => {
+    const key = crypto.randomBytes(16).toString('base64');
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port,
+      path: reqPath,
+      method: 'GET',
+      headers: {
+        Connection: 'Upgrade',
+        Upgrade: 'websocket',
+        'Sec-WebSocket-Key': key,
+        'Sec-WebSocket-Version': '13',
+      },
+    });
+
+    let settled = false;
+    const finish = (result: WsAttemptResult) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    req.on('upgrade', (res, socket) => {
+      socket.on('error', () => {});
+      const closedPromise = new Promise<void>((r) => {
+        if (socket.destroyed) r();
+        else socket.once('close', () => r());
+      });
+      finish({ statusCode: res.statusCode || 101, socket, closedPromise });
+    });
+
+    req.on('response', (res) => {
+      res.resume();
+      finish({ statusCode: res.statusCode || 0 });
+    });
+
+    req.on('error', () => {
+      finish({ statusCode: 0 });
+    });
+
+    req.end();
+  });
+}
+
+async function startMockUpstreamLiveKit() {
+  const sockets = new Set<Duplex>();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  });
+
+  server.on('upgrade', (req, socket) => {
+    const acceptKey = crypto
+      .createHash('sha1')
+      .update(`${req.headers['sec-websocket-key'] || ''}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+      .digest('base64');
+    sockets.add(socket);
+    socket.on('error', () => {});
+    socket.once('close', () => sockets.delete(socket));
+    socket.write(
+      `HTTP/1.1 101 Switching Protocols\r\n` +
+        `Upgrade: websocket\r\n` +
+        `Connection: Upgrade\r\n` +
+        `Sec-WebSocket-Accept: ${acceptKey}\r\n\r\n`
+    );
+  });
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  const addr = server.address();
+  if (!addr || typeof addr === 'string') throw new Error('Mock upstream bind failed');
+
+  return {
+    port: addr.port,
+    close: async () => {
+      for (const s of Array.from(sockets)) {
+        try {
+          s.destroy();
+        } catch {
+          // ignore
+        }
+      }
+      server.closeAllConnections?.();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    },
+  };
+}
+
+async function waitForCondition(predicate: () => boolean, timeoutMs = 2500): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  assert.ok(predicate(), 'Condition was not satisfied within timeout');
+}
+
+describe('Phase 09 Post-Sync Atomic 101 Fencing & Distributed Delivery Audit Suite', () => {
+  let upstream: Awaited<ReturnType<typeof startMockUpstreamLiveKit>>;
+  const users: Array<{ id: string; email: string }> = [];
+  const createdMeetingIds: mongoose.Types.ObjectId[] = [];
+  const hubA = new MeetingRealtimeHub();
+  const hubB = new MeetingRealtimeHub();
+
+  const stubAdapter: LiveKitRoomClientAdapter = {
+    createRoom: async () => ({}),
+    removeParticipant: async () => ({}),
+    deleteRoom: async () => ({}),
+  };
+
+  let configuredLiveKit: LiveKitService;
+
+  before(async () => {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/connectly_test';
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(mongoUri);
+    }
+
+    upstream = await startMockUpstreamLiveKit();
+    configuredLiveKit = new LiveKitService({
+      config: {
+        url: `ws://127.0.0.1:${upstream.port}`,
+        apiKey: TEST_API_KEY,
+        apiSecret: TEST_API_SECRET,
+        tokenTtlSeconds: 600,
+      },
+      nodeEnv: 'development',
+      roomClientFactory: () => stubAdapter,
+    });
+
+    const passwordHash = await hashPassword('StrongPass!2026');
+    const suffix = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    for (let i = 0; i < 3; i += 1) {
+      const email = `lk_fence_${i}_${suffix}@example.com`;
+      const user = await User.create({
+        firstName: `FenceUser${i}`,
+        lastName: 'Linearizable',
+        email,
+        passwordHash,
+      });
+      users.push({ id: user._id.toString(), email });
+    }
+  });
+
+  after(async () => {
+    await upstream.close();
+    if (createdMeetingIds.length > 0) {
+      await LiveKitRevocationEvent.deleteMany({ meetingId: { $in: createdMeetingIds } });
+      await MeetingParticipant.deleteMany({ meetingId: { $in: createdMeetingIds } });
+      await Meeting.deleteMany({ _id: { $in: createdMeetingIds } });
+    }
+    if (users.length > 0) {
+      await User.deleteMany({ _id: { $in: users.map((u) => u.id) } });
+    }
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+  });
+
+  async function spawnNode(
+    hub: MeetingRealtimeHub,
+    hooks: LiveKitSignalGatewayHooks = {},
+    coordOpts: { pollIntervalMs?: number; initialCursorSeq?: number; maxStaleDeliveryMs?: number } = {}
+  ) {
+    const coordinator = new LiveKitRevocationCoordinator({
+      pollIntervalMs: coordOpts.pollIntervalMs ?? 25,
+      enableChangeStream: true,
+      initialCursorSeq: coordOpts.initialCursorSeq,
+      maxStaleDeliveryMs: coordOpts.maxStaleDeliveryMs ?? 10_000,
+    });
+    await coordinator.start();
+    const gateway = new LiveKitSignalGateway(configuredLiveKit, hooks, coordinator);
+    const app = createApp({ signalGateway: gateway });
+    const server = http.createServer(app);
+    gateway.attach(server);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const addr = server.address();
+    if (!addr || typeof addr === 'string') throw new Error('Node bind failed');
+    const svc = new MeetingService(hub, {}, configuredLiveKit, gateway);
+
+    return {
+      coordinator,
+      gateway,
+      svc,
+      port: addr.port,
+      close: async () => {
+        gateway.close();
+        await coordinator.stop();
+        server.closeAllConnections?.();
+        await new Promise<void>((resolve) => server.close(() => resolve()));
+      },
+    };
+  }
+
+  async function createMeetingWithThreeUsers(svc: MeetingService) {
+    const { meeting } = await svc.createMeeting(users[0].id, {
+      title: 'Post-Sync Atomic Fence Room',
+      maxParticipants: 10,
+      settings: { waitingRoomEnabled: false },
+    });
+    createdMeetingIds.push(new mongoose.Types.ObjectId(meeting.id));
+    await svc.joinMeeting(meeting.meetingCode, users[0].id);
+    await svc.joinMeeting(meeting.meetingCode, users[1].id);
+    await svc.joinMeeting(meeting.meetingCode, users[2].id);
+    return meeting;
+  }
+
+  it('1. Removal AFTER syncNow() AND AFTER final MongoDB read (with delivery paused) loses atomic fence and NEVER emits HTTP 101', async () => {
+    const barrier = createBarrier();
+    let pauseGuestOnly = false;
+
+    const instanceA = await spawnNode(hubA, {
+      afterSyncBeforeAtomicFence: async () => {
+        if (pauseGuestOnly) await barrier.pause();
+      },
+    });
+    const instanceB = await spawnNode(hubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const [hostTok, guestTok] = await Promise.all([
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+      ]);
+
+      // Host stays connected throughout
+      const hostConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(hostConn.statusCode, 101);
+
+      // Pause Guest AFTER postHandshakeCheck, AFTER syncNow(), AND AFTER finalReadCheck
+      pauseGuestOnly = true;
+      const guestPromise = attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      await barrier.arrived;
+
+      // Deliberately PAUSE Instance A's revocation notification delivery!
+      instanceA.coordinator.pauseDelivery();
+
+      // Instance B commits removal + durable revocation event
+      await instanceB.svc.removeParticipant(
+        m.meetingCode,
+        users[0].id,
+        users[1].id,
+        'Post-sync pre-atomic-fence removal'
+      );
+
+      // Resume Instance A while revocation delivery is STILL paused
+      barrier.release();
+      const guestRes = await guestPromise;
+
+      assert.strictEqual(
+        guestRes.statusCode,
+        403,
+        'Atomic claimSignalingAdmissionFence MUST reject removal committed after syncNow() with 403 and NEVER emit 101'
+      );
+      assert.strictEqual(hostConn.socket?.destroyed, false, 'Host MUST remain connected');
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 2);
+      assert.strictEqual(instanceA.gateway.getPendingUpgradeCount(), 0);
+
+      hostConn.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('2. Post-linearization sequence (after atomic fence, before socket.write(101), delivery deliberately paused then resumed) proves exact propagation guarantee', async () => {
+    const barrier = createBarrier();
+    let pauseGuestOnly = false;
+
+    const instanceA = await spawnNode(hubA, {
+      afterAtomicFenceBeforeSocketWrite101: async () => {
+        if (pauseGuestOnly) await barrier.pause();
+      },
+    });
+    const instanceB = await spawnNode(hubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const [hostTok, guestTok, peerTok] = await Promise.all([
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[2].id),
+      ]);
+
+      const hostConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      const peerConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(peerTok.token)}`
+      );
+      assert.strictEqual(hostConn.statusCode, 101);
+      assert.strictEqual(peerConn.statusCode, 101);
+
+      // Pause Guest AFTER atomic claimSignalingAdmissionFence linearized as ADMITTED (fenceVersion = 1),
+      // immediately BEFORE clientSocket.write(HTTP 101)
+      pauseGuestOnly = true;
+      const guestPromise = attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      await barrier.arrived;
+
+      // Deliberately hold Instance A's revocation delivery paused while Instance B commits removal AFTER admission linearized
+      instanceA.coordinator.pauseDelivery();
+      await instanceB.svc.removeParticipant(
+        m.meetingCode,
+        users[0].id,
+        users[1].id,
+        'Post-linearization removal with delayed delivery'
+      );
+
+      // Resume Instance A while revocation delivery is STILL paused:
+      // Because admission linearized BEFORE removal and delivery is paused, 101 flushes for the pre-removal admission
+      barrier.release();
+      const guestRes = await guestPromise;
+      assert.strictEqual(guestRes.statusCode, 101);
+
+      // Now resume revocation delivery -> Instance A receives durable revocation event and MUST terminate Guest socket
+      instanceA.coordinator.resumeDelivery();
+      const synced = await instanceA.coordinator.syncNow();
+      assert.strictEqual(synced, true);
+
+      await guestRes.closedPromise;
+      assert.strictEqual(guestRes.socket?.destroyed, true, 'Post-linearization socket MUST terminate upon revocation delivery');
+      assert.strictEqual(hostConn.socket?.destroyed, false, 'Host MUST remain connected');
+      assert.strictEqual(peerConn.socket?.destroyed, false, 'Unrelated peer MUST remain connected');
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 4);
+
+      hostConn.socket?.destroy();
+      peerConn.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('3. Concurrent cross-instance admission vs removal races serialize cleanly with ZERO surviving removed sockets while Host stays connected', async () => {
+    const instanceA = await spawnNode(hubA);
+    const instanceB = await spawnNode(hubB);
+
+    try {
+      for (let trial = 0; trial < 5; trial += 1) {
+        const m = await createMeetingWithThreeUsers(instanceA.svc);
+        const [hostTok, guestTok] = await Promise.all([
+          instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+          instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+        ]);
+
+        const hostConn = await attemptWsUpgrade(
+          instanceA.port,
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+        );
+        assert.strictEqual(hostConn.statusCode, 101);
+
+        // Fire admission on Instance A and removal on Instance B concurrently
+        const [wsRes] = await Promise.all([
+          attemptWsUpgrade(
+            instanceA.port,
+            `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+          ),
+          instanceB.svc.removeParticipant(
+            m.meetingCode,
+            users[0].id,
+            users[1].id,
+            `Concurrent race trial ${trial}`
+          ),
+        ]);
+
+        // Synchronize revocation cursor to complete cross-instance propagation deterministically
+        await instanceA.coordinator.syncNow();
+        if (wsRes.closedPromise) {
+          await wsRes.closedPromise;
+        }
+
+        assert.ok(
+          wsRes.statusCode === 403 || wsRes.socket?.destroyed === true,
+          `Trial ${trial}: removed participant must either never get 101 or have socket terminated`
+        );
+        assert.strictEqual(hostConn.socket?.destroyed, false, 'Host MUST stay connected');
+        await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 2);
+
+        hostConn.socket?.destroy();
+        await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+      }
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('4. Removal followed immediately by re-admission: old-epoch JWT rejected; delayed old revocation event does not disrupt new-epoch socket', async () => {
+    const instanceA = await spawnNode(hubA, {}, { pollIntervalMs: 60_000 });
+    const instanceB = await spawnNode(hubB, {}, { pollIntervalMs: 60_000 });
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const oldEpoch1Tok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+
+      // Pause delivery on Instance A so the removal event (revokedEpoch=2) arrives AFTER re-admission
+      instanceA.coordinator.pauseDelivery();
+      await instanceB.svc.removeParticipant(m.meetingCode, users[0].id, users[1].id, 'Removed before re-admit');
+
+      // Re-admit Guest under new tokenEpoch = 3
+      await MeetingParticipant.updateOne(
+        { meetingId: m.id, userId: users[1].id },
+        { $set: { admissionStatus: 'ADMITTED' }, $inc: { tokenEpoch: 1, signalFenceVersion: 1 } }
+      );
+
+      // Old epoch-1 JWT MUST fail atomic fence (403)
+      const oldWsRes = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(oldEpoch1Tok.token)}`
+      );
+      assert.strictEqual(oldWsRes.statusCode, 403);
+
+      // Fresh epoch-3 JWT connects cleanly (101)
+      const newEpoch3Tok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+      const newWsRes = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(newEpoch3Tok.token)}`
+      );
+      assert.strictEqual(newWsRes.statusCode, 101);
+
+      // Now deliver the delayed old revocation event (revokedEpoch=2) -> MUST NOT kill epoch-3 socket!
+      instanceA.coordinator.resumeDelivery();
+      await instanceA.coordinator.syncNow();
+      assert.strictEqual(
+        newWsRes.socket?.destroyed,
+        false,
+        'Delayed revokedEpoch=2 event must not kill legitimate re-admitted epoch=3 socket'
+      );
+
+      newWsRes.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('5. Duplicate and out-of-order revocation events are deduplicated cleanly without skipping lower sequence numbers', async () => {
+    const coord = new LiveKitRevocationCoordinator({
+      pollIntervalMs: 60_000,
+      enableChangeStream: false,
+      initialCursorSeq: 10,
+    });
+
+    const received: number[] = [];
+    coord.subscribe((ev) => received.push(ev.seq));
+
+    const makeEvent = (seq: number): DistributedRevocationPayload => ({
+      eventId: new mongoose.Types.ObjectId().toString(),
+      seq,
+      meetingId: new mongoose.Types.ObjectId().toString(),
+      userId: new mongoose.Types.ObjectId().toString(),
+      kind: 'PARTICIPANT_REMOVED',
+      revokedEpoch: 2,
+      fenceVersion: 1,
+      reason: 'Out-of-order test',
+      createdAt: new Date(),
+    });
+
+    // Arrive out-of-order: seq 12 before seq 11
+    assert.strictEqual(coord.ingestEvent(makeEvent(12)), true);
+    assert.deepStrictEqual(received, [12]);
+    // Cursor MUST NOT skip over unseen seq 11!
+    assert.strictEqual(coord.getLastContiguousSeq(), 10);
+
+    // Duplicate seq 12 MUST be dropped cleanly
+    assert.strictEqual(coord.ingestEvent(makeEvent(12)), false);
+    assert.deepStrictEqual(received, [12]);
+
+    // Missing seq 11 arrives -> dispatches seq 11 and advances contiguous cursor cleanly to 12
+    assert.strictEqual(coord.ingestEvent(makeEvent(11)), true);
+    assert.deepStrictEqual(received, [12, 11]);
+    assert.strictEqual(coord.getLastContiguousSeq(), 12);
+
+    await coord.stop();
+  });
+
+  it('6. Coordinator restart recovers missed durable cursor events; stalled delivery & unavailable atomic fence both fail closed (503)', async () => {
+    // Part A: Durable cursor recovery across coordinator restart
+    const nodeA1 = await spawnNode(hubA, {}, { pollIntervalMs: 60_000 });
+    const nodeB = await spawnNode(hubB, {}, { pollIntervalMs: 60_000 });
+    let savedCursorSeq = 0;
+    let meetingId = '';
+    let guestUserId = users[1].id;
+
+    try {
+      const m = await createMeetingWithThreeUsers(nodeA1.svc);
+      meetingId = m.id;
+      await nodeA1.coordinator.syncNow();
+      savedCursorSeq = nodeA1.coordinator.getLastContiguousSeq();
+      await nodeA1.close();
+
+      // While Coordinator 1 is stopped, Instance B removes Guest -> persists durable seq = savedCursorSeq + 1
+      await nodeB.svc.removeParticipant(m.meetingCode, users[0].id, guestUserId, 'Published during restart');
+
+      // Coordinator 2 starts from saved durable cursor and replays missed event cleanly
+      const recoveredEvents: DistributedRevocationPayload[] = [];
+      const coord2 = new LiveKitRevocationCoordinator({
+        pollIntervalMs: 60_000,
+        enableChangeStream: false,
+        initialCursorSeq: savedCursorSeq,
+      });
+      coord2.subscribe((ev) => recoveredEvents.push(ev));
+      await coord2.start();
+      await coord2.syncNow();
+
+      assert.ok(
+        recoveredEvents.some(
+          (e) =>
+            e.meetingId === meetingId &&
+            e.userId === guestUserId &&
+            e.kind === 'PARTICIPANT_REMOVED'
+        ),
+        'Restarted coordinator MUST recover durable revocation event published while offline'
+      );
+      assert.ok(coord2.getLastContiguousSeq() > savedCursorSeq);
+      await coord2.stop();
+    } finally {
+      await nodeB.close();
+    }
+
+    // Part B: Stalled delivery watchdog (without DB exception) fails closed & closes active sockets
+    const stalledNode = await spawnNode(hubA, {}, { pollIntervalMs: 60_000, maxStaleDeliveryMs: 500 });
+    try {
+      const m2 = await createMeetingWithThreeUsers(stalledNode.svc);
+      const hostTok = await stalledNode.svc.issueLiveKitToken(m2.meetingCode, users[0].id);
+
+      const activeConn = await attemptWsUpgrade(
+        stalledNode.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(activeConn.statusCode, 101);
+      assert.strictEqual(stalledNode.gateway.getActiveSocketCount(), 2);
+
+      // Simulate delivery pipeline stalling past maxStaleDeliveryMs (no DB error thrown)
+      stalledNode.coordinator.setLastSuccessfulSyncAtForTest(Date.now() - 10_000);
+      assert.strictEqual(stalledNode.coordinator.isHealthy(), false);
+
+      await activeConn.closedPromise;
+      assert.strictEqual(stalledNode.gateway.getActiveSocketCount(), 0);
+
+      const blockedRes = await attemptWsUpgrade(
+        stalledNode.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(blockedRes.statusCode, 503);
+
+      // Part C: Atomic fencing DB error fails closed (503 LIVEKIT_FENCE_UNAVAILABLE)
+      const origFindOneAndUpdate = MeetingParticipant.findOneAndUpdate;
+      (MeetingParticipant as any).findOneAndUpdate = () => ({
+        lean: () => Promise.reject(new Error('Simulated atomic fence DB failure')),
+      });
+      try {
+        const fenceErr = await claimSignalingAdmissionFence(m2.id, users[0].id, 1);
+        assert.strictEqual(fenceErr.allowed, false);
+        if (!fenceErr.allowed) {
+          assert.strictEqual(fenceErr.statusCode, 503);
+          assert.strictEqual(fenceErr.code, 'LIVEKIT_FENCE_UNAVAILABLE');
+        }
+      } finally {
+        (MeetingParticipant as any).findOneAndUpdate = origFindOneAndUpdate;
+      }
+    } finally {
+      await stalledNode.close();
+    }
+  });
+});
+
+================================================================================
+END FILE: server/src/tests/livekitPostSyncFencing.test.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: server/src/tests/livekitCrossInstanceRevocation.test.ts (24896 bytes)
+================================================================================
+import { describe, it, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import crypto from 'node:crypto';
+import type { Duplex } from 'node:stream';
+import mongoose from 'mongoose';
+import { createApp } from '../app.js';
+import { User } from '../models/User.model.js';
+import { Meeting } from '../models/Meeting.model.js';
+import { MeetingParticipant } from '../models/MeetingParticipant.model.js';
+import { LiveKitRevocationEvent } from '../models/LiveKitRevocationEvent.model.js';
+import { MeetingRealtimeHub } from '../realtime/meetingSocket.js';
+import { LiveKitRevocationCoordinator } from '../realtime/livekitRevocationCoordinator.js';
+import {
+  authorizeLiveKitSignalHandshake,
+  LiveKitSignalGateway,
+  LIVEKIT_SIGNAL_GATEWAY_PATH,
+  revalidateParticipantAccess,
+  type LiveKitSignalGatewayHooks,
+} from '../realtime/livekitSignalGateway.js';
+import { MeetingService } from '../services/meeting.service.js';
+import {
+  LiveKitService,
+  type LiveKitRoomClientAdapter,
+} from '../services/livekit.service.js';
+import { hashPassword } from '../utils/password.js';
+
+const TEST_API_KEY = 'APIconnectlyCrossInstKey01';
+const TEST_API_SECRET = 'SuperSecureCrossInstanceRevocationSecretKey2026987654321';
+
+function createBarrier() {
+  let markArrived!: () => void;
+  let releaseWaiter!: () => void;
+  const arrived = new Promise<void>((r) => {
+    markArrived = r;
+  });
+  const gate = new Promise<void>((r) => {
+    releaseWaiter = r;
+  });
+  return {
+    arrived,
+    release: () => releaseWaiter(),
+    pause: async () => {
+      markArrived();
+      await gate;
+    },
+  };
+}
+
+function createCountdownBarrier(expectedCount: number) {
+  let arrivedCount = 0;
+  let markAllArrived!: () => void;
+  let releaseAll!: () => void;
+  const allArrived = new Promise<void>((r) => {
+    markAllArrived = r;
+  });
+  const gate = new Promise<void>((r) => {
+    releaseAll = r;
+  });
+  return {
+    allArrived,
+    release: () => releaseAll(),
+    pause: async () => {
+      arrivedCount += 1;
+      if (arrivedCount >= expectedCount) {
+        markAllArrived();
+      }
+      await gate;
+    },
+  };
+}
+
+interface WsAttemptResult {
+  statusCode: number;
+  socket?: Duplex;
+  closedPromise?: Promise<void>;
+}
+
+function attemptWsUpgrade(port: number, reqPath: string): Promise<WsAttemptResult> {
+  return new Promise((resolve) => {
+    const key = crypto.randomBytes(16).toString('base64');
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port,
+      path: reqPath,
+      method: 'GET',
+      headers: {
+        Connection: 'Upgrade',
+        Upgrade: 'websocket',
+        'Sec-WebSocket-Key': key,
+        'Sec-WebSocket-Version': '13',
+      },
+    });
+
+    let settled = false;
+    const finish = (result: WsAttemptResult) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    req.on('upgrade', (res, socket) => {
+      socket.on('error', () => {});
+      const closedPromise = new Promise<void>((r) => {
+        if (socket.destroyed) r();
+        else socket.once('close', () => r());
+      });
+      finish({ statusCode: res.statusCode || 101, socket, closedPromise });
+    });
+
+    req.on('response', (res) => {
+      res.resume();
+      finish({ statusCode: res.statusCode || 0 });
+    });
+
+    req.on('error', () => {
+      finish({ statusCode: 0 });
+    });
+
+    req.end();
+  });
+}
+
+async function startMockUpstreamLiveKit() {
+  const sockets = new Set<Duplex>();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  });
+
+  server.on('upgrade', (req, socket) => {
+    const acceptKey = crypto
+      .createHash('sha1')
+      .update(`${req.headers['sec-websocket-key'] || ''}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+      .digest('base64');
+    sockets.add(socket);
+    socket.on('error', () => {});
+    socket.once('close', () => sockets.delete(socket));
+    socket.write(
+      `HTTP/1.1 101 Switching Protocols\r\n` +
+        `Upgrade: websocket\r\n` +
+        `Connection: Upgrade\r\n` +
+        `Sec-WebSocket-Accept: ${acceptKey}\r\n\r\n`
+    );
+  });
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  const addr = server.address();
+  if (!addr || typeof addr === 'string') throw new Error('Mock upstream bind failed');
+
+  return {
+    port: addr.port,
+    close: async () => {
+      for (const s of Array.from(sockets)) {
+        try {
+          s.destroy();
+        } catch {
+          // ignore
+        }
+      }
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    },
+  };
+}
+
+async function waitForCondition(predicate: () => boolean, timeoutMs = 2500): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  assert.ok(predicate(), 'Condition was not satisfied within timeout');
+}
+
+describe('Phase 09 Cross-Instance Distributed Revocation & 101 Handshake Fencing Suite', () => {
+  let upstream: Awaited<ReturnType<typeof startMockUpstreamLiveKit>>;
+  const users: Array<{ id: string; email: string }> = [];
+  const createdMeetingIds: mongoose.Types.ObjectId[] = [];
+  const realtimeHubA = new MeetingRealtimeHub();
+  const realtimeHubB = new MeetingRealtimeHub();
+
+  const stubAdapter: LiveKitRoomClientAdapter = {
+    createRoom: async () => ({}),
+    removeParticipant: async () => ({}),
+    deleteRoom: async () => ({}),
+  };
+
+  let configuredLiveKit: LiveKitService;
+
+  before(async () => {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/connectly_test';
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(mongoUri);
+    }
+
+    upstream = await startMockUpstreamLiveKit();
+    configuredLiveKit = new LiveKitService({
+      config: {
+        url: `ws://127.0.0.1:${upstream.port}`,
+        apiKey: TEST_API_KEY,
+        apiSecret: TEST_API_SECRET,
+        tokenTtlSeconds: 600,
+      },
+      nodeEnv: 'development',
+      roomClientFactory: () => stubAdapter,
+    });
+
+    const passwordHash = await hashPassword('StrongPass!2026');
+    const suffix = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    for (let i = 0; i < 3; i += 1) {
+      const email = `lk_xinst_${i}_${suffix}@example.com`;
+      const user = await User.create({
+        firstName: `XInstUser${i}`,
+        lastName: 'Distributed',
+        email,
+        passwordHash,
+      });
+      users.push({ id: user._id.toString(), email });
+    }
+  });
+
+  after(async () => {
+    await upstream.close();
+    if (createdMeetingIds.length > 0) {
+      await LiveKitRevocationEvent.deleteMany({ meetingId: { $in: createdMeetingIds } });
+      await MeetingParticipant.deleteMany({ meetingId: { $in: createdMeetingIds } });
+      await Meeting.deleteMany({ _id: { $in: createdMeetingIds } });
+    }
+    if (users.length > 0) {
+      await User.deleteMany({ _id: { $in: users.map((u) => u.id) } });
+    }
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+  });
+
+  async function spawnClusterNode(
+    hub: MeetingRealtimeHub,
+    hooks: LiveKitSignalGatewayHooks = {},
+    pollIntervalMs = 25
+  ) {
+    const coordinator = new LiveKitRevocationCoordinator({
+      pollIntervalMs,
+      enableChangeStream: true,
+    });
+    await coordinator.start();
+    const gateway = new LiveKitSignalGateway(configuredLiveKit, hooks, coordinator);
+    const app = createApp({ signalGateway: gateway });
+    const server = http.createServer(app);
+    gateway.attach(server);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const addr = server.address();
+    if (!addr || typeof addr === 'string') throw new Error('Node bind failed');
+    const svc = new MeetingService(hub, {}, configuredLiveKit, gateway);
+
+    return {
+      coordinator,
+      gateway,
+      svc,
+      port: addr.port,
+      close: async () => {
+        gateway.close();
+        await coordinator.stop();
+        server.closeAllConnections?.();
+        await new Promise<void>((resolve) => server.close(() => resolve()));
+      },
+    };
+  }
+
+  async function createMeetingWithThreeUsers(svc: MeetingService) {
+    const { meeting } = await svc.createMeeting(users[0].id, {
+      title: 'Cross-Instance Revocation Room',
+      maxParticipants: 10,
+      settings: { waitingRoomEnabled: false },
+    });
+    createdMeetingIds.push(new mongoose.Types.ObjectId(meeting.id));
+    await svc.joinMeeting(meeting.meetingCode, users[0].id);
+    await svc.joinMeeting(meeting.meetingCode, users[1].id);
+    await svc.joinMeeting(meeting.meetingCode, users[2].id);
+    return meeting;
+  }
+
+  it('1. Final 101 race: cross-instance removal AFTER post-handshake MongoDB revalidation but BEFORE HTTP 101 write blocks 101 cleanly', async () => {
+    const before101Barrier = createBarrier();
+    const instanceA = await spawnClusterNode(realtimeHubA, {
+      beforeWrite101: before101Barrier.pause,
+    });
+    const instanceB = await spawnClusterNode(realtimeHubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const guestTok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+
+      // Instance A validates JWT, completes upstream handshake, registers sockets,
+      // passes post-handshake MongoDB revalidation, and pauses right BEFORE writing HTTP 101.
+      const wsPromise = attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      await before101Barrier.arrived;
+
+      // Independent API Instance B removes Guest & commits MongoDB + durable revocation event
+      await instanceB.svc.removeParticipant(
+        m.meetingCode,
+        users[0].id,
+        users[1].id,
+        'Cross-instance pre-101 removal'
+      );
+
+      // Release Instance A to attempt final pre-101 fence & HTTP 101 write
+      before101Barrier.release();
+
+      const res = await wsPromise;
+      assert.strictEqual(
+        res.statusCode,
+        403,
+        'Removed participant MUST receive 403 and NEVER HTTP 101 when removed before 101 write'
+      );
+      await waitForCondition(
+        () =>
+          instanceA.gateway.getActiveSocketCount() === 0 &&
+          instanceA.gateway.getPendingUpgradeCount() === 0
+      );
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('2. Cross-instance removal IMMEDIATELY AFTER HTTP 101 terminates newly established socket via distributed revocation coordinator', async () => {
+    const after101Barrier = createBarrier();
+    const instanceA = await spawnClusterNode(realtimeHubA, {
+      afterWrite101: after101Barrier.pause,
+    });
+    const instanceB = await spawnClusterNode(realtimeHubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const guestTok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+
+      const wsPromise = attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      await after101Barrier.arrived;
+
+      // Independent API Instance B removes Guest right after Instance A wrote HTTP 101
+      await instanceB.svc.removeParticipant(
+        m.meetingCode,
+        users[0].id,
+        users[1].id,
+        'Cross-instance post-101 removal'
+      );
+      after101Barrier.release();
+
+      const res = await wsPromise;
+      if (res.closedPromise) {
+        await res.closedPromise;
+      }
+      assert.ok(
+        !res.socket || res.socket.destroyed,
+        'Guest socket established just before cross-instance removal MUST be terminated'
+      );
+      await waitForCondition(
+        () =>
+          instanceA.gateway.getActiveSocketCount() === 0 &&
+          instanceA.gateway.getPendingUpgradeCount() === 0
+      );
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('3. Cross-instance removal of already-established socket on Instance A by API Instance B terminates ONLY removed participant; Host & unrelated peer stay connected', async () => {
+    const instanceA = await spawnClusterNode(realtimeHubA);
+    const instanceB = await spawnClusterNode(realtimeHubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const [hostTok, guestTok, peerTok] = await Promise.all([
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[2].id),
+      ]);
+
+      // All 3 participants establish active proxied WebSockets on Gateway Instance A
+      const [hostConn, guestConn, peerConn] = await Promise.all([
+        attemptWsUpgrade(
+          instanceA.port,
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+        ),
+        attemptWsUpgrade(
+          instanceA.port,
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+        ),
+        attemptWsUpgrade(
+          instanceA.port,
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(peerTok.token)}`
+        ),
+      ]);
+
+      assert.strictEqual(hostConn.statusCode, 101);
+      assert.strictEqual(guestConn.statusCode, 101);
+      assert.strictEqual(peerConn.statusCode, 101);
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 6);
+      assert.strictEqual(instanceB.gateway.getActiveSocketCount(), 0);
+
+      // API Instance B (which owns ZERO sockets!) removes Guest
+      await instanceB.svc.removeParticipant(
+        m.meetingCode,
+        users[0].id,
+        users[1].id,
+        'Cross-instance active eviction'
+      );
+
+      // Instance A MUST automatically terminate Guest's already-established socket via distributed revocation
+      await guestConn.closedPromise;
+      assert.strictEqual(guestConn.socket?.destroyed, true);
+
+      // Host and unrelated admitted peer (users[2]) MUST remain connected uninterrupted!
+      assert.strictEqual(hostConn.socket?.destroyed, false, 'Host MUST remain connected');
+      assert.strictEqual(peerConn.socket?.destroyed, false, 'Unrelated admitted peer MUST remain connected');
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 4);
+
+      hostConn.socket?.destroy();
+      peerConn.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('4. Simultaneous cross-instance removal + multiple old-JWT reconnect attempts block all reconnects and evict active socket while Host remains connected', async () => {
+    const RECONNECT_COUNT = 4;
+    const burstBarrier = createCountdownBarrier(RECONNECT_COUNT);
+    let pauseBurst = false;
+
+    const instanceA = await spawnClusterNode(realtimeHubA, {
+      beforeWrite101: async () => {
+        if (pauseBurst) await burstBarrier.pause();
+      },
+    });
+    const instanceB = await spawnClusterNode(realtimeHubB);
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const [hostTok, guestTok] = await Promise.all([
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+      ]);
+
+      const hostConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      const guestActive = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      assert.strictEqual(hostConn.statusCode, 101);
+      assert.strictEqual(guestActive.statusCode, 101);
+
+      // Guest launches 4 simultaneous reconnect attempts using the same old JWT
+      pauseBurst = true;
+      const burstPromises = Array.from({ length: RECONNECT_COUNT }, () =>
+        attemptWsUpgrade(
+          instanceA.port,
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+        )
+      );
+      await burstBarrier.allArrived;
+
+      // Concurrently, Instance B removes Guest
+      await instanceB.svc.removeParticipant(m.meetingCode, users[0].id, users[1].id, 'Cross-instance burst');
+      burstBarrier.release();
+
+      const burstResults = await Promise.all(burstPromises);
+      for (const r of burstResults) {
+        assert.notStrictEqual(r.statusCode, 101, 'Every simultaneous reconnect attempt MUST be blocked');
+      }
+
+      await guestActive.closedPromise;
+      assert.strictEqual(hostConn.socket?.destroyed, false, 'Host MUST remain uninterrupted');
+      await waitForCondition(
+        () =>
+          instanceA.gateway.getActiveSocketCount() === 2 &&
+          instanceA.gateway.getPendingUpgradeCount() === 0
+      );
+
+      hostConn.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+      await instanceB.close();
+    }
+  });
+
+  it('5. Re-admission after removal keeps old-epoch JWTs permanently invalid while new-epoch JWT succeeds', async () => {
+    const instanceA = await spawnClusterNode(realtimeHubA);
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const oldEpoch1Tok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+
+      // Remove Guest -> tokenEpoch increments to 2 & tokenRevokedBefore set
+      await instanceA.svc.removeParticipant(m.meetingCode, users[0].id, users[1].id, 'Removed then re-admitted');
+
+      // Simulate administrative / host re-admission in MongoDB under new epoch (preserving monotonic epoch >= 2)
+      await MeetingParticipant.updateOne(
+        { meetingId: m.id, userId: users[1].id },
+        { $set: { admissionStatus: 'ADMITTED' }, $inc: { tokenEpoch: 1 } }
+      );
+
+      // Old epoch-1 JWT MUST remain permanently rejected on BOTH HTTP validate AND WS upgrade
+      const oldValidateRes = await fetch(
+        `http://127.0.0.1:${instanceA.port}${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1/validate?access_token=${encodeURIComponent(oldEpoch1Tok.token)}`
+      );
+      assert.strictEqual(oldValidateRes.status, 403);
+
+      const oldWsRes = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(oldEpoch1Tok.token)}`
+      );
+      assert.strictEqual(oldWsRes.statusCode, 403);
+
+      // Fresh epoch-3 JWT minted after re-admission succeeds cleanly
+      const newEpochTok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id);
+      const newWsRes = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(newEpochTok.token)}`
+      );
+      assert.strictEqual(newWsRes.statusCode, 101);
+      newWsRes.socket?.destroy();
+      await waitForCondition(() => instanceA.gateway.getActiveSocketCount() === 0);
+    } finally {
+      await instanceA.close();
+    }
+  });
+
+  it('6. Revocation coordinator unavailable/disconnected AND MongoDB unavailable both enforce strict fail-closed policy (503 + active socket termination)', async () => {
+    // Use a long poll interval so coordinator outage stays deterministic throughout assertions
+    const instanceA = await spawnClusterNode(realtimeHubA, {}, 60_000);
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const hostTok = await instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id);
+
+      const activeConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(activeConn.statusCode, 101);
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 2);
+
+      // Simulate real consecutive MongoDB revocation-cursor sync failures -> coordinator transitions to UNHEALTHY
+      const origEventFind = LiveKitRevocationEvent.find;
+      (LiveKitRevocationEvent as any).find = () => ({
+        sort: () => ({
+          limit: () => ({
+            lean: () => Promise.reject(new Error('Simulated revocation store disconnect')),
+          }),
+        }),
+      });
+      try {
+        await instanceA.coordinator.syncNow();
+        await instanceA.coordinator.syncNow();
+      } finally {
+        (LiveKitRevocationEvent as any).find = origEventFind;
+      }
+      assert.strictEqual(instanceA.coordinator.isHealthy(), false);
+
+      // 1) Active proxied sockets fail closed immediately
+      await activeConn.closedPromise;
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 0);
+
+      // 2) New WS upgrade fails closed with 503
+      const blockedWs = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(blockedWs.statusCode, 503);
+
+      // 3) HTTP /validate fails closed with 503
+      const blockedHttp = await fetch(
+        `http://127.0.0.1:${instanceA.port}${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1/validate?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(blockedHttp.status, 503);
+
+      // 4) MongoDB outage during direct authorization & revalidation fails closed (503)
+      const origFindById = Meeting.findById;
+      (Meeting as any).findById = () => ({
+        select: () => Promise.reject(new Error('Simulated MongoDB outage')),
+      });
+      try {
+        const authErr = await authorizeLiveKitSignalHandshake(
+          `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`,
+          undefined,
+          configuredLiveKit
+        );
+        assert.strictEqual(authErr.allowed, false);
+        if (!authErr.allowed) {
+          assert.strictEqual(authErr.statusCode, 503);
+          assert.strictEqual(authErr.code, 'LIVEKIT_AUTH_UNAVAILABLE');
+        }
+
+        const revalErr = await revalidateParticipantAccess(m.id, users[0].id, 1);
+        assert.strictEqual(revalErr.allowed, false);
+        if (!revalErr.allowed) {
+          assert.strictEqual(revalErr.statusCode, 503);
+          assert.strictEqual(revalErr.code, 'LIVEKIT_AUTH_UNAVAILABLE');
+        }
+      } finally {
+        (Meeting as any).findById = origFindById;
+      }
+    } finally {
+      await instanceA.close();
+    }
+  });
+
+  it('7. Gateway shutdown while BOTH pending handshakes AND established sockets are active closes all cleanly with zero leaks', async () => {
+    const pendingBarrier = createBarrier();
+    let pauseGuest = false;
+
+    const instanceA = await spawnClusterNode(realtimeHubA, {
+      duringUpstreamHandshake: async () => {
+        if (pauseGuest) await pendingBarrier.pause();
+      },
+    });
+
+    try {
+      const m = await createMeetingWithThreeUsers(instanceA.svc);
+      const [hostTok, guestTok] = await Promise.all([
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[0].id),
+        instanceA.svc.issueLiveKitToken(m.meetingCode, users[1].id),
+      ]);
+
+      // Host has an active established socket
+      const hostConn = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(hostConn.statusCode, 101);
+
+      // Guest has a pending handshake in-flight
+      pauseGuest = true;
+      const guestPendingPromise = attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(guestTok.token)}`
+      );
+      await pendingBarrier.arrived;
+
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 2);
+      assert.strictEqual(instanceA.gateway.getPendingUpgradeCount(), 1);
+
+      // Trigger graceful shutdown while both are active
+      const closed = instanceA.gateway.close();
+      assert.ok(closed >= 3);
+      pendingBarrier.release();
+
+      const guestPendingRes = await guestPendingPromise;
+      assert.notStrictEqual(guestPendingRes.statusCode, 101);
+      await hostConn.closedPromise;
+
+      assert.strictEqual(instanceA.gateway.getActiveSocketCount(), 0);
+      assert.strictEqual(instanceA.gateway.getPendingUpgradeCount(), 0);
+
+      // Subsequent upgrade rejected cleanly with 503
+      const postShutdown = await attemptWsUpgrade(
+        instanceA.port,
+        `${LIVEKIT_SIGNAL_GATEWAY_PATH}/rtc/v1?access_token=${encodeURIComponent(hostTok.token)}`
+      );
+      assert.strictEqual(postShutdown.statusCode, 503);
+    } finally {
+      await instanceA.close();
+    }
+  });
+});
+
+================================================================================
+END FILE: server/src/tests/livekitCrossInstanceRevocation.test.ts
+================================================================================
+
+================================================================================
+BEGIN FILE: docs/PHASE_09_SECURITY_AUDIT.md (26654 bytes)
+================================================================================
+# CONNECTLY — Phase 09 Security Audit Report
+
+**Phase:** 09 – WebRTC + LiveKit Integration  
+**Audit Date:** 2026-11-18 (Updated following independent Removed-Participant Token Reuse & `revokeTokenTs` Security Audit)  
+**Deployed & Verified Versions:** `livekit-server-sdk@2.20.0` (backend), `livekit-client@2.24.1` (frontend), self-hosted `livekit-server version 1.13.11` (OSS binary compiled from `github.com/livekit/livekit@v1.13.11`).
+
+---
+
+## 1. Executive Security Finding: Self-Hosted LiveKit `v1.13.11` Token Revocation Audit
+
+### 1.1 Source-Code & Experimental Investigation (`livekit-server-sdk@2.20.0` vs. `livekit-server v1.13.11`)
+
+An independent security audit inspected both the installed SDK (`livekit-server-sdk@2.20.0`) and the compiled LiveKit Server `v1.13.11` Go source code, and executed live multi-browser token-reuse experiments:
+
+1. **SDK Protocol Support (`livekit-server-sdk@2.20.0`):** `RoomServiceClient.removeParticipant(room, identity, { revokeTokenTs?: bigint })` exposes `revokeTokenTs` (`int64 revoke_token_ts = 3` in `livekit.RoomParticipantIdentity`).
+2. **Self-Hosted Server Reality (`github.com/livekit/livekit@v1.13.11`):**
+   - Searching the entire `livekit@v1.13.11` Go source tree for `RevokeTokenTs` / `revoke_token_ts` returned **0 occurrences**.
+   - `pkg/service/roomservice.go:226-247` checks `HasParticipant` (returning `404 participant does not exist` when offline, even when `revokeTokenTs` is supplied) and forwards to `roommanager.go:861-870`, which only disconnects the active peer (`SERVICE_REQUEST_REMOVE_PARTICIPANT`) without storing any revocation cutoff.
+   - `pkg/service/auth.go:86-117` (`APIKeyAuthMiddleware`) verifies only JWT HMAC signature, `nbf`, and `exp` via `v.Verify(secret)` — there is no revocation table in OSS `v1.13.11`.
+3. **Experimental Pre-Mitigation Proof (Raw `ws://127.0.0.1:7880`):**
+   - Host removed Guest via CONNECTLY's Phase 08 `DELETE /api/v1/meetings/:code/participants/:id` (`200 OK`).
+   - Guest was disconnected (`Disconnected`, reason `4` = `PARTICIPANT_REMOVED`) and denied new CONNECTLY tokens (`403 PARTICIPANT_REMOVED`).
+   - **HOWEVER**, reconnecting directly to raw `ws://127.0.0.1:7880` using the **exact original unexpired JWT** succeeded (`reconnected: true`, `remoteCount: 1`) in:
+     - Same browser context (without requesting a new token).
+     - Fresh isolated Chrome browser context.
+     - After calling `removeParticipant(room, identity, { revokeTokenTs: now + 5s })` while online (LiveKit logged `"revokeTokenTs": 1794970853`, returned `200`, and still started a new RTC session 2 seconds later with the old JWT).
+     - After a full browser disconnect + `removeParticipant(..., { revokeTokenTs })` while offline (LiveKit returned `404 participant does not exist`, and reconnecting with the original JWT succeeded).
+
+### 1.2 Implemented Mitigation: Authoritative Signaling Admission Gateway + Signed `tokenEpoch` + Cloud `revokeTokenTs`
+
+To block old-token reuse **immediately (0 ms post-join race window)** on self-hosted LiveKit **without disrupting Host or any other admitted participant**:
+
+1. **Authoritative LiveKit Signaling Admission Gateway ([livekitSignalGateway.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/realtime/livekitSignalGateway.ts)):**
+   - Mounted on CONNECTLY's HTTP/WebSocket server at `/livekit-signal` (`HEAD /livekit-signal`, `GET /livekit-signal/rtc[/v1]/validate`, and WebSocket `UPGRADE /livekit-signal/rtc[/v1]`), leaving `/socket.io` untouched.
+   - Automatically enabled (`LIVEKIT_SIGNAL_GATEWAY_ENABLED=auto`) for all self-hosted LiveKit deployments (non-`*.livekit.cloud` hosts); browsers receive `livekitUrl: ws(s)://<api-host>/livekit-signal`.
+   - **Pre-Admission Gate (executes BEFORE any packet reaches LiveKit SFU):** Cryptographically verifies the LiveKit JWT (`TokenVerifier`), validates opaque room/identity mapping, queries authoritative MongoDB (`Meeting` + `MeetingParticipant`), and rejects with HTTP `403` / `410` if:
+     - Meeting is `ENDED` or `EXPIRED` (`410 LIVEKIT_MEETING_ENDED`).
+     - Participant is `REMOVED` (`403 PARTICIPANT_REMOVED`) or not `ADMITTED` (`403 LIVEKIT_ACCESS_DENIED`).
+     - Signed JWT `metadata.epoch` does not match MongoDB `MeetingParticipant.tokenEpoch` (`403 LIVEKIT_TOKEN_REVOKED`).
+     - JWT `nbf` predates `MeetingParticipant.tokenRevokedBefore` (`403 LIVEKIT_TOKEN_REVOKED`).
+   - **Per-Participant Socket Termination:** On removal or leave, only the removed/departed participant's active proxied signaling sockets are closed (`disconnectParticipantSockets`), leaving Host and all other admitted participants connected with **zero disruption**.
+   - **Zero JWT Log Leakage:** [requestLogger.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/middlewares/requestLogger.ts) redacts `access_token`, `token`, and `join_request` query parameters before logging.
+2. **Monotonic Signed `tokenEpoch` & Post-Generation TOCTOU Guard:**
+   - `MeetingParticipant` stores `tokenEpoch` (default `1`, atomically `$inc: 1` on `removeParticipant` and `leaveMeeting`) and `tokenRevokedBefore`.
+   - Every LiveKit JWT embeds `epoch` inside HMAC-signed `metadata`, and `issueLiveKitToken` re-verifies `admissionStatus === 'ADMITTED'` AND `tokenEpoch === expectedTokenEpoch` after room provisioning before returning any token.
+   - Permanently invalidates pre-departure unexpired JWTs even if a user leaves and legitimately rejoins within the same second.
+3. **LiveKit Cloud `revokeTokenTs` Compatibility:**
+   - `LiveKitService.removeParticipant` forwards `{ revokeTokenTs: BigInt(Math.floor(Date.now() / 1000) + 1) }` so LiveKit Cloud deployments also benefit from native Cloud control-plane token revocation.
+
+### 1.3 Explicit Security State Distinction Matrix
+
+| Security Dimension | Self-Hosted `v1.13.11` via CONNECTLY `/livekit-signal` Gateway (Default) | Direct to Raw Self-Hosted `v1.13.11` (`:7880` if exposed) | Managed LiveKit Cloud (`*.livekit.cloud`) |
+| --- | --- | --- | --- |
+| **Participant disconnected** | **YES — Immediate** (`removeParticipant` + per-participant gateway socket teardown; zero disruption to other peers) | **YES — Immediate** (while online; `404` when offline) | **YES — Immediate** |
+| **Existing JWT revoked** | **YES — Immediate at Gateway** (`admissionStatus=REMOVED` + `tokenEpoch` mismatch + `tokenRevokedBefore` checked pre-handshake) | **NO — Not supported by OSS `v1.13.11`** (`revokeTokenTs` ignored) | **YES — Cloud control plane** (via `revokeTokenTs`, 10-min Cloud window) |
+| **Existing JWT still valid** | **NO at Gateway** (cryptographically signed, but permanently rejected with HTTP `403` pre-upgrade) | **YES** (remains valid at raw `:7880` until `exp`, default `600s`) | **NO** (rejected by Cloud `nbf < revoke_token_ts` cutoff) |
+| **New token request denied** | **YES — Immediate** (`403 PARTICIPANT_REMOVED`; stale in-flight requests also rejected) | **YES — Immediate** (`403 PARTICIPANT_REMOVED` from CONNECTLY API) | **YES — Immediate** (`403 PARTICIPANT_REMOVED`) |
+| **Old-token reconnection** | **DENIED (HTTP `403`)** across same browser, auto-reconnect, fresh browser context, and offline-then-removed | **STILL POSSIBLE** if client network can directly reach raw `:7880` | **DENIED** by LiveKit Cloud control plane |
+
+> **Mandatory Self-Hosted Production Network Boundary:** Because self-hosted LiveKit Server `v1.13.11` itself lacks native JWT revocation, production self-hosted deployments **MUST** bind LiveKit's raw HTTP/WS signaling port (`7880`) to a private loopback/VPC interface reachable **only** by the CONNECTLY Signaling Admission Gateway (never directly from untrusted client browsers). Only ICE/WebRTC media ports (`7881/TCP`, UDP media range) are exposed, and WebRTC media cannot be established without completing the gateway-authorized `/rtc` signaling handshake.
+
+### 1.4 Final Gateway Race-Condition, Bypass & Fail-Closed Audit (7-Boundary Verification)
+
+A focused follow-up audit identified and resolved four subtle gateway concurrency and deployment edge cases:
+
+1. **7-Boundary Handshake-vs-Removal TOCTOU Race (Fixed & Barrier-Tested):**
+   - *Vulnerability found:* Previously, if `removeParticipant` ran after initial gateway authorization but before upstream WebSocket upgrade completed, `disconnectParticipantSockets` saw zero registered sockets and the late-completing upstream `101` could leave a removed participant connected.
+   - *Fix implemented ([livekitSignalGateway.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/realtime/livekitSignalGateway.ts)):*
+     - Tracks every in-flight handshake (`pendingByParticipant` / `pendingByMeeting`) immediately upon initial authorization so `disconnectParticipantSockets` / `disconnectMeetingSockets` / `close()` aborts pending upstream requests instantly.
+     - Executes an authoritative pre-upstream MongoDB re-check AND a **mandatory post-handshake MongoDB revalidation** (`revalidateParticipantAccess`) AFTER registering `(clientSocket, proxySocket)` and BEFORE sending `HTTP/1.1 101 Switching Protocols` to the client.
+     - If removal committed on the same instance OR on another API instance (cross-instance MongoDB), the upgraded upstream socket is destroyed, HTTP `403`/`410` is returned (never `101`), and best-effort `livekit.removeParticipant` is invoked.
+   - *Verified deterministically ([livekitGatewaySecurity.test.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/tests/livekitGatewaySecurity.test.ts) Tests 1–2):* All 7 exact boundaries (`beforeAuthorize`, `afterAuthorize`, `beforeUpstreamConnect`, `duringUpstreamHandshake`, `afterUpstreamHandshake`, `duringSocketRegister`, `afterSocketRegister`), cross-instance removal, and a simultaneous 5x connection burst with the same old JWT leave **0** active removed sockets while Host remains connected uninterrupted.
+2. **Half-Open Socket Cleanup & Graceful Shutdown (Fixed & Verified):**
+   - Added `'end'` listeners alongside `'close'`/`'error'` so TCP FIN from either peer immediately destroys and untracks both sockets (`getActiveSocketCount() === 0`).
+   - Added `livekitSignalGateway.close()` and wired it into `server/src/server.ts`'s graceful `SIGTERM`/`SIGINT` shutdown handler (`getActiveSocketCount() === 0`, subsequent upgrades receive `503`).
+3. **Alternate Route Locking & Fail-Closed MongoDB (Fixed & Verified):**
+   - All alternate WebSocket upgrade routes (`/rtc`, `/rtc/v1`, `/livekit-signal/rtc/v2`, `/livekit-signal/*`) and unknown HTTP routes return `404` without reaching LiveKit (leaving `/socket.io` untouched).
+   - MongoDB query errors inside `authorizeLiveKitSignalHandshake` / `revalidateParticipantAccess` strictly fail CLOSED (`503 LIVEKIT_AUTH_UNAVAILABLE`).
+   - Missing/malformed `epoch` metadata, cross-meeting metadata mismatches, and outsider tokens are rejected (`403`).
+4. **Anti-Bypass Production Transport Enforcement (Fixed & Verified):**
+   - `env.ts` and `validateLiveKitConfig` reject `LIVEKIT_SIGNAL_GATEWAY_ENABLED=false` for self-hosted production deployments (preventing silent gateway bypass) and enforce `wss://` for `LIVEKIT_PUBLIC_URL` / production gateway URLs.
+   - Removed client-side `VITE_LIVEKIT_URL` direct fallback in `useLiveKitConnection.ts` and `livekitClient.ts` so browsers strictly use the authoritative backend `livekitUrl`.
+   - Local development verification (real loopback `127.0.0.1:7880` behind `localhost:5000/livekit-signal`) is explicitly distinguished from production infrastructure verification (TLS reverse proxy + VPC port `7880` firewall isolation, documented in `PHASE_09_LIVEKIT_SETUP.md` and verified during Phase 18 Deployment).
+
+### 1.5 Cross-Instance Distributed Revocation, Atomic Linearization & Post-Sync 101 Fencing Audit
+
+A deep distributed-systems audit examined both the post-`syncNow()` / post-final-read `HTTP 101` race and cross-instance event delivery semantics across independent Gateway & API nodes:
+
+1. **Atomic MongoDB Linearization Point (`claimSignalingAdmissionFence` vs. `removeParticipant`):**
+   - *Key distributed-systems fact:* Neither a MongoDB read followed by an OS socket `write(101)` nor `coordinator.syncNow()` alone provides cross-instance linearizability.
+   - *Implemented linearization mechanism ([livekitSignalGateway.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/realtime/livekitSignalGateway.ts), [MeetingParticipant.model.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/models/MeetingParticipant.model.ts), [meeting.service.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/services/meeting.service.ts)):*
+     - Both signaling admission (`claimSignalingAdmissionFence`) and participant removal (`removeParticipant`) execute an **atomic single-document conditional `findOneAndUpdate`** on the exact same `MeetingParticipant` MongoDB document, incrementing monotonic `signalFenceVersion`.
+     - **Case A — Removal linearizes BEFORE Admission (including after `syncNow()` and after final MongoDB read, even while revocation delivery is paused):** `claimSignalingAdmissionFence` atomically returns `null` (loses the document race). The gateway destroys the upstream socket, returns `403`, and **NEVER emits `HTTP 101`**.
+     - **Case B — Admission linearizes BEFORE Removal:** Admission won the MongoDB document lock with `signalFenceVersion = k`; removal subsequently commits `admissionStatus = 'REMOVED'`, `tokenEpoch = E + 1`, `signalFenceVersion = k + 1`, and publishes a durable `LiveKitRevocationEvent`. Because the socket pair was already registered before the linearization point, `LiveKitRevocationCoordinator` deterministically terminates the established socket upon event delivery. **Unavoidable propagation interval (disclosed honestly):** If a gateway process stalls *after* winning `claimSignalingAdmissionFence` and *before* kernel `socket.write(101)` while asynchronous revocation delivery is delayed, `HTTP 101` reflects the pre-removal linearized admission and is then unconditionally terminated once the durable revocation event propagates to that gateway.
+     - **Fail-Closed Fence:** If `claimSignalingAdmissionFence` encounters any MongoDB error, it returns `503 LIVEKIT_FENCE_UNAVAILABLE` and never emits `HTTP 101`.
+2. **Durable Global-Sequence Event Delivery (`LiveKitRevocationCounter` + `LiveKitRevocationEvent` + `LiveKitRevocationCoordinator`):**
+   - **Clock-Skew-Independent Monotonic `seq`:** Every revocation event atomically allocates a global integer `seq` (`1, 2, 3, ...`) from `LiveKitRevocationCounter`, preventing skipped events caused by cross-host `ObjectId` clock skew.
+   - **Zero Skipped Events & Out-of-Order Safety:** `lastContiguousSeq` advances strictly across contiguous sequences (holding a bounded grace window for in-flight out-of-order commits while dispatching higher-`seq` events immediately with exact `dispatchedSeqs` deduplication). Epoch fencing (`entry.tokenEpoch < event.revokedEpoch`) prevents delayed old-epoch events from disrupting newer re-admitted sessions.
+   - **Change Stream Resume & Standalone Polling (Separately Defined):**
+     - *MongoDB Replica Set (Production):* Real-time push via Change Stream (`watch`), capturing `resumeAfter` tokens for reconnect recovery and running periodic durable `seq` cursor catch-up (`pollIntervalMs`, default `250ms`). Delivery latency is determined by MongoDB oplog commit + network RTT + event-loop scheduling (no unmeasured hard millisecond SLA is claimed).
+     - *Standalone MongoDB (Local Dev / CI):* Automatically uses indexed durable `seq` cursor sweeps (`pollIntervalMs`, default `250ms`) with no Change Stream dependency.
+   - **TTL Retention & Stalled-Delivery Watchdog (Fail-Closed):**
+     - `LiveKitRevocationEvent` TTL is **24 hours (`86400s` — 24x max 1-hour JWT TTL, 144x default 10-min TTL)** so no unexpired JWT can outlive its revocation event; cursor discontinuity detection fails closed if an extended outage causes a retention gap.
+     - `coordinator.isHealthy()` enforces both `maxConsecutiveFailures` (`2`) AND a **stalled-delivery watchdog** (`Date.now() - lastSuccessfulSyncAt > maxStaleDeliveryMs`), failing closed (`503` + active socket termination) even if delivery stalls without throwing DB exceptions.
+   - *Verified deterministically ([livekitCrossInstanceRevocation.test.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/tests/livekitCrossInstanceRevocation.test.ts) 7/7 PASS & [livekitPostSyncFencing.test.ts](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/server/src/tests/livekitPostSyncFencing.test.ts) 6/6 PASS).*
+
+---
+
+## 2. Secret Management & Client Bundle Isolation
+
+- **Server-Only Credentials:** `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` exist strictly in server environment variables (`server/src/config/env.ts`) and are NEVER returned by any API endpoint, Socket.IO event, or `VITE_` frontend variable.
+- **Production Boot Fail-Safe:** In `NODE_ENV=production`, `env.ts` refuses to start if `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or `LIVEKIT_API_SECRET` is missing, uses an insecure scheme (`ws://` / `http://`), or uses placeholder/dev credentials (`devkey`, `secret`, `replace_with_*`).
+- **No Mock Fallback:** When LiveKit configuration is absent, `POST /api/v1/meetings/:code/livekit-token` returns `503 LIVEKIT_NOT_CONFIGURED`.
+- **Client Bundle, Web Storage & Log Verification:**
+  - Compiled `client/dist/assets/*.js`: **0** secret occurrences.
+  - Chrome CDP Web Storage (`localStorage` / `sessionStorage`): **0** LiveKit JWTs stored.
+  - Express HTTP logs (`requestLogger.ts`): `access_token=[REDACTED]` verified live against real browser traffic.
+
+---
+
+## 3. Least-Privilege Token Permission Model (Phase 09 Boundary)
+
+Verified cryptographically with LiveKit's `TokenVerifier` (`livekitService.test.ts` Tests 3 & 7, `livekitTokenAuth.test.ts` Test 3):
+
+| Claim / Grant | Value Issued (All Roles) | Rationale |
+| --- | --- | --- |
+| `sub` (Identity) | `usr_<mongoUserId>` | Opaque internal ID; zero email/phone PII |
+| `video.room` | `cly_room_<mongoMeetingId>` | Server-derived from MongoDB; client cannot choose room |
+| `metadata` | `{"role":"...","meetingId":"...","epoch":N}` | HMAC-signed monotonic token epoch for immediate gateway revocation |
+| `video.roomJoin` | `true` | Allows WebRTC signaling & room entry |
+| `video.canPublish` | **`false`** | Media publishing strictly deferred to Phase 10 |
+| `video.canSubscribe` | **`false`** | Media subscription strictly deferred to Phase 10 |
+| `video.canPublishData` | **`false`** | Data channels deferred to later phases |
+| `video.roomAdmin` / `roomCreate` / `roomList` / `roomRecord` | **`false`** | Never granted to any client role |
+| TTL (`exp - nbf`) | **`600s` (10 min)** | Short-lived credential window |
+
+---
+
+## 4. Exact Reconciliation: 14 Server-Side Token Issuance Checks vs. 20 Tested Security Scenarios
+
+Previous documentation cited **14 authorization checks** on the token endpoint and **18 security scenarios** in the test matrix without cross-referencing them. The exact 1-to-1 reconciliation is documented below.
+
+### 4.1 The 14 Server-Side Token Issuance Gate Checks (`POST /api/v1/meetings/:meetingCode/livekit-token`)
+
+| Check # | Layer & File | Exact Check Enforced | Failure Status / Code |
+| ---: | --- | --- | --- |
+| 1 | Middleware (`auth.middleware.ts`) | `requireAuth` — valid authenticated Bearer/session JWT | `401 UNAUTHORIZED` |
+| 2 | Middleware (`csrf.middleware.ts`) | `validateRequestOrigin` — rejects untrusted `Origin`/`Referer` | `403 CSRF_INVALID_ORIGIN` / `CSRF_INVALID_REFERER` |
+| 3 | Middleware (`rateLimiter.ts`) | `livekitTokenLimiter` — `60 req / 5 min / IP` | `429 RATE_LIMIT_EXCEEDED` |
+| 4 | Middleware (`meeting.schema.ts`) | `livekitTokenRequestSchema = z.strictObject({})` — blocks forged `role`, `roomName`, `identity`, `userId`, `canPublish` | `400 VALIDATION_ERROR` |
+| 5 | Service (`meeting.service.ts:1747`) | Valid MongoDB `ObjectId` for authenticated `userId` | `400 INVALID_IDENTIFIER` |
+| 6 | Service (`meeting.service.ts:1751`) | Valid canonical meeting code (`cly-xxx-xxx`) + meeting exists in MongoDB | `400 INVALID_MEETING_CODE` / `404 MEETING_NOT_FOUND` |
+| 7 | Service (`meeting.service.ts:1752`) | Meeting is neither `ENDED` nor `EXPIRED` (enforces expiration atomically) | `410 LIVEKIT_MEETING_ENDED` / `410 MEETING_EXPIRED` |
+| 8 | Service (`meeting.service.ts:1772`) | Participant record exists (if absent and locked -> `MEETING_LOCKED`; else `LIVEKIT_ACCESS_DENIED`) | `403 MEETING_LOCKED` / `403 LIVEKIT_ACCESS_DENIED` |
+| 9 | Service (`meeting.service.ts:1785`) | Participant `admissionStatus !== 'REMOVED'` | `403 PARTICIPANT_REMOVED` |
+| 10 | Service (`meeting.service.ts:1792`) | Participant `admissionStatus === 'ADMITTED'` (rejects `WAITING`, `REJECTED`, `LEFT`, `CANCELLED`) | `403 LIVEKIT_ACCESS_DENIED` |
+| 11 | Service (`meeting.service.ts:1801`) | Meeting capacity bound (`activeParticipantCount <= maxParticipants`) | `403 MEETING_FULL` |
+| 12 | Service (`livekit.service.ts:276`) | LiveKit config present & production-valid (`assertConfigured`) | `503 LIVEKIT_NOT_CONFIGURED` |
+| 13 | Service (`livekit.service.ts:309`) | LiveKit SFU room lazily provisioned & reachable (`ensureRoomExists`) | `503 LIVEKIT_UNAVAILABLE` |
+| 14 | Service (`meeting.service.ts:1829`) | **Post-generation TOCTOU re-check:** re-reads MongoDB to confirm meeting not `ENDED`/`EXPIRED`, participant still `ADMITTED`, and `tokenEpoch` unchanged | `410 LIVEKIT_MEETING_ENDED` / `403 PARTICIPANT_REMOVED` / `403 LIVEKIT_ACCESS_DENIED` |
+
+*(Plus **5 Pre-Handshake Signaling Gateway Checks** in `livekitSignalGateway.ts` on every `/livekit-signal/rtc[/v1]` validate & WebSocket upgrade: JWT cryptographic signature/exp, opaque room/identity parsing, live Meeting status, live Participant `ADMITTED` status, and signed `tokenEpoch` + `tokenRevokedBefore` validation.)*
+
+### 4.2 The 20 Tested Security, Forgery & Revocation Scenarios
+
+| Scenario # | Attack / Edge Case | Gate Check(s) Exercised | Enforced Outcome | Verification Source |
+| ---: | --- | --- | --- | --- |
+| 1 | Unauthenticated token request | Check #1 | `401 UNAUTHORIZED` | `livekitTokenAuth.test.ts` Test 1 |
+| 2 | Untrusted `Origin` CSRF request | Check #2 | `403 CSRF_INVALID_ORIGIN` | `livekitTokenAuth.test.ts` Test 1 |
+| 3 | Invalid meeting code format | Check #6 | `400 INVALID_MEETING_CODE` | `livekitTokenAuth.test.ts` Test 1 |
+| 4 | Non-existent meeting | Check #6 | `404 MEETING_NOT_FOUND` | `livekitTokenAuth.test.ts` Test 1 |
+| 5 | Non-member / outsider token request | Check #8 | `403 LIVEKIT_ACCESS_DENIED` | `livekitTokenAuth.test.ts` Test 2 & `test-phase09-livekit-real.mjs` |
+| 6 | Waiting-room participant token request | Check #10 | `403 LIVEKIT_ACCESS_DENIED` | `livekitTokenAuth.test.ts` Test 2 & `test-phase09-livekit-real.mjs` |
+| 7 | Rejected participant token request | Check #10 | `403 LIVEKIT_ACCESS_DENIED` | `livekitTokenAuth.test.ts` Test 2 |
+| 8 | Removed participant new token request | Check #9 | `403 PARTICIPANT_REMOVED` | `livekitTokenAuth.test.ts` Test 2 & `test-phase09-livekit-real.mjs` |
+| 9 | Left participant new token request | Check #10 | `403 LIVEKIT_ACCESS_DENIED` | `livekitTokenAuth.test.ts` Test 2 |
+| 10 | Ended meeting token request | Check #7 | `410 LIVEKIT_MEETING_ENDED` | `livekitTokenAuth.test.ts` Test 4 & `test-phase09-livekit-real.mjs` |
+| 11 | Locked meeting non-member token request | Check #8 | `403 MEETING_LOCKED` | `livekitTokenAuth.test.ts` Test 4 |
+| 12 | Forged `identity`, `roomName`, `role`, or `canPublish` in request body | Check #4 | `400 VALIDATION_ERROR` | `livekitTokenAuth.test.ts` Test 1 |
+| 13 | Removed participant original unexpired JWT reuse (same browser, fresh browser, offline-removed) via Gateway | Gateway Checks + `tokenEpoch` | **HTTP `403 PARTICIPANT_REMOVED`** pre-upgrade; Host uninterrupted | `livekitTokenAuth.test.ts` Test 7 & `test-phase09-token-reuse-audit.mjs` (6/6 PASS) |
+| 14 | Pre-departure unexpired JWT reuse after `leaveMeeting` + legitimate rejoin | Gateway `tokenEpoch` Check | **HTTP `403 LIVEKIT_TOKEN_REVOKED`** | `livekitTokenAuth.test.ts` Test 8 |
+| 15 | Concurrent token requests for same & distinct users | Checks #1–#14 | Clean parallel signing, zero corruption | `livekitTokenAuth.test.ts` Test 5 |
+| 16 | Meeting terminated concurrently during token generation | Check #14 (barrier) | `410 LIVEKIT_MEETING_ENDED` (token discarded) | `livekitTokenAuth.test.ts` Test 5 |
+| 17 | Participant removed concurrently during in-flight token generation | Check #14 (barrier) | `403 PARTICIPANT_REMOVED` (token discarded) | `livekitTokenAuth.test.ts` Test 8 |
+| 18 | LiveKit configuration missing | Check #12 | `503 LIVEKIT_NOT_CONFIGURED` | `livekitService.test.ts` Test 4 & `livekitTokenAuth.test.ts` Test 6 |
+| 19 | LiveKit server unavailable | Check #13 | `503 LIVEKIT_UNAVAILABLE` + honest `Connection failed` UI | `livekitService.test.ts` Test 5 & `verify_phase_09_unavailable.js` |
+| 20 | Invalid/expired JWT or gateway `403` revoked rejection in client | Gateway + `livekitClient.ts` | Classified to `LIVEKIT_INVALID_TOKEN` / terminal `unauthorized` (`PARTICIPANT_REMOVED`) | `livekitClient.test.ts` Tests 3 & 6 |
+
+*(Note: Rate limiter Check #3 is implemented via `livekitTokenLimiter` at `60 req / 5 min / IP` in `server/src/middlewares/rateLimiter.ts` and mounted on `meetings.routes.ts`.)*
+
+---
+
+## 5. Transport Encryption vs. End-to-End Encryption & Dependency Audit
+
+- **Transport Encryption Only in Phase 09:** WebSocket signaling uses TLS (`wss://` in production) and WebRTC peer transport uses DTLS/SRTP. True **End-to-End Encryption (E2EE / SFrame)** is NOT implemented in Phase 09 and remains strictly scoped to **Phase 15**.
+- **Production Dependency Audit (`npm audit --omit=dev`):**
+  - `livekit-server-sdk@2.20.0`: **0 vulnerabilities**.
+  - `livekit-client@2.24.1`: **0 vulnerabilities**.
+  - `zod@4.6.7`: Patched and verified intact (`zodSecurity.test.ts` 6/6 PASS).
+  - **2 pre-existing moderate advisories** remain disclosed in `react-router` v6 (`GHSA-wrjc-x8rr-h8h6` mitigated via `sanitizeRedirectPath`, and `GHSA-337j-9hxr-rhxg` SSR hydration unused by SPA).
+
+================================================================================
+END FILE: docs/PHASE_09_SECURITY_AUDIT.md
+================================================================================
+

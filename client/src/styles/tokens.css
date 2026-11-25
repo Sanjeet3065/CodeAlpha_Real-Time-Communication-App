@@ -1,0 +1,131 @@
+/**
+ * CONNECTLY Design System - Tokens
+ * Source: docs/COLOR_TYPOGRAPHY_TOKENS.md
+ */
+
+:root {
+  /* 1. Core Color Tokens */
+  --cly-color-surface-canvas: #F7F6F2;
+  --cly-color-surface-card: #FFFFFF;
+  --cly-color-surface-theater: #101820;
+  --cly-color-surface-dock: #253746;
+  --cly-color-brand-primary: #172B3A;
+  --cly-color-brand-accent: #168B83;
+  --cly-color-brand-accent-hover: #11706A;
+  --cly-color-brand-subtle: #DCEDE8;
+  --cly-color-brand-subtle-hover: #C8E2DB;
+  --cly-color-brand-danger: #D94F4F;
+  --cly-color-brand-danger-hover: #BF3C3C;
+
+  /* Text Colors */
+  --cly-text-primary: #172B3A;
+  --cly-text-secondary: #3D5265;
+  --cly-text-muted: #6B8092;
+
+  /* Border Colors */
+  --cly-border-subtle: #E3E1D9;
+  --cly-border-focus: #168B83;
+  --cly-border-dark: rgba(255, 255, 255, 0.12);
+
+  /* 2. Typography Tokens */
+  --cly-type-font-display: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cly-type-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cly-type-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Font Weights */
+  --cly-type-weight-regular: 400;
+  --cly-type-weight-medium: 500;
+  --cly-type-weight-semibold: 600;
+  --cly-type-weight-bold: 700;
+
+  /* 3. Spacing Tokens (4px baseline grid) */
+  --cly-space-1: 4px;
+  --cly-space-2: 8px;
+  --cly-space-3: 12px;
+  --cly-space-4: 16px;
+  --cly-space-5: 20px;
+  --cly-space-6: 24px;
+  --cly-space-8: 32px;
+  --cly-space-12: 48px;
+  --cly-space-16: 64px;
+
+  /* 4. Border Radius */
+  --cly-radius-none: 0px;
+  --cly-radius-sm: 4px;
+  --cly-radius-md: 8px;
+  --cly-radius-lg: 12px;
+  --cly-radius-xl: 16px;
+  --cly-radius-full: 9999px;
+
+  /* 5. Shadow Tokens */
+  --cly-shadow-sm: 0 1px 2px 0 rgba(23, 43, 58, 0.05);
+  --cly-shadow-md: 0 4px 6px -1px rgba(23, 43, 58, 0.08), 0 2px 4px -2px rgba(23, 43, 58, 0.04);
+  --cly-shadow-lg: 0 10px 15px -3px rgba(23, 43, 58, 0.10), 0 4px 6px -4px rgba(23, 43, 58, 0.05);
+  --cly-shadow-theater: 0 12px 30px 0 rgba(0, 0, 0, 0.45);
+
+  /* 6. Elevation Tokens */
+  --cly-elevation-0: 0;
+  --cly-elevation-card: var(--cly-shadow-sm);
+  --cly-elevation-dropdown: var(--cly-shadow-md);
+  --cly-elevation-modal: var(--cly-shadow-lg);
+
+  /* 7. Border Widths */
+  --cly-border-hairline: 1px solid var(--cly-border-subtle);
+  --cly-border-thick: 2px solid var(--cly-border-subtle);
+  --cly-border-active-speaker: 3px solid #168B83;
+
+  /* 8. Container Max Widths */
+  --cly-container-sm: 640px;
+  --cly-container-md: 768px;
+  --cly-container-lg: 1024px;
+  --cly-container-xl: 1280px;
+  --cly-container-full: 100%;
+
+  /* 9. Grid Settings */
+  --cly-grid-gutter-desktop: 24px;
+  --cly-grid-gutter-tablet: 16px;
+  --cly-grid-gutter-mobile: 12px;
+
+  /* 10. Breakpoint Values */
+  --cly-bp-mobile-sm: 360px;
+  --cly-bp-mobile: 480px;
+  --cly-bp-tablet-portrait: 768px;
+  --cly-bp-tablet-landscape: 840px;
+  --cly-bp-laptop: 1024px;
+  --cly-bp-desktop: 1280px;
+  --cly-bp-desktop-xl: 1440px;
+
+  /* 11. Icon Sizes */
+  --cly-icon-sm: 16px;
+  --cly-icon-md: 20px;
+  --cly-icon-lg: 24px;
+  --cly-icon-xl: 32px;
+
+  /* 12. Animation Durations */
+  --cly-dur-instant: 75ms;
+  --cly-dur-fast: 150ms;
+  --cly-dur-base: 250ms;
+  --cly-dur-slow: 350ms;
+
+  /* 13. Transition Easings */
+  --cly-ease-default: cubic-bezier(0.16, 1, 0.3, 1);
+  --cly-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --cly-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* 14. Z-Index Layers */
+  --cly-z-base: 1;
+  --cly-z-dock: 100;
+  --cly-z-drawer: 200;
+  --cly-z-dropdown: 300;
+  --cly-z-modal: 400;
+  --cly-z-toast: 500;
+
+  /* 15. Focus Ring */
+  --cly-focus-outline: 2px solid #168B83;
+  --cly-focus-offset: 2px;
+  --cly-focus-dark: 2px solid #2EC4B6;
+
+  /* 16. Overlays */
+  --cly-overlay-backdrop-light: rgba(23, 43, 58, 0.40);
+  --cly-overlay-backdrop-dark: rgba(0, 0, 0, 0.70);
+}

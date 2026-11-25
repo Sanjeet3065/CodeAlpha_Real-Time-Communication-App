@@ -1,0 +1,25 @@
+{
+  "title": "Connectly — Real-Time Video Collaboration",
+  "heading": "Frontend Architecture Foundation",
+  "brandText": "CONNECTLY",
+  "fontsStatus": "loaded",
+  "tokens": {
+    "bodyBg": "rgb(247, 246, 242)",
+    "bodyColor": "rgb(23, 43, 58)",
+    "fontFamily": "Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+    "h1FontFamily": "Manrope, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+    "h1FontSize": "24px"
+  },
+  "desktopOverflow": false,
+  "tabletOverflow": false,
+  "mobileOverflow": false,
+  "typedValue": "Sprint Planning Session 01",
+  "buttonInteraction": {
+    "found": true,
+    "textDuringClick": "Primary CTA",
+    "ariaBusy": null
+  },
+  "notFoundHeading": "Page Not Found",
+  "notFoundCode": "404",
+  "navigatedBackUrl": "/"
+}
