@@ -172,7 +172,7 @@ describe('Phase 14 Collaborative Whiteboard Test Suite', () => {
   });
 
   after(async () => {
-    meetingRealtime.close();
+    await meetingRealtime.closeAsync();
     server.closeAllConnections?.();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await chatRedisService.close();
@@ -189,8 +189,9 @@ describe('Phase 14 Collaborative Whiteboard Test Suite', () => {
     await mongoose.disconnect();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     whiteboardService.clearRateLimits();
+    await chatRedisService.clearTestState();
   });
 
   it('1. Initial whiteboard state fetch creates board v1 and returns empty active elements', async () => {

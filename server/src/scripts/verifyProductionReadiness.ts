@@ -867,6 +867,8 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
   }
 
   if (options.exitOnError !== false && !success && isStrict) {
+    // Allow closing network/TLS sockets on Windows libuv to unwind before process.exit
+    await new Promise((resolve) => setTimeout(resolve, 50));
     process.exit(1);
   }
 

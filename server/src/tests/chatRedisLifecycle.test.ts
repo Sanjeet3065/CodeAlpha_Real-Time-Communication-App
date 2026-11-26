@@ -44,6 +44,8 @@ function startLightweightRespServer(): Promise<{
             sock.write(`$${Buffer.byteLength(payload)}\r\n${payload}\r\n`);
           } else if (cmd === 'PING') {
             sock.write('+PONG\r\n');
+          } else if (cmd === 'SCAN') {
+            sock.write('*2\r\n$1\r\n0\r\n*0\r\n');
           } else if (cmd === 'QUIT') {
             sock.write('+OK\r\n');
             sock.end();
@@ -76,18 +78,25 @@ function startLightweightRespServer(): Promise<{
 }
 
 describe('ChatRedisService Lifecycle & CI Socket Teardown Suite', () => {
-  it('closes owned ioredis TCP socket cleanly so Node event loop does not hang', async () => {
+  it('closes owned ioredis TCP socket cleanly and deduplicates concurrent connections', async () => {
     const respServer = await startLightweightRespServer();
     const originalRedisUrl = env.REDIS_URL;
+    const originalNodeEnv = env.NODE_ENV;
 
     try {
       (env as { REDIS_URL: string }).REDIS_URL = `redis://127.0.0.1:${respServer.port}`;
+      (env as { NODE_ENV: string }).NODE_ENV = 'test';
       const svc = new ChatRedisService();
 
-      const ok = await svc.ping();
-      assert.strictEqual(ok, true);
-      assert.ok(respServer.activeSocketCount() >= 1, 'ping() should establish an active TCP connection');
+      const results = await Promise.all([svc.ping(), svc.ping(), svc.ping()]);
+      assert.deepStrictEqual(results, [true, true, true]);
+      assert.strictEqual(
+        respServer.activeSocketCount(),
+        1,
+        'Concurrent cold-start pings MUST share a single ioredis TCP connection'
+      );
 
+      await svc.clearTestState();
       await svc.close();
       await new Promise((r) => setTimeout(r, 30));
 
@@ -98,6 +107,7 @@ describe('ChatRedisService Lifecycle & CI Socket Teardown Suite', () => {
       );
     } finally {
       (env as { REDIS_URL: string }).REDIS_URL = originalRedisUrl;
+      (env as { NODE_ENV: string }).NODE_ENV = originalNodeEnv;
       await respServer.close();
     }
   });

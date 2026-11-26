@@ -74,6 +74,7 @@ interface InMemoryIdempotencyEntry {
 
 export class ChatRedisService {
   private redisClient: Redis | null = null;
+  private connectPromise: Promise<Redis | null> | null = null;
   private isExternalClient = false;
   private readonly inMemoryRateLimits = new Map<string, InMemoryRateLimitEntry>();
   private readonly inMemoryIdempotency = new Map<string, InMemoryIdempotencyEntry>();
@@ -98,12 +99,28 @@ export class ChatRedisService {
 
   /**
    * Lazily initializes and returns the shared Redis client if configured.
+   * Deduplicates concurrent cold-start initialization so only one TCP socket is opened.
    */
   public async getClient(): Promise<Redis | null> {
     if (this.redisClient) {
       return this.redisClient;
     }
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
 
+    const connectAttempt = this.createSharedClient();
+    this.connectPromise = connectAttempt;
+    try {
+      return await connectAttempt;
+    } finally {
+      if (this.connectPromise === connectAttempt) {
+        this.connectPromise = null;
+      }
+    }
+  }
+
+  private async createSharedClient(): Promise<Redis | null> {
     const redisUrl = (env.REDIS_URL || '').trim();
     if (!redisUrl) {
       if (this.isDistributedRequired()) {
@@ -541,10 +558,40 @@ export class ChatRedisService {
   }
 
   /**
+   * Clears in-memory state and deletes test rate-limit / idempotency keys from Redis.
+   * Strictly no-ops against Redis outside NODE_ENV=test.
+   */
+  public async clearTestState(): Promise<void> {
+    this.clearLocalState();
+    if (env.NODE_ENV !== 'test') {
+      return;
+    }
+
+    const client = await this.getClient();
+    if (!client) {
+      return;
+    }
+
+    for (const pattern of ['connectly:rl:*', 'connectly:idemp:*']) {
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 200);
+        cursor = nextCursor;
+        if (keys.length > 0) {
+          await client.del(...keys);
+        }
+      } while (cursor !== '0');
+    }
+  }
+
+  /**
    * Closes the managed Redis connection if owned.
    */
   public async close(): Promise<void> {
     this.clearLocalState();
+    if (this.connectPromise) {
+      await this.connectPromise.catch(() => null);
+    }
     if (this.redisClient && !this.isExternalClient) {
       await this.redisClient.quit().catch(() => {});
       this.redisClient.disconnect();

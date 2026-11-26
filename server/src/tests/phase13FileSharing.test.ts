@@ -257,8 +257,8 @@ describe('Phase 13 File Sharing Test Suite', () => {
     }
   });
 
-  beforeEach(() => {
-    chatRedisService.clearLocalState();
+  beforeEach(async () => {
+    await chatRedisService.clearTestState();
   });
 
   after(async () => {

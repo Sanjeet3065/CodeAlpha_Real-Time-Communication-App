@@ -149,8 +149,9 @@ describe('Phase 12 Real-Time Chat & Reactions Test Suite', () => {
     await mongoose.disconnect();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     chatService.clearRateLimits();
+    await chatRedisService.clearTestState();
   });
 
   it('1. Admitted participant successfully sends a chat message, persists to DB, and broadcasts event', async () => {
