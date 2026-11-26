@@ -269,6 +269,7 @@ describe('Phase 13 File Sharing Test Suite', () => {
       if (meetingRealtime) {
         await meetingRealtime.close();
       }
+      await chatRedisService.close();
       if (mongoose.connection.readyState !== 0) {
         await User.deleteMany({
           _id: { $in: [hostUser?._id, guestUser?._id, waitingUser?._id, outsiderUser?._id] },

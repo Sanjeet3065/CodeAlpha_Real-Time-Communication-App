@@ -8,6 +8,7 @@ import { Meeting } from '../models/Meeting.model.js';
 import { MeetingParticipant } from '../models/MeetingParticipant.model.js';
 import { ChatMessage } from '../models/ChatMessage.model.js';
 import { meetingRealtime } from '../realtime/meetingSocket.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { chatService } from '../services/chat.service.js';
 import { meetingService } from '../services/meeting.service.js';
 import { hashPassword } from '../utils/password.js';
@@ -133,7 +134,9 @@ describe('Phase 12 Real-Time Chat & Reactions Test Suite', () => {
 
   after(async () => {
     meetingRealtime.close();
+    server.closeAllConnections?.();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    await chatRedisService.close();
 
     if (createdMeetingIds.length > 0) {
       await Meeting.deleteMany({ _id: { $in: createdMeetingIds } });

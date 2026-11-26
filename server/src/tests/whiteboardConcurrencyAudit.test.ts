@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose, { Types } from 'mongoose';
 import { WhiteboardService } from '../services/whiteboard.service.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { Whiteboard } from '../models/Whiteboard.model.js';
 import { WhiteboardOperation } from '../models/WhiteboardOperation.model.js';
 import { Meeting } from '../models/Meeting.model.js';
@@ -86,6 +87,7 @@ describe('Whiteboard Cross-Instance Concurrency & Mutex Audit Suite', () => {
   });
 
   after(async () => {
+    await chatRedisService.close();
     await Whiteboard.deleteMany({});
     await WhiteboardOperation.deleteMany({});
     await Meeting.deleteMany({});

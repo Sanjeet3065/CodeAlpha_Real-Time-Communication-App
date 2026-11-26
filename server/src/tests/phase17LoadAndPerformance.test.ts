@@ -13,6 +13,7 @@ import { Whiteboard } from '../models/Whiteboard.model.js';
 import { WhiteboardOperation } from '../models/WhiteboardOperation.model.js';
 import { resetRevocationTopologyCache } from '../models/LiveKitRevocationEvent.model.js';
 import { meetingRealtime } from '../realtime/meetingSocket.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { generateAccessToken } from '../utils/tokens.js';
 import { hashPassword } from '../utils/password.js';
 
@@ -150,7 +151,9 @@ describe('Phase 17 — Comprehensive 60-Participant Load & Performance Suite', (
       if (s.connected) s.disconnect();
     }
     await meetingRealtime.closeAsync();
+    server.closeAllConnections?.();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    await chatRedisService.close();
     await mongoose.disconnect();
   });
 

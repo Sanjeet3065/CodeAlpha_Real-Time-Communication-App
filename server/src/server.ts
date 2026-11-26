@@ -12,6 +12,7 @@ import {
   LIVEKIT_SIGNAL_GATEWAY_PATH,
 } from './realtime/livekitSignalGateway.js';
 import { livekitRevocationCoordinator } from './realtime/livekitRevocationCoordinator.js';
+import { chatRedisService } from './services/chatRedis.service.js';
 import { fileCleanupWorker } from './services/fileCleanupWorker.service.js';
 import { reminderWorker } from './services/reminderWorker.service.js';
 import { livekitEvictionWorker } from './workers/livekitEvictionWorker.js';
@@ -108,6 +109,7 @@ async function bootstrap() {
         await meetingOutboxDispatcher.stop();
         livekitSignalGateway.close();
         await livekitRevocationCoordinator.stop();
+        await chatRedisService.close();
         await meetingRealtime.closeAsync();
       },
       disconnectDatabase,

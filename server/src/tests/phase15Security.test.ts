@@ -36,6 +36,7 @@ import {
 } from '../utils/securityAudit.js';
 import { LiveKitService, validateLiveKitConfig } from '../services/livekit.service.js';
 import { S3StorageProvider } from '../storage/s3StorageProvider.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { chatService } from '../services/chat.service.js';
 import { meetingService } from '../services/meeting.service.js';
 import { dataEncryptionMigration } from '../services/dataEncryptionMigration.service.js';
@@ -96,8 +97,10 @@ describe('Phase 15 — Encryption & Security Suite', () => {
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+    await chatRedisService.close();
     await User.deleteMany({});
     await AuthSession.deleteMany({});
     await Meeting.deleteMany({});

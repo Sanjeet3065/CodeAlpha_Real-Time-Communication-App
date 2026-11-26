@@ -23,6 +23,8 @@ import http from 'node:http';
 import mongoose from 'mongoose';
 import { createApp } from '../app.js';
 import { env, envSchema } from '../config/env.js';
+import { resetReadinessHealthCacheForTesting } from '../routes/health.routes.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { User } from '../models/User.model.js';
 import { Meeting } from '../models/Meeting.model.js';
 import { MeetingParticipant } from '../models/MeetingParticipant.model.js';
@@ -104,6 +106,9 @@ describe('Phase 18 Sprint 02 File-Sharing Feature Gate Suite', () => {
         server.close(() => resolve());
       });
     }
+
+    await chatRedisService.close();
+    resetReadinessHealthCacheForTesting();
 
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();

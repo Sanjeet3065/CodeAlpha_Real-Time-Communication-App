@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import { createApp } from '../app.js';
 import { connectDatabase, disconnectDatabase } from '../config/database.js';
+import { resetReadinessHealthCacheForTesting } from '../routes/health.routes.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import type { Server } from 'node:http';
 
 describe('Health & Readiness Endpoints Suite', () => {
@@ -25,8 +27,11 @@ describe('Health & Readiness Endpoints Suite', () => {
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+    await chatRedisService.close();
+    resetReadinessHealthCacheForTesting();
     await disconnectDatabase();
   });
 

@@ -18,6 +18,7 @@ import { Whiteboard } from '../models/Whiteboard.model.js';
 import { WhiteboardOperation } from '../models/WhiteboardOperation.model.js';
 import { resetRevocationTopologyCache } from '../models/LiveKitRevocationEvent.model.js';
 import { meetingRealtime } from '../realtime/meetingSocket.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { whiteboardService } from '../services/whiteboard.service.js';
 import { meetingService } from '../services/meeting.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
@@ -172,7 +173,9 @@ describe('Phase 14 Collaborative Whiteboard Test Suite', () => {
 
   after(async () => {
     meetingRealtime.close();
+    server.closeAllConnections?.();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    await chatRedisService.close();
 
     if (createdMeetingIds.length > 0) {
       await Meeting.deleteMany({ _id: { $in: createdMeetingIds } });

@@ -2,6 +2,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose, { Types } from 'mongoose';
 import { WhiteboardService } from '../services/whiteboard.service.js';
+import { chatRedisService } from '../services/chatRedis.service.js';
 import { Whiteboard } from '../models/Whiteboard.model.js';
 import { WhiteboardOperation } from '../models/WhiteboardOperation.model.js';
 import { Meeting } from '../models/Meeting.model.js';
@@ -107,6 +108,7 @@ describe('Whiteboard Transaction Integrity & Failure-Injection Verification Suit
   });
 
   after(async () => {
+    await chatRedisService.close();
     if (mongoose.connection.readyState !== 0) {
       await Whiteboard.deleteMany({});
       await WhiteboardOperation.deleteMany({});
