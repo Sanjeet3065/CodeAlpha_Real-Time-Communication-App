@@ -38,6 +38,8 @@ describe('Phase 18 Sprint 06B — Critical Security Blocker Remediation Suite', 
   let meetingService: MeetingService;
   let mockLiveKit: LiveKitService;
   let evictionWorker: LiveKitEvictionWorker;
+  let coordinator: LiveKitRevocationCoordinator;
+  let gateway: LiveKitSignalGateway;
   let removedParticipantsFromSFU: string[] = [];
   const sfuPresenceMap = new Map<string, boolean>();
   let sfuEvictErrorToThrow: Error | null = null;
@@ -97,8 +99,8 @@ describe('Phase 18 Sprint 06B — Critical Security Blocker Remediation Suite', 
     });
 
     const hub = new MeetingRealtimeHub();
-    const coordinator = new LiveKitRevocationCoordinator({ pollIntervalMs: 60_000, enableChangeStream: false });
-    const gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
+    coordinator = new LiveKitRevocationCoordinator({ pollIntervalMs: 60_000, enableChangeStream: false });
+    gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
 
     meetingService = new MeetingService(
       hub,
@@ -124,7 +126,11 @@ describe('Phase 18 Sprint 06B — Critical Security Blocker Remediation Suite', 
   });
 
   after(async () => {
+    gateway?.close();
+    await coordinator?.stop();
+    await evictionWorker?.stop();
     if (appServer) {
+      appServer.closeAllConnections?.();
       await new Promise<void>((resolve) => appServer.close(() => resolve()));
     }
     await mongoose.disconnect();

@@ -146,6 +146,7 @@ describe('Phase 08 Deterministic Concurrency, Rejoin/Reconnect & Event Ordering 
       }
     }
     realtimeHub.close();
+    httpServer.closeAllConnections?.();
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
 
     if (createdMeetingIds.length > 0) {

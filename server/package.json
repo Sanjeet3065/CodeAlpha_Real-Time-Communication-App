@@ -12,7 +12,7 @@
     "start": "node dist/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test --test-concurrency=1 \"src/**/*.test.ts\"",
+    "test": "node scripts/runTests.mjs",
     "verify:production": "node --import tsx src/scripts/verifyProductionReadiness.ts",
     "verify:ci-production": "node --import tsx src/scripts/runCiProductionPreflight.ts"
   },

@@ -109,6 +109,7 @@ describe('Phase 08 Real-Time Socket.IO Security, Isolation & Room Events Suite',
   after(async () => {
     realtimeHub.close();
     if (httpServer) {
+      httpServer.closeAllConnections?.();
       await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     }
     await MeetingParticipant.deleteMany({});

@@ -236,6 +236,7 @@ export class LiveKitEvictionWorker {
         }
       }
     }, delayMs);
+    this.pollTimer.unref?.();
   }
 
   /**
@@ -533,6 +534,7 @@ export class LiveKitEvictionWorker {
           renewLease().catch(() => false);
         }
       }, this.heartbeatIntervalMs);
+      heartbeatTimer.unref?.();
       this.activeHeartbeatTimers.add(heartbeatTimer);
     }
 

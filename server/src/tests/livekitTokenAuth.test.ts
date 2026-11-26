@@ -47,6 +47,7 @@ function createBarrier() {
 
 describe('Phase 09 LiveKit Token Authorization, Security & Concurrency Integration Suite', () => {
   let httpServer: http.Server;
+  let testGateway: LiveKitSignalGateway;
   let baseUrl: string;
   const users: Array<{ id: string; token: string; email: string }> = [];
   const createdMeetingIds: mongoose.Types.ObjectId[] = [];
@@ -96,7 +97,7 @@ describe('Phase 09 LiveKit Token Authorization, Security & Concurrency Integrati
 
     const app = createApp();
     httpServer = http.createServer(app);
-    const testGateway = new LiveKitSignalGateway(configuredLiveKit);
+    testGateway = new LiveKitSignalGateway(configuredLiveKit);
     testGateway.attach(httpServer);
     await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', () => resolve()));
     const addr = httpServer.address();
@@ -131,6 +132,8 @@ describe('Phase 09 LiveKit Token Authorization, Security & Concurrency Integrati
     if (originalEnv.secret === undefined) delete process.env.LIVEKIT_API_SECRET;
     else process.env.LIVEKIT_API_SECRET = originalEnv.secret;
 
+    testGateway?.close();
+    httpServer?.closeAllConnections?.();
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     if (createdMeetingIds.length > 0) {
       await MeetingParticipant.deleteMany({ meetingId: { $in: createdMeetingIds } });

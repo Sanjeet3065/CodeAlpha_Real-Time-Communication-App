@@ -51,6 +51,7 @@ describe('Zod 4.6.7 Security & GHSA-mrhx-c7xc-m3w5 Protection Suite', () => {
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
     await User.deleteMany({});

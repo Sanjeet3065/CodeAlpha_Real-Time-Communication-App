@@ -67,6 +67,7 @@ describe('Phase 08 Meeting Room Management — REST API, Permissions, Lifecycle 
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
     await MeetingParticipant.deleteMany({});

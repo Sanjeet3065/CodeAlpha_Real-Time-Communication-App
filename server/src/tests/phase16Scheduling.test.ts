@@ -95,6 +95,7 @@ describe('Phase 16 — Scheduling & Meeting History Suite', () => {
   after(async () => {
     reminderWorker.stop();
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
     await mongoose.disconnect();

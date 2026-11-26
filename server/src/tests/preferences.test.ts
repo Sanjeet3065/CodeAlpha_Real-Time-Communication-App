@@ -68,6 +68,7 @@ describe('User Preferences Persistence & Data Isolation Suite', () => {
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
     await User.deleteMany({});

@@ -41,6 +41,8 @@ describe('Sprint 06F — Audit-Driven Reliability & Security Remediation Suite',
   let appBaseUrl = '';
   let meetingService: MeetingService;
   let evictionWorker: LiveKitEvictionWorker;
+  let coordinator: LiveKitRevocationCoordinator;
+  let gateway: LiveKitSignalGateway;
 
   let testUserHost: IUser;
   let testUserGuest: IUser;
@@ -94,11 +96,11 @@ describe('Sprint 06F — Audit-Driven Reliability & Security Remediation Suite',
     });
 
     const hub = new MeetingRealtimeHub();
-    const coordinator = new LiveKitRevocationCoordinator({
+    coordinator = new LiveKitRevocationCoordinator({
       pollIntervalMs: 60_000,
       enableChangeStream: false,
     });
-    const gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
+    gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
 
     meetingService = new MeetingService(
       hub,
@@ -123,7 +125,10 @@ describe('Sprint 06F — Audit-Driven Reliability & Security Remediation Suite',
   });
 
   after(async () => {
+    gateway?.close();
+    await coordinator?.stop();
     if (appServer) {
+      appServer.closeAllConnections?.();
       await new Promise<void>((resolve) => appServer.close(() => resolve()));
     }
     await evictionWorker.stop();

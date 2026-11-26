@@ -38,6 +38,8 @@ describe('Phase 18 Sprint 06D — Reliability Remediation & Staging Hardening Su
   let meetingService: MeetingService;
   let mockLiveKit: LiveKitService;
   let evictionWorker: LiveKitEvictionWorker;
+  let coordinator: LiveKitRevocationCoordinator;
+  let gateway: LiveKitSignalGateway;
   let removedParticipantsFromSFU: string[] = [];
   const sfuPresenceMap = new Map<string, boolean>();
   let sfuEvictErrorToThrow: Error | null = null;
@@ -106,8 +108,8 @@ describe('Phase 18 Sprint 06D — Reliability Remediation & Staging Hardening Su
     });
 
     const hub = new MeetingRealtimeHub();
-    const coordinator = new LiveKitRevocationCoordinator({ pollIntervalMs: 60_000, enableChangeStream: false });
-    const gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
+    coordinator = new LiveKitRevocationCoordinator({ pollIntervalMs: 60_000, enableChangeStream: false });
+    gateway = new LiveKitSignalGateway(mockLiveKit, {}, coordinator);
 
     meetingService = new MeetingService(
       hub,
@@ -132,7 +134,10 @@ describe('Phase 18 Sprint 06D — Reliability Remediation & Staging Hardening Su
   });
 
   after(async () => {
+    gateway?.close();
+    await coordinator?.stop();
     if (appServer) {
+      appServer.closeAllConnections?.();
       await new Promise<void>((resolve) => appServer.close(() => resolve()));
     }
     await evictionWorker.stop();

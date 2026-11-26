@@ -65,6 +65,7 @@ describe('User Profile API & Security Suite', () => {
 
   after(async () => {
     if (server) {
+      server.closeAllConnections?.();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
     await User.deleteMany({});
