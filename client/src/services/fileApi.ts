@@ -149,7 +149,8 @@ export const fileApi = {
         );
       };
 
-      xhr.open(initRes.method || 'POST', initRes.uploadUrl, true);
+      const method = (initRes.method || 'POST').toUpperCase();
+      xhr.open(method, initRes.uploadUrl, true);
 
       const formData = new FormData();
       // Important: signed fields must precede file field for S3 POST policies
@@ -158,7 +159,11 @@ export const fileApi = {
           formData.append(key, value);
         }
       }
-      formData.append('file', file);
+      // Supabase Storage signed upload URLs expect PUT FormData with an unnamed binary field (''),
+      // whereas S3 Presigned POST expects POST FormData with field name 'file'.
+      const fileFieldName =
+        method === 'PUT' && initRes.uploadUrl.includes('/object/upload/sign/') ? '' : 'file';
+      formData.append(fileFieldName, file);
       xhr.send(formData);
     });
 

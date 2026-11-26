@@ -23,6 +23,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { createClient } from '@supabase/supabase-js';
 import { Redis } from 'ioredis';
 import { RoomServiceClient } from 'livekit-server-sdk';
 import { envSchema } from '../config/envSchema.js';
@@ -106,10 +107,24 @@ export function resolveFileSharingConfig(
       : String(rawEnable).trim().toLowerCase() === 'true';
 
   const configuredProvider = (rawEnv.STORAGE_PROVIDER || 'auto').trim().toLowerCase();
+  const dbProvider = (rawEnv.DB_PROVIDER || 'auto').trim().toLowerCase();
+  const hasSupabase =
+    dbProvider === 'supabase' ||
+    (dbProvider === 'auto' && Boolean(rawEnv.SUPABASE_URL?.trim()));
 
   let effectiveProvider: string;
   if (configuredProvider === 'auto') {
-    effectiveProvider = !enableFileSharing ? 'disabled' : isStrict ? 's3' : 'local';
+    if (!enableFileSharing) {
+      effectiveProvider = 'disabled';
+    } else if (
+      hasSupabase &&
+      !rawEnv.STORAGE_S3_ACCESS_KEY_ID?.trim() &&
+      !rawEnv.STORAGE_S3_ENDPOINT?.trim()
+    ) {
+      effectiveProvider = 'supabase';
+    } else {
+      effectiveProvider = isStrict ? 's3' : 'local';
+    }
   } else {
     effectiveProvider = configuredProvider;
   }
@@ -316,14 +331,23 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
   }
 
   // Worker-to-Backend Origin Authentication Secret (Phase 18 Sprint 06R & 06T: F-06Q-01, F-06S-01, F-06S-02)
-  const proxySecretResult = validateProxySecret(mergedEnv.PROXY_SECRET, isStrict);
-  if (!proxySecretResult.valid) {
+  const originAuthMode = (mergedEnv.ORIGIN_AUTH_MODE || 'proxy').trim().toLowerCase();
+  const requireProxySecret = isStrict && originAuthMode !== 'direct';
+  const proxySecretResult = validateProxySecret(mergedEnv.PROXY_SECRET, requireProxySecret);
+  if (originAuthMode === 'direct' && !mergedEnv.PROXY_SECRET) {
+    record(
+      'Security',
+      'PROXY_SECRET',
+      'PASS',
+      'Split-origin direct HTTPS mode configured (ORIGIN_AUTH_MODE=direct); Worker PROXY_SECRET not required.'
+    );
+  } else if (!proxySecretResult.valid) {
     record(
       'Security',
       'PROXY_SECRET',
       isStrict ? 'FAIL' : 'WARN',
       proxySecretResult.error || 'Invalid PROXY_SECRET configuration.',
-      'Generate a 64-hex character secret using "openssl rand -hex 32" and configure in both Koyeb/Render and Cloudflare Worker.'
+      'Generate a 64-hex character secret using "openssl rand -hex 32" and configure in both Koyeb/Render and Cloudflare Worker, or set ORIGIN_AUTH_MODE=direct for split-origin Vercel + Render deployment.'
     );
   } else if (mergedEnv.PROXY_SECRET) {
     record(
@@ -357,6 +381,34 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
         'File sharing is explicitly DISABLED (ENABLE_FILE_SHARING=false). S3 bucket versioning check will be skipped.'
       );
     }
+  } else if (fileSharingCfg.effectiveProvider === 'supabase') {
+    const sbBucket = (mergedEnv.SUPABASE_STORAGE_BUCKET || 'connectly-files').trim();
+    const hasSbCreds =
+      Boolean(mergedEnv.SUPABASE_URL?.trim()) &&
+      Boolean(mergedEnv.SUPABASE_SERVICE_ROLE_KEY?.trim() || mergedEnv.SUPABASE_ANON_KEY?.trim());
+    if (!hasSbCreds) {
+      record(
+        'Storage',
+        'File Sharing Gate',
+        isStrict ? 'FAIL' : 'WARN',
+        'STORAGE_PROVIDER=supabase requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+        'Configure Supabase credentials or disable file sharing via ENABLE_FILE_SHARING=false and STORAGE_PROVIDER=disabled.'
+      );
+    } else if (fileSharingCfg.enableFileSharing) {
+      record(
+        'Storage',
+        'File Sharing Gate',
+        'PASS',
+        `File sharing enabled with Supabase Storage provider (bucket: ${sbBucket}).`
+      );
+    } else {
+      record(
+        'Storage',
+        'File Sharing Gate',
+        'INFO',
+        'File sharing is disabled via ENABLE_FILE_SHARING=false.'
+      );
+    }
   } else if (fileSharingCfg.effectiveProvider === 's3') {
     if (fileSharingCfg.enableFileSharing) {
       record(
@@ -378,52 +430,111 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
       'Storage',
       'File Sharing Gate',
       'FAIL',
-      `Non-S3 storage provider '${fileSharingCfg.configuredProvider}' configured while ENABLE_FILE_SHARING=true in ${mode}.`,
-      'In staging/production, either configure STORAGE_PROVIDER=s3 or disable file sharing via ENABLE_FILE_SHARING=false and STORAGE_PROVIDER=disabled.'
+      `Unsupported storage provider '${fileSharingCfg.effectiveProvider}' configured while ENABLE_FILE_SHARING=true in ${mode}.`,
+      'In staging/production, configure STORAGE_PROVIDER=supabase (or s3), or disable file sharing via ENABLE_FILE_SHARING=false and STORAGE_PROVIDER=disabled.'
     );
   }
 
   // -------------------------------------------------------------------------
-  // 2. Database Connectivity & Replica Set Multi-Document Transactions
+  // 2. Database Connectivity & Multi-Document Transaction Capability
   // -------------------------------------------------------------------------
-  if (!quiet) console.log('\n[2/5] Testing MongoDB connectivity and transaction capabilities...');
-  const mongoUri = mergedEnv.MONGODB_URI || 'mongodb://127.0.0.1:27017/connectly';
-  try {
-    const conn = await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-    record('Database', 'MongoDB Connection', 'PASS', `Connected to database '${conn.connection.name}'.`);
+  const dbProvider = (mergedEnv.DB_PROVIDER || 'auto').trim().toLowerCase();
+  const useSupabaseDb =
+    dbProvider === 'supabase' ||
+    (dbProvider === 'auto' && Boolean(mergedEnv.SUPABASE_URL?.trim()));
 
-    const txSupported = await isReplicaSetTransactionsSupported(true);
-    if (txSupported) {
+  if (useSupabaseDb) {
+    if (!quiet) console.log('\n[2/5] Testing Supabase Cloud PostgreSQL connectivity...');
+    const sbUrl = mergedEnv.SUPABASE_URL?.trim();
+    const sbKey =
+      mergedEnv.SUPABASE_SERVICE_ROLE_KEY?.trim() || mergedEnv.SUPABASE_ANON_KEY?.trim();
+
+    if (!sbUrl || !sbKey) {
       record(
         'Database',
-        'Replica Set Transactions',
-        'PASS',
-        'Multi-document ACID transactions and change streams are fully supported.'
+        'Supabase Connection',
+        'FAIL',
+        'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY.',
+        'Configure Supabase credentials in environment variables.'
       );
     } else {
+      try {
+        const sb = createClient(sbUrl, sbKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { error } = await sb.from('users').select('id').limit(1);
+        if (error) {
+          record(
+            'Database',
+            'Supabase Connection',
+            'FAIL',
+            `Failed to query Supabase PostgreSQL: ${error.message}`,
+            'Verify SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and schema tables.'
+          );
+        } else {
+          record(
+            'Database',
+            'Supabase Connection',
+            'PASS',
+            `Connected to Supabase Cloud PostgreSQL (${sbUrl}).`
+          );
+          record(
+            'Database',
+            'PostgreSQL ACID Transactions',
+            'PASS',
+            'Multi-document ACID transactions are natively supported by Supabase PostgreSQL.'
+          );
+        }
+      } catch (err) {
+        record(
+          'Database',
+          'Supabase Connection',
+          'FAIL',
+          `Failed to connect to Supabase: ${err instanceof Error ? err.message : String(err)}`,
+          'Verify SUPABASE_URL and network access.'
+        );
+      }
+    }
+  } else {
+    if (!quiet) console.log('\n[2/5] Testing MongoDB connectivity and transaction capabilities...');
+    const mongoUri = mergedEnv.MONGODB_URI || 'mongodb://127.0.0.1:27017/connectly';
+    try {
+      const conn = await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
+      record('Database', 'MongoDB Connection', 'PASS', `Connected to database '${conn.connection.name}'.`);
+
+      const txSupported = await isReplicaSetTransactionsSupported(true);
+      if (txSupported) {
+        record(
+          'Database',
+          'Replica Set Transactions',
+          'PASS',
+          'Multi-document ACID transactions and change streams are fully supported.'
+        );
+      } else {
+        record(
+          'Database',
+          'Replica Set Transactions',
+          isStrict ? 'FAIL' : 'WARN',
+          'Connected to Standalone MongoDB. Multi-document transactions are unavailable.',
+          isStrict
+            ? 'Staging and production deployment strictly require a MongoDB Replica Set (e.g. MongoDB Atlas M0 3-node cluster).'
+            : 'Replica set is recommended but not mandatory for local development.'
+        );
+      }
+    } catch (err) {
       record(
         'Database',
-        'Replica Set Transactions',
-        isStrict ? 'FAIL' : 'WARN',
-        'Connected to Standalone MongoDB. Multi-document transactions are unavailable.',
-        isStrict
-          ? 'Staging and production deployment strictly require a MongoDB Replica Set (e.g. MongoDB Atlas M0 3-node cluster).'
-          : 'Replica set is recommended but not mandatory for local development.'
+        'MongoDB Connection',
+        'FAIL',
+        `Failed to connect to MongoDB: ${err instanceof Error ? err.message : String(err)}`,
+        'Verify MONGODB_URI and network access.'
       );
-    }
-  } catch (err) {
-    record(
-      'Database',
-      'MongoDB Connection',
-      'FAIL',
-      `Failed to connect to MongoDB: ${err instanceof Error ? err.message : String(err)}`,
-      'Verify MONGODB_URI and network access.'
-    );
-  } finally {
-    try {
-      await mongoose.disconnect();
-    } catch {
-      // Disconnect cleanup ignored
+    } finally {
+      try {
+        await mongoose.disconnect();
+      } catch {
+        // Disconnect cleanup ignored
+      }
     }
   }
 
@@ -432,14 +543,24 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
   // -------------------------------------------------------------------------
   if (!quiet) console.log('\n[3/5] Testing Redis connectivity, in-transit TLS, and Lua scripting...');
   const redisUrl = mergedEnv.REDIS_URL?.trim();
+  const multiInstanceSetting = (mergedEnv.SOCKET_IO_MULTI_INSTANCE || 'auto').trim().toLowerCase();
   if (!redisUrl) {
-    record(
-      'Redis',
-      'REDIS_URL Configuration',
-      isStrict ? 'FAIL' : 'WARN',
-      'REDIS_URL is not configured.',
-      'Distributed rate-limiting, presence, and pub/sub fail closed in production without Redis. Provide a TLS-enabled endpoint (e.g. Upstash Redis rediss://).'
-    );
+    if (multiInstanceSetting === 'false') {
+      record(
+        'Redis',
+        'REDIS_URL Configuration',
+        'INFO',
+        'Single-instance Socket.IO mode configured (SOCKET_IO_MULTI_INSTANCE=false); Redis is optional.'
+      );
+    } else {
+      record(
+        'Redis',
+        'REDIS_URL Configuration',
+        isStrict ? 'FAIL' : 'WARN',
+        'REDIS_URL is not configured.',
+        'Distributed rate-limiting, presence, and pub/sub fail closed in production without Redis. Provide a TLS-enabled endpoint (e.g. Upstash Redis rediss://), or set SOCKET_IO_MULTI_INSTANCE=false for single-instance deployment.'
+      );
+    }
   } else {
     try {
       validateRedisUrl(redisUrl, isStrict ? 'production' : 'development');
@@ -606,6 +727,57 @@ export async function runPreflight(options: PreflightOptions = {}): Promise<Pref
         'INFO',
         'File sharing is DISABLED. Object storage bucket versioning validation safely skipped.'
       );
+    }
+  } else if (fileSharingCfg.effectiveProvider === 'supabase') {
+    const sbBucket = (mergedEnv.SUPABASE_STORAGE_BUCKET || 'connectly-files').trim();
+    const sbUrl = mergedEnv.SUPABASE_URL?.trim();
+    const sbKey =
+      mergedEnv.SUPABASE_SERVICE_ROLE_KEY?.trim() || mergedEnv.SUPABASE_ANON_KEY?.trim();
+
+    if (!sbUrl || !sbKey) {
+      record(
+        'Storage',
+        'Supabase Storage Bucket',
+        isStrict ? 'FAIL' : 'WARN',
+        'Supabase Storage credentials missing.',
+        'Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+      );
+    } else {
+      try {
+        const sb = createClient(sbUrl, sbKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: buckets, error } = await sb.storage.listBuckets();
+        if (error) {
+          throw new Error(error.message);
+        }
+        const found = Array.isArray(buckets) && buckets.some((b) => b.name === sbBucket);
+        if (found) {
+          record(
+            'Storage',
+            'Supabase Storage Bucket',
+            'PASS',
+            `Supabase Storage bucket '${sbBucket}' is active.`
+          );
+        } else {
+          record(
+            'Storage',
+            'Supabase Storage Bucket',
+            isStrict ? 'FAIL' : 'WARN',
+            `Supabase Storage bucket '${sbBucket}' does not exist yet.`,
+            `Create private bucket '${sbBucket}' in Supabase Storage (or start server once with service role key to auto-create it).`
+          );
+        }
+      } catch (err) {
+        const errMsg = sanitizeSecrets(err instanceof Error ? err.message : String(err));
+        record(
+          'Storage',
+          'Supabase Storage Bucket',
+          isStrict ? 'FAIL' : 'WARN',
+          `Supabase Storage check failed: ${errMsg}`,
+          'Verify SUPABASE_SERVICE_ROLE_KEY permissions and network access.'
+        );
+      }
     }
   } else if (fileSharingCfg.effectiveProvider === 's3') {
     try {

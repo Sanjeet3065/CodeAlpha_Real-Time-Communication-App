@@ -5,6 +5,8 @@ import {
   type SecurityAuditOutcome,
   type ISecurityAuditEntry,
 } from '../models/SecurityAuditEntry.model.js';
+import { isDatabaseConnected } from '../config/database.js';
+import { isSupabaseActive } from '../config/supabase.js';
 import { logger } from './logger.js';
 
 /**
@@ -349,12 +351,12 @@ export class SecurityAuditLogger {
     event: SecurityAuditEvent,
     options?: { session?: mongoose.ClientSession }
   ): Promise<void> {
-    if (mongoose.connection?.readyState !== 1) {
+    if (!isDatabaseConnected() && !(isSupabaseActive() || mongoose.connection?.readyState === 1)) {
       throw new Error('Database is not connected');
     }
 
     try {
-      const doc = new SecurityAuditEntry({
+      const payload = {
         eventId: event.id,
         timestamp: new Date(event.timestamp),
         eventType: event.eventType,
@@ -368,11 +370,18 @@ export class SecurityAuditLogger {
         ip: event.ip || null,
         userAgent: event.userAgent || null,
         details: event.details || null,
-      });
+      };
+
+      if (isSupabaseActive()) {
+        await SecurityAuditEntry.create(payload);
+        return;
+      }
+
+      const doc = new SecurityAuditEntry(payload);
 
       await doc.save(options?.session ? { session: options.session } : undefined);
     } catch (dbErr) {
-      logger.error('[SecurityAudit] Failed to persist security audit event to MongoDB', {
+      logger.error('[SecurityAudit] Failed to persist security audit event to database', {
         metadata: {
           eventId: event.id,
           eventType: event.eventType,
@@ -490,7 +499,7 @@ export class SecurityAuditLogger {
     limit?: number;
     skip?: number;
   }): Promise<ISecurityAuditEntry[]> {
-    if (mongoose.connection?.readyState !== 1) {
+    if (!isDatabaseConnected() && mongoose.connection?.readyState !== 1) {
       return [];
     }
 

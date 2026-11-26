@@ -102,7 +102,7 @@ export interface PreferencesApiResponse {
 export const preferencesApi = {
   /**
    * Fetches persisted user preferences and authoritative server fieldVersions
-   * from the MongoDB backend.
+   * from the Supabase-backed backend.
    */
   async getPreferences(): Promise<UserPreferencesData | null> {
     try {
@@ -128,7 +128,7 @@ export const preferencesApi = {
   },
 
   /**
-   * Persists updated user preferences to the MongoDB backend with monotonic clientTimestamp,
+   * Persists updated user preferences to the Supabase-backed backend with monotonic clientTimestamp,
    * per-session clientSessionId, and server-controlled expectedFieldVersions so delayed
    * requests from previous sessions or other devices receive explicit HTTP 409 conflicts
    * instead of silently overwriting newer committed preferences.

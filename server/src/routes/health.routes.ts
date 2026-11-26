@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { isDatabaseConnected, getDatabaseState } from '../config/database.js';
+import { isSupabaseActive, pingSupabase } from '../config/supabase.js';
 import { isReplicaSetTransactionsSupported } from '../models/LiveKitRevocationEvent.model.js';
 import { env } from '../config/env.js';
 import { createRateLimitMessage } from '../middlewares/rateLimiter.js';
@@ -73,12 +74,14 @@ healthRouter.get('/health', (_req: Request, res: Response) => {
 // Readiness probe: Confirms that required infrastructure is operational
 // Protected with rate limiting, bounded timeout, and short-TTL single-flight Redis caching
 healthRouter.get(['/ready', '/health/ready'], readinessLimiter, async (_req: Request, res: Response) => {
-  const isConnected = isDatabaseConnected();
+  const supabaseMode = isSupabaseActive();
+  const isConnected = supabaseMode ? await pingSupabase() : isDatabaseConnected();
   const dbState = getDatabaseState();
 
   const checks: Record<string, any> = {
     database: {
-      status: dbState.status,
+      status: isConnected ? 'connected' : dbState.status,
+      provider: supabaseMode ? 'supabase' : 'mongo',
       connected: isConnected,
     },
   };
@@ -88,7 +91,11 @@ healthRouter.get(['/ready', '/health/ready'], readinessLimiter, async (_req: Req
 
   if (!isConnected) {
     isReady = false;
-    failureReason = 'MongoDB is unavailable or still connecting. Service not ready to accept traffic.';
+    failureReason = supabaseMode
+      ? 'Supabase is unavailable or unreachable. Service not ready to accept traffic.'
+      : 'MongoDB is unavailable or still connecting. Service not ready to accept traffic.';
+  } else if (supabaseMode) {
+    checks.database.transactionsSupported = true;
   } else {
     try {
       const txSupported = await isReplicaSetTransactionsSupported();
@@ -106,18 +113,24 @@ healthRouter.get(['/ready', '/health/ready'], readinessLimiter, async (_req: Req
     }
   }
 
-  // Redis check if configured or in production (bounded timeout & coalesced)
-  if (env.REDIS_URL || env.NODE_ENV === 'production') {
+  // Redis check if configured or required by multi-instance policy (bounded timeout & coalesced)
+  const redisRequired =
+    Boolean(env.REDIS_URL) ||
+    env.SOCKET_IO_ADAPTER === 'redis' ||
+    env.SOCKET_IO_MULTI_INSTANCE === 'true' ||
+    (env.SOCKET_IO_MULTI_INSTANCE === 'auto' && env.NODE_ENV === 'production');
+
+  if (redisRequired) {
     try {
       const redisOk = await checkRedisWithBoundedCache();
       checks.redis = { status: redisOk ? 'connected' : 'down' };
-      if (!redisOk && (env.NODE_ENV === 'production' || env.SOCKET_IO_ADAPTER === 'redis')) {
+      if (!redisOk && (redisRequired || env.SOCKET_IO_ADAPTER === 'redis')) {
         isReady = false;
         failureReason = failureReason || 'Redis is required in production/multi-instance but unavailable.';
       }
     } catch {
       checks.redis = { status: 'down' };
-      if (env.NODE_ENV === 'production' || env.SOCKET_IO_ADAPTER === 'redis') {
+      if (redisRequired || env.SOCKET_IO_ADAPTER === 'redis') {
         isReady = false;
         failureReason = failureReason || 'Redis connection check failed.';
       }

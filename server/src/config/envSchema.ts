@@ -7,6 +7,10 @@ export const envSchema = z
   .object({
     PORT: z.coerce.number().default(5000),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    DB_PROVIDER: z.enum(['auto', 'supabase', 'mongo']).default('auto'),
+    SUPABASE_URL: z.string().trim().optional().default(''),
+    SUPABASE_ANON_KEY: z.string().trim().optional().default(''),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().trim().optional().default(''),
     MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/connectly'),
     JWT_ACCESS_SECRET: z
       .string()
@@ -35,7 +39,8 @@ export const envSchema = z
       .union([z.boolean(), z.enum(['true', 'false'])])
       .default('true')
       .transform((val) => val === true || val === 'true'),
-    STORAGE_PROVIDER: z.enum(['auto', 's3', 'local', 'memory', 'disabled']).default('auto'),
+    STORAGE_PROVIDER: z.enum(['auto', 'supabase', 's3', 'local', 'memory', 'disabled']).default('auto'),
+    SUPABASE_STORAGE_BUCKET: z.string().trim().min(1).default('connectly-files'),
     STORAGE_S3_ENDPOINT: z.string().trim().optional().default(''),
     STORAGE_S3_REGION: z.string().trim().default('us-east-1'),
     STORAGE_S3_BUCKET: z.string().trim().default('connectly-files'),
@@ -69,6 +74,8 @@ export const envSchema = z
       .string()
       .trim()
       .optional(),
+    ORIGIN_AUTH_MODE: z.enum(['proxy', 'direct']).default('proxy'),
+    COOKIE_SAME_SITE: z.enum(['auto', 'lax', 'none']).default('auto'),
   })
   .refine(
     (data) => {
@@ -234,6 +241,10 @@ export const envSchema = z
       }
     }
 
+    const wantsSupabaseDb =
+      data.DB_PROVIDER === 'supabase' ||
+      (data.DB_PROVIDER === 'auto' && Boolean(data.SUPABASE_URL.trim()));
+
     // Phase 18 — File Sharing Feature Gate Validation
     if (data.ENABLE_FILE_SHARING && data.STORAGE_PROVIDER === 'disabled') {
       ctx.addIssue({
@@ -244,8 +255,26 @@ export const envSchema = z
       });
     }
 
-    // Phase 13 & 18 — Storage Provider Validation
+    // Phase 13 & 18 — Storage Provider & Database Validation
     if (data.NODE_ENV === 'production') {
+      if (data.DB_PROVIDER === 'supabase') {
+        if (!data.SUPABASE_URL.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['SUPABASE_URL'],
+            message: 'CRITICAL: DB_PROVIDER=supabase requires a valid SUPABASE_URL in production.',
+          });
+        }
+        if (!data.SUPABASE_SERVICE_ROLE_KEY.trim() && !data.SUPABASE_ANON_KEY.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['SUPABASE_SERVICE_ROLE_KEY'],
+            message:
+              'CRITICAL: DB_PROVIDER=supabase requires SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) in production.',
+          });
+        }
+      }
+
       if (data.STORAGE_PROVIDER === 'disabled') {
         if (data.ENABLE_FILE_SHARING) {
           ctx.addIssue({
@@ -260,15 +289,31 @@ export const envSchema = z
           code: z.ZodIssueCode.custom,
           path: ['STORAGE_PROVIDER'],
           message:
-            'CRITICAL: Local disk storage (STORAGE_PROVIDER=local) is prohibited in production. Configure STORAGE_PROVIDER=s3 with private object storage or STORAGE_PROVIDER=disabled with ENABLE_FILE_SHARING=false.',
+            'CRITICAL: Local disk storage (STORAGE_PROVIDER=local) is prohibited in production. Configure STORAGE_PROVIDER=supabase, STORAGE_PROVIDER=s3, or STORAGE_PROVIDER=disabled with ENABLE_FILE_SHARING=false.',
         });
       } else if (data.STORAGE_PROVIDER === 'memory') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['STORAGE_PROVIDER'],
           message:
-            'CRITICAL: In-memory storage (STORAGE_PROVIDER=memory) is prohibited in production. Configure STORAGE_PROVIDER=s3 with private object storage or STORAGE_PROVIDER=disabled with ENABLE_FILE_SHARING=false.',
+            'CRITICAL: In-memory storage (STORAGE_PROVIDER=memory) is prohibited in production. Configure STORAGE_PROVIDER=supabase, STORAGE_PROVIDER=s3, or STORAGE_PROVIDER=disabled with ENABLE_FILE_SHARING=false.',
         });
+      } else if (
+        data.STORAGE_PROVIDER === 'supabase' ||
+        (data.STORAGE_PROVIDER === 'auto' &&
+          data.ENABLE_FILE_SHARING &&
+          wantsSupabaseDb &&
+          !data.STORAGE_S3_ACCESS_KEY_ID &&
+          !data.STORAGE_S3_ENDPOINT)
+      ) {
+        if (!data.SUPABASE_URL.trim() || (!data.SUPABASE_SERVICE_ROLE_KEY.trim() && !data.SUPABASE_ANON_KEY.trim())) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['SUPABASE_URL'],
+            message:
+              'CRITICAL: Supabase Storage requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in production.',
+          });
+        }
       } else if (
         data.STORAGE_PROVIDER === 's3' ||
         (data.STORAGE_PROVIDER === 'auto' && data.ENABLE_FILE_SHARING)
@@ -295,8 +340,8 @@ export const envSchema = z
         });
       }
 
-      // Phase 18 Sprint 06H — Production Transaction Enforcement
-      if (data.REQUIRE_TRANSACTIONS === 'false') {
+      // Phase 18 Sprint 06H — Production Transaction Enforcement (MongoDB mode only; Supabase PostgreSQL supports ACID natively)
+      if (!wantsSupabaseDb && data.REQUIRE_TRANSACTIONS === 'false') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['REQUIRE_TRANSACTIONS'],
@@ -305,14 +350,18 @@ export const envSchema = z
         });
       }
 
-      // Phase 18 Sprint 06T: Mandatory 64-hex non-placeholder PROXY_SECRET in production (F-06S-01, F-06S-02)
-      const proxySecretResult = validateProxySecret(data.PROXY_SECRET, true);
-      if (!proxySecretResult.valid) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['PROXY_SECRET'],
-          message: proxySecretResult.error!,
-        });
+      // Phase 18 Sprint 06T: Mandatory 64-hex non-placeholder PROXY_SECRET in production proxy mode.
+      // When ORIGIN_AUTH_MODE='direct' (split-origin Vercel + Render deployment), PROXY_SECRET is optional unless supplied.
+      const requireProxySecret = data.ORIGIN_AUTH_MODE !== 'direct';
+      if (requireProxySecret || data.PROXY_SECRET) {
+        const proxySecretResult = validateProxySecret(data.PROXY_SECRET, requireProxySecret);
+        if (!proxySecretResult.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['PROXY_SECRET'],
+            message: proxySecretResult.error!,
+          });
+        }
       }
     } else if (data.PROXY_SECRET) {
       // Non-production environment: if PROXY_SECRET is explicitly configured, enforce format and placeholder checks

@@ -124,7 +124,7 @@ export const DashboardPlaceholderPage: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9]/60">
                 <dt className="text-xs font-medium text-[#6B8092] flex items-center gap-1.5 mb-1">
                   <Key className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>MongoDB User Identifier</span>
+                  <span>User Identifier</span>
                 </dt>
                 <dd className="font-mono text-xs font-semibold text-[#172B3A] truncate">
                   {user?.id}

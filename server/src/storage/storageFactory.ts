@@ -1,7 +1,9 @@
 import type { IStorageProvider } from './storageProvider.interface.js';
 import { S3StorageProvider } from './s3StorageProvider.js';
+import { SupabaseStorageProvider } from './supabaseStorageProvider.js';
 import { LocalStorageProvider } from './localStorageProvider.js';
 import { MemoryStorageProvider } from './memoryStorageProvider.js';
+import { isSupabaseActive } from '../config/supabase.js';
 import { env } from '../config/env.js';
 import { AppError } from '../utils/errors.js';
 
@@ -17,9 +19,11 @@ export function getStorageProvider(): IStorageProvider {
     rawProvider === 'auto'
       ? env.ENABLE_FILE_SHARING === false
         ? 'disabled'
-        : env.NODE_ENV === 'production'
-          ? 's3'
-          : 'local'
+        : isSupabaseActive() && !env.STORAGE_S3_ACCESS_KEY_ID && !env.STORAGE_S3_ENDPOINT
+          ? 'supabase'
+          : env.NODE_ENV === 'production'
+            ? 's3'
+            : 'local'
       : rawProvider;
 
   if (providerType === 'disabled') {
@@ -28,6 +32,14 @@ export function getStorageProvider(): IStorageProvider {
       503,
       'STORAGE_DISABLED'
     );
+  }
+
+  if (providerType === 'supabase') {
+    defaultStorageProvider = new SupabaseStorageProvider({
+      bucket: env.SUPABASE_STORAGE_BUCKET,
+      maxFileSizeBytes: env.STORAGE_MAX_FILE_SIZE_BYTES,
+    });
+    return defaultStorageProvider;
   }
 
   if (providerType === 's3') {

@@ -64,15 +64,23 @@ export function createApp(options?: {
     })
   );
 
-  // CORS Configuration (Production restricts strictly to configured CLIENT_ORIGIN)
-  const allowedOrigins =
+  // CORS Configuration (Production restricts strictly to configured CLIENT_ORIGIN, normalized without trailing slash)
+  const normalizeCorsOrigin = (val: string) => {
+    try {
+      return new URL(val.trim()).origin;
+    } catch {
+      return val.trim().replace(/\/+$/, '');
+    }
+  };
+  const allowedOrigins = (
     env.NODE_ENV === 'production'
       ? [env.CLIENT_ORIGIN]
-      : [env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'];
+      : [env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173']
+  ).map(normalizeCorsOrigin);
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(normalizeCorsOrigin(origin))) {
           callback(null, true);
         } else {
           callback(null, false);

@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: connectly-backend
+    runtime: docker
+    dockerfilePath: server/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: DB_PROVIDER
+        value: supabase
+      - key: STORAGE_PROVIDER
+        value: supabase
+      - key: SUPABASE_STORAGE_BUCKET
+        value: connectly-files
+      - key: ENABLE_FILE_SHARING
+        value: "true"
+      - key: ORIGIN_AUTH_MODE
+        value: direct
+      - key: COOKIE_SAME_SITE
+        value: auto
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SOCKET_IO_MULTI_INSTANCE
+        value: "false"
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CONNECTLY_ENCRYPTION_KEY_V1
+        sync: false

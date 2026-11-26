@@ -11,7 +11,7 @@ import type {
 } from '@/types/meeting';
 
 interface VideoConferenceGridProps {
-  /** Authoritative admitted participant roster from CONNECTLY MongoDB/Socket.IO SSOT */
+  /** Authoritative admitted participant roster from CONNECTLY Supabase/Socket.IO SSOT */
   admittedParticipants: MeetingParticipantInfo[];
   /** Live media track states observed from LiveKit SFU */
   livekitParticipants: ParticipantMediaState[];

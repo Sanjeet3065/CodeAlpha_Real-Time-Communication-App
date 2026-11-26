@@ -75,6 +75,22 @@ export function buildConnectSrcAllowlist(envConfig: CspConfigInput): string[] {
   addServiceOrigins(envConfig.LIVEKIT_PUBLIC_URL);
   addServiceOrigins(envConfig.LIVEKIT_URL);
 
+  // Supabase Storage origins for direct signed uploads & downloads
+  if (
+    envConfig.SUPABASE_URL &&
+    (envConfig.STORAGE_PROVIDER === 'supabase' || envConfig.STORAGE_PROVIDER === 'auto' || !envConfig.STORAGE_PROVIDER)
+  ) {
+    try {
+      const sbUrl = new URL(envConfig.SUPABASE_URL.trim());
+      const isLoopback = sbUrl.hostname === 'localhost' || sbUrl.hostname === '127.0.0.1';
+      if (!isProduction || !isLoopback) {
+        sources.add(sbUrl.origin);
+      }
+    } catch {
+      /* Ignore malformed SUPABASE_URL */
+    }
+  }
+
   // S3 Storage provider endpoints for direct presigned client uploads
   if (envConfig.STORAGE_PROVIDER === 's3') {
     if (envConfig.STORAGE_S3_ENDPOINT) {
@@ -102,21 +118,34 @@ export function buildConnectSrcAllowlist(envConfig: CspConfigInput): string[] {
  * Returns the hardened Helmet CSP configuration directives.
  */
 export function getCspDirectives(envConfig: CspConfigInput) {
-  // S3 storage origins for images if S3 is active
-  const s3ImageSources: string[] = [];
+  // Storage origins for images (Supabase Storage or S3)
+  const storageImageSources: string[] = [];
+  if (
+    envConfig.SUPABASE_URL &&
+    (envConfig.STORAGE_PROVIDER === 'supabase' || envConfig.STORAGE_PROVIDER === 'auto' || !envConfig.STORAGE_PROVIDER)
+  ) {
+    try {
+      const sbUrl = new URL(envConfig.SUPABASE_URL.trim());
+      if (envConfig.NODE_ENV !== 'production' || (sbUrl.hostname !== 'localhost' && sbUrl.hostname !== '127.0.0.1')) {
+        storageImageSources.push(sbUrl.origin);
+      }
+    } catch {
+      /* Ignore malformed SUPABASE_URL */
+    }
+  }
   if (envConfig.STORAGE_PROVIDER === 's3') {
     if (envConfig.STORAGE_S3_ENDPOINT) {
       try {
         const url = new URL(envConfig.STORAGE_S3_ENDPOINT.trim());
-        s3ImageSources.push(url.origin);
+        storageImageSources.push(url.origin);
       } catch {
         /* Ignore malformed optional S3 endpoint */
       }
     } else if (envConfig.STORAGE_S3_BUCKET) {
       const bucket = envConfig.STORAGE_S3_BUCKET.trim();
       const region = (envConfig.STORAGE_S3_REGION || 'us-east-1').trim();
-      s3ImageSources.push(`https://${bucket}.s3.${region}.amazonaws.com`);
-      s3ImageSources.push(`https://${bucket}.s3.amazonaws.com`);
+      storageImageSources.push(`https://${bucket}.s3.${region}.amazonaws.com`);
+      storageImageSources.push(`https://${bucket}.s3.amazonaws.com`);
     }
   }
 
@@ -129,7 +158,7 @@ export function getCspDirectives(envConfig: CspConfigInput) {
     // In pre-built static client single-page applications without server-side templating,
     // request-bound nonce injection is not possible. 'unsafe-eval' is strictly forbidden.
     styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", 'data:', 'blob:', ...s3ImageSources],
+    imgSrc: ["'self'", 'data:', 'blob:', ...storageImageSources],
     fontSrc: ["'self'", 'data:'],
     connectSrc: buildConnectSrcAllowlist(envConfig),
     mediaSrc: ["'self'", 'blob:', 'mediastream:'],

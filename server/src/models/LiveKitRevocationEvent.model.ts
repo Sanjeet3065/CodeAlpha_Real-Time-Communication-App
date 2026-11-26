@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model, Types, type ClientSession } from 'mongoose';
 import { ensureMeetingRealtimeOutboxReady } from './MeetingRealtimeEvent.model.js';
+import { isSupabaseActive } from '../config/supabase.js';
 import { logger } from '../utils/logger.js';
 
 export const LIVEKIT_REVOCATION_EVENT_TTL_SECONDS = 86400;
@@ -106,6 +107,9 @@ export function setReplicaSetTransactionsSupportedForTesting(supported: boolean 
 export async function isReplicaSetTransactionsSupported(
   forceRefresh = false
 ): Promise<boolean> {
+  if (isSupabaseActive()) {
+    return true;
+  }
   const conn = LiveKitRevocationEvent.db;
   const connId = typeof conn?.id === 'number' ? conn.id : null;
   if (
@@ -400,6 +404,9 @@ async function verifyRevocationEventIndexes(): Promise<void> {
  * calls, and verifies final index options fail-closed before marking initialization ready.
  */
 export async function ensureRevocationCollectionsReady(): Promise<void> {
+  if (isSupabaseActive()) {
+    return;
+  }
   const conn = LiveKitRevocationEvent.db;
   const connId = typeof conn?.id === 'number' ? conn.id : null;
   if (cachedCollectionsReadyConnId === connId && conn?.readyState === 1) {

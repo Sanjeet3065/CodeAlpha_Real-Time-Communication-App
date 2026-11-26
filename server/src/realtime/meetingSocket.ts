@@ -125,15 +125,23 @@ export class MeetingRealtimeHub {
   }
 
   public attach(httpServer: HttpServer): SocketIOServer {
-    const allowedOrigins =
+    const normalizeCorsOrigin = (val: string) => {
+      try {
+        return new URL(val.trim()).origin;
+      } catch {
+        return val.trim().replace(/\/+$/, '');
+      }
+    };
+    const allowedOrigins = (
       env.NODE_ENV === 'production'
         ? [env.CLIENT_ORIGIN]
-        : [env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'];
+        : [env.CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173']
+    ).map(normalizeCorsOrigin);
 
     const io = new SocketIOServer(httpServer, {
       cors: {
         origin: (origin, callback) => {
-          if (!origin || allowedOrigins.includes(origin)) {
+          if (!origin || allowedOrigins.includes(normalizeCorsOrigin(origin))) {
             callback(null, true);
           } else {
             callback(new Error('Origin not allowed by CORS'));

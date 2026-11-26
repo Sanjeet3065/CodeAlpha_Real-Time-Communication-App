@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+import { isSupabaseActive } from '../config/supabase.js';
 
 export type MeetingRealtimeEventType =
   | 'ADMISSION_APPROVED'
@@ -191,6 +192,9 @@ export const REQUIRED_MEETING_OUTBOX_INDEX_NAMES = [
  * with degraded or unsafe outbox indexing.
  */
 export async function ensureMeetingRealtimeOutboxReady(): Promise<void> {
+  if (isSupabaseActive()) {
+    return;
+  }
   try {
     await MeetingRealtimeEvent.createCollection();
   } catch (err: any) {

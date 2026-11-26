@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
 import { env } from './env.js';
+import {
+  disconnectSupabase,
+  initSupabase,
+  isSupabaseActive,
+  isSupabaseConnected,
+  pingSupabase,
+} from './supabase.js';
+import { installSupabaseBridge } from '../repositories/supabaseModelBridge.js';
 
 let isListenersAttached = false;
 
@@ -27,6 +35,25 @@ function attachConnectionListeners(): void {
 }
 
 export async function connectDatabase(customUri?: string): Promise<typeof mongoose> {
+  if (!customUri && env.DB_PROVIDER === 'supabase' && !isSupabaseActive()) {
+    throw new Error(
+      '[Database] Fatal Supabase configuration error: DB_PROVIDER=supabase requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY.'
+    );
+  }
+
+  if (!customUri && isSupabaseActive()) {
+    initSupabase();
+    installSupabaseBridge();
+    const ok = await pingSupabase();
+    if (!ok) {
+      throw new Error(
+        '[Database] Fatal Supabase connection error: unable to reach Supabase Cloud project.'
+      );
+    }
+    console.log(`[Database] Supabase Cloud PostgreSQL connected (${env.SUPABASE_URL})`);
+    return mongoose;
+  }
+
   try {
     mongoose.set('strictQuery', true);
     attachConnectionListeners();
@@ -48,6 +75,10 @@ export async function connectDatabase(customUri?: string): Promise<typeof mongoo
 }
 
 export async function disconnectDatabase(): Promise<void> {
+  if (isSupabaseActive()) {
+    await disconnectSupabase();
+    console.log('[Database] Supabase client disconnected cleanly');
+  }
   try {
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
@@ -59,13 +90,25 @@ export async function disconnectDatabase(): Promise<void> {
 }
 
 export function isDatabaseConnected(): boolean {
+  if (isSupabaseActive()) {
+    return isSupabaseConnected();
+  }
   return mongoose.connection.readyState === 1;
 }
 
 export function getDatabaseState(): {
   status: 'connected' | 'connecting' | 'disconnecting' | 'disconnected' | 'unknown';
   readyState: number;
+  provider?: 'supabase' | 'mongo';
 } {
+  if (isSupabaseActive()) {
+    const connected = isSupabaseConnected();
+    return {
+      status: connected ? 'connected' : 'disconnected',
+      readyState: connected ? 1 : 0,
+      provider: 'supabase',
+    };
+  }
   const readyState = mongoose.connection.readyState;
   switch (readyState) {
     case 1:

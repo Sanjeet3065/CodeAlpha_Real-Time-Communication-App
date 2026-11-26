@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { isSupabaseActive } from '../config/supabase.js';
 import type { SecurityEventType, SecuritySeverity } from '../utils/securityAudit.js';
 
 export type SecurityAuditOutcome = 'SUCCESS' | 'FAILURE' | 'ESCALATED' | 'DENIED' | 'INFO';
@@ -112,6 +113,9 @@ export const SecurityAuditEntry: Model<ISecurityAuditEntry> =
   mongoose.model<ISecurityAuditEntry>('SecurityAuditEntry', SecurityAuditEntrySchema);
 
 export async function ensureSecurityAuditReady(): Promise<void> {
+  if (isSupabaseActive()) {
+    return;
+  }
   if (mongoose.connection.readyState === 1) {
     await SecurityAuditEntry.init().catch(() => {});
   }

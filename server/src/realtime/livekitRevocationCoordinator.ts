@@ -1,5 +1,6 @@
 import mongoose, { Types, type ClientSession } from 'mongoose';
 import { env } from '../config/env.js';
+import { isSupabaseActive } from '../config/supabase.js';
 import {
   allocateNextRevocationSeq,
   ensureRevocationCollectionsReady,
@@ -947,6 +948,10 @@ export class LiveKitRevocationCoordinator {
 
   private async tryAttachChangeStream(): Promise<void> {
     if (!this.running) return;
+    if (isSupabaseActive()) {
+      this.transportMode = 'cursor_poll';
+      return;
+    }
     const isReconnect = this.changeStreamAttachCount > 0;
     try {
       const txSupported = await isReplicaSetTransactionsSupported();

@@ -189,7 +189,7 @@ export const SettingsPage: React.FC = () => {
         localStorage.setItem(userKey, JSON.stringify(preferencesPayload));
       }
 
-      // 2. Persist to authoritative MongoDB backend with monotonic clientTimestamp
+      // 2. Persist to authoritative Supabase-backed backend with monotonic clientTimestamp
       const cloudRes = await preferencesApi.updatePreferences({
         defaultAudioMuted: audioMuted,
         defaultVideoOff: videoOff,

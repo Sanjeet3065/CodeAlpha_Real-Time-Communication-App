@@ -4,7 +4,7 @@ import type {
   WhiteboardOperation,
 } from '@/types/whiteboard';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL as string) || '/api/v1';
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const token = authStorage.getAccessToken();

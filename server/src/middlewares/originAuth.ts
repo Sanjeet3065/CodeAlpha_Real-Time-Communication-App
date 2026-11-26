@@ -69,11 +69,15 @@ export function createOriginAuthMiddleware(options?: {
 }) {
   return function originAuthMiddleware(req: Request, res: Response, next: NextFunction): void {
     const isProduction = env.NODE_ENV === 'production';
+    const isDirectMode =
+      options?.proxySecretOverride === undefined && env.ORIGIN_AUTH_MODE === 'direct';
     const activeSecret =
       options?.proxySecretOverride !== undefined ? options.proxySecretOverride : env.PROXY_SECRET;
 
-    // F-06S-01: Defensive fail-closed in production if PROXY_SECRET is missing or empty
-    if (isProduction && (!activeSecret || !activeSecret.trim())) {
+    // F-06S-01: Defensive fail-closed in production proxy mode if PROXY_SECRET is missing or empty.
+    // Split-origin direct mode (ORIGIN_AUTH_MODE=direct, e.g. Vercel + Render without Cloudflare Worker)
+    // enforces strict HTTPS CORS + Origin/Referer CSRF + JWT authentication without a proxy secret.
+    if (isProduction && !isDirectMode && (!activeSecret || !activeSecret.trim())) {
       logger.error('[OriginAuth] CRITICAL CONFIGURATION ERROR: PROXY_SECRET is missing in production mode.');
       res.status(500).json({
         status: 500,
@@ -84,7 +88,7 @@ export function createOriginAuthMiddleware(options?: {
       return;
     }
 
-    // If no secret is configured in development/test mode, origin authentication is inactive
+    // If no secret is configured (local dev/test OR explicit ORIGIN_AUTH_MODE=direct), proceed
     if (!activeSecret) {
       return next();
     }
