@@ -1,6 +1,9 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { envSchema } from '../config/envSchema.js';
 import { getCspDirectives } from '../config/csp.js';
 import { getStorageProvider, setStorageProvider } from '../storage/storageFactory.js';
@@ -142,5 +145,22 @@ describe('Supabase-First Architecture Unit Suite', () => {
     });
     assert.strictEqual(proxyCookies.sameSite, 'lax');
     assert.strictEqual(proxyCookies.secure, true);
+  });
+
+  it('10. specifies Node.js >=22 base image in server/Dockerfile for native WebSocket required by Supabase SDK', () => {
+    const dockerfilePath = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../../Dockerfile'
+    );
+    const dockerfile = fs.readFileSync(dockerfilePath, 'utf8');
+    const fromMatches = [...dockerfile.matchAll(/^FROM\s+node:(\d+)-alpine\b/gm)];
+    assert.strictEqual(fromMatches.length, 2, 'Expected both builder and runner FROM node:<major>-alpine stages');
+    for (const match of fromMatches) {
+      const major = Number(match[1]);
+      assert.ok(
+        major >= 22,
+        `Expected Docker Node major version >= 22 for native globalThis.WebSocket, found node:${major}-alpine`
+      );
+    }
   });
 });

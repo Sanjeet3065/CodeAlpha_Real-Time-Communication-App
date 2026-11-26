@@ -67,7 +67,7 @@ flowchart TD
 ### 2.2. Backend Application Tier (Node.js & Socket.IO)
 - **Target Platform:** **Koyeb Web Service** (validated primary platform for zero-budget showcase) or **Render / AWS ECS (Fargate)** containerized deployment (see [DEPLOYMENT_GUIDE.md](file:///c:/Users/SANJEET%20CHAUHAN/Desktop/code%20Alpha/antigravity%20communication%20application/docs/DEPLOYMENT_GUIDE.md)).
 - **Initial Showcase Baseline (`max_scale = 1`):** Zero-budget deployments run strictly as a single backend container instance to align with free-tier quotas (Koyeb Free Tier `1` service, Upstash Free `500k` commands/month).
-- **Packaging:** Multi-stage Docker image built on `node:20-alpine`:
+- **Packaging:** Multi-stage Docker image built on `node:24-alpine`:
   - Stage 1: Build & TypeScript compilation (`tsc`).
   - Stage 2: Minimal runtime image running as non-root user (`USER node`).
 - **Clustering & Sticky Sessions:** Application Load Balancer enforces cookie-based sticky sessions for the WebSocket upgrade handshake. Socket.IO instances sync state via `@socket.io/redis-adapter`.

@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------
 # Stage 1: Build & Compile TypeScript
 # -----------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -31,7 +31,7 @@ RUN npm prune --omit=dev
 # -----------------------------------------------------------------
 # Stage 2: Production Minimal Runtime
 # -----------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
@@ -58,7 +58,7 @@ EXPOSE 5000
 
 # Docker native liveness healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://localhost:5000/api/v1/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+  CMD node -e "fetch('http://localhost:' + (process.env.PORT || 5000) + '/api/v1/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 # Start the CONNECTLY API server under dumb-init
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]

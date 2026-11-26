@@ -52,7 +52,7 @@ antigravity communication application/
 ├── .gitignore / .dockerignore      # Secret & build exclusions (.env.*, proxy/.dev.vars, !.env*.example)
 ├── package.json                    # Root npm workspace scripts
 ├── server/
-│   ├── Dockerfile                  # Two-stage node:20-alpine container build (non-root USER node)
+│   ├── Dockerfile                  # Two-stage node:24-alpine container build (non-root USER node)
 │   ├── eslint.config.js            # Backend ESLint 9 flat configuration
 │   ├── .env.example                # Backend local env template
 │   ├── .env.production.example     # Backend production env template
@@ -81,7 +81,7 @@ antigravity communication application/
 ## 3. Getting Started (Local Development)
 
 ### Prerequisites
-- **Node.js:** v22.6+ / v24 LTS (`ci.yml` runs Node 24 for client `--experimental-strip-types` test support; `server/Dockerfile` builds compiled JS on `node:20-alpine`)
+- **Node.js:** v22.6+ / v24 LTS (`ci.yml` runs Node 24 for client `--experimental-strip-types` test support; `server/Dockerfile` builds and runs compiled JS on `node:24-alpine` for native WebSocket support required by Supabase JS)
 - **npm:** v9+
 - **MongoDB:** Standalone local MongoDB on `127.0.0.1:27017` plus Replica Set (`rs0`) on `127.0.0.1:27018` for ACID transaction and preflight test paths
 - **Redis (optional in dev, required for strict staging/production):** Local or TLS endpoint
