@@ -10,6 +10,7 @@ import {
   WifiOff,
   Clock,
 } from 'lucide-react';
+import { buildMeetingJoinUrl } from '@/lib/meetingLink';
 import type { MeetingSummary } from '@/types/meeting';
 
 interface MeetingHeaderProps {
@@ -31,10 +32,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
 }) => {
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
 
-  const invitationLink =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/join/${meeting.meetingCode}`
-      : meeting.joinUrl;
+  const invitationLink = buildMeetingJoinUrl(meeting.meetingCode, meeting.joinUrl);
 
   const copyText = async (value: string, kind: 'code' | 'link') => {
     try {
@@ -47,11 +45,11 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#101820]/95 backdrop-blur-md border-b border-white/10 px-3 sm:px-6 py-3">
+    <header className="sticky top-0 z-30 bg-[#111316]/95 border-b border-white/10 px-3 sm:px-6 py-3">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
         {/* Left: Brand + Meeting Title + Code */}
         <div className="flex items-center gap-3 min-w-[175px] flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#168B83] text-white flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#2F6F68] text-white flex items-center justify-center flex-shrink-0">
             <Video className="w-4 h-4" aria-hidden="true" />
           </div>
           <div className="min-w-0">
@@ -60,13 +58,13 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                 {meeting.title}
               </h1>
               {meeting.isLocked && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D94F4F]/20 text-[#F7A3A3] border border-[#D94F4F]/30">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#C24D4D]/20 text-[#D46A6A] border border-[#C24D4D]/30">
                   <Lock className="w-3 h-3" aria-hidden="true" />
                   Locked
                 </span>
               )}
               {meeting.settings.waitingRoomEnabled && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#168B83]/20 text-[#7CE5DB] border border-[#168B83]/30">
+                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#2F6F68]/20 text-[#5FA399] border border-[#5FA399]/30">
                   <Shield className="w-3 h-3" aria-hidden="true" />
                   Waiting Room On
                 </span>
@@ -87,7 +85,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
                 type="button"
                 onClick={() => copyText(meeting.meetingCode, 'code')}
                 aria-label={`Copy meeting code ${meeting.meetingCode}`}
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-300 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] rounded whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-300 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] rounded whitespace-nowrap"
               >
                 <span>{meeting.meetingCode}</span>
                 {copied === 'code' ? (
@@ -116,7 +114,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
           <button
             type="button"
             onClick={() => copyText(invitationLink, 'link')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#253746] hover:bg-[#2F4658] border border-white/10 text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             {copied === 'link' ? (
               <>
@@ -125,7 +123,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
               </>
             ) : (
               <>
-                <LinkIcon className="w-3.5 h-3.5 text-[#7CE5DB]" />
+                <LinkIcon className="w-3.5 h-3.5 text-[#5FA399]" />
                 <span className="hidden sm:inline">Copy Invite Link</span>
                 <span className="sm:hidden">Invite</span>
               </>
@@ -136,9 +134,9 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
             type="button"
             onClick={() => onToggleMobileSidebar('participants')}
             aria-label={`Participants (${participantCount})`}
-            className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#253746] hover:bg-[#2F4658] border border-white/10 text-xs font-semibold text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-xs font-semibold text-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
-            <Users className="w-3.5 h-3.5 text-[#7CE5DB]" />
+            <Users className="w-3.5 h-3.5 text-[#5FA399]" />
             <span className="font-mono">
               {participantCount}/{meeting.maxParticipants}
             </span>

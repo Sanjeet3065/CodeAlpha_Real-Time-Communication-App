@@ -90,11 +90,11 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md rounded-2xl bg-[#253746] border border-white/15 shadow-xl text-white overflow-hidden"
+        className="w-full max-w-md rounded-2xl bg-[#1C1F24] border border-white/15 shadow-xl text-white overflow-hidden"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               Audio &amp; Video Devices
             </h2>
             {isSwitching && (
-              <Loader2 className="w-4 h-4 animate-spin text-[#7CE5DB]" aria-label="Switching device" />
+              <Loader2 className="w-4 h-4 animate-spin text-[#5FA399]" aria-label="Switching device" />
             )}
           </div>
           <div className="flex items-center gap-1.5">
@@ -112,7 +112,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               disabled={devices.isEnumerating}
               aria-label="Refresh device list"
               title="Refresh devices"
-              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${devices.isEnumerating ? 'animate-spin' : ''}`}
@@ -124,7 +124,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close device settings"
-              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
             >
               <X className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -135,9 +135,9 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
           {mediaError && (
             <div
               role="alert"
-              className="p-3 rounded-xl bg-[#D94F4F]/20 border border-[#D94F4F]/40 text-xs text-rose-100 flex items-start gap-2"
+              className="p-3 rounded-xl bg-[#C24D4D]/20 border border-[#C24D4D]/40 text-xs text-rose-100 flex items-start gap-2"
             >
-              <AlertCircle className="w-4 h-4 text-[#F7A3A3] flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <AlertCircle className="w-4 h-4 text-[#D46A6A] flex-shrink-0 mt-0.5" aria-hidden="true" />
               <span>{mediaError}</span>
             </div>
           )}
@@ -146,9 +146,9 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
             <div
               role="status"
               aria-live="polite"
-              className="p-3 rounded-xl bg-[#168B83]/20 border border-[#168B83]/40 text-xs text-[#9BF3EA] flex items-start gap-2"
+              className="p-3 rounded-xl bg-[#2F6F68]/20 border border-[#5FA399]/40 text-xs text-[#5FA399] flex items-start gap-2"
             >
-              <CheckCircle2 className="w-4 h-4 text-[#7CE5DB] flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <CheckCircle2 className="w-4 h-4 text-[#5FA399] flex-shrink-0 mt-0.5" aria-hidden="true" />
               <span>{mediaNotice}</span>
             </div>
           )}
@@ -165,7 +165,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               htmlFor="meeting-mic-select"
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-200"
             >
-              <Mic className="w-3.5 h-3.5 text-[#7CE5DB]" aria-hidden="true" />
+              <Mic className="w-3.5 h-3.5 text-[#5FA399]" aria-hidden="true" />
               <span>Microphone</span>
             </label>
             {devices.audioInputs.length > 0 ? (
@@ -174,7 +174,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 value={devices.selectedAudioInputId}
                 disabled={isSwitching}
                 onChange={(e) => onSelectDevice('audioinput', e.target.value)}
-                className="w-full rounded-xl bg-[#101820] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+                className="w-full rounded-xl bg-[#111316] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
               >
                 {devices.audioInputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -183,7 +183,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-slate-400 bg-[#101820]/60 rounded-xl px-3 py-2.5 border border-white/10">
+              <p className="text-xs text-slate-400 bg-[#111316]/60 rounded-xl px-3 py-2.5 border border-white/10">
                 No microphone detected.
               </p>
             )}
@@ -195,7 +195,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               htmlFor="meeting-camera-select"
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-200"
             >
-              <Video className="w-3.5 h-3.5 text-[#7CE5DB]" aria-hidden="true" />
+              <Video className="w-3.5 h-3.5 text-[#5FA399]" aria-hidden="true" />
               <span>Camera</span>
             </label>
             {devices.videoInputs.length > 0 ? (
@@ -204,7 +204,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 value={devices.selectedVideoInputId}
                 disabled={isSwitching}
                 onChange={(e) => onSelectDevice('videoinput', e.target.value)}
-                className="w-full rounded-xl bg-[#101820] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+                className="w-full rounded-xl bg-[#111316] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
               >
                 {devices.videoInputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -213,7 +213,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-slate-400 bg-[#101820]/60 rounded-xl px-3 py-2.5 border border-white/10">
+              <p className="text-xs text-slate-400 bg-[#111316]/60 rounded-xl px-3 py-2.5 border border-white/10">
                 No camera detected.
               </p>
             )}
@@ -225,11 +225,11 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               htmlFor="meeting-speaker-select"
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-200"
             >
-              <Volume2 className="w-3.5 h-3.5 text-[#7CE5DB]" aria-hidden="true" />
+              <Volume2 className="w-3.5 h-3.5 text-[#5FA399]" aria-hidden="true" />
               <span>Speaker Output</span>
             </label>
             {!devices.canSelectAudioOutput ? (
-              <p className="text-xs text-slate-400 bg-[#101820]/60 rounded-xl px-3 py-2.5 border border-white/10">
+              <p className="text-xs text-slate-400 bg-[#111316]/60 rounded-xl px-3 py-2.5 border border-white/10">
                 Speaker output switching is not supported by this browser (uses system default output).
               </p>
             ) : devices.audioOutputs.length > 0 ? (
@@ -238,7 +238,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 value={devices.selectedAudioOutputId}
                 disabled={isSwitching}
                 onChange={(e) => onSelectDevice('audiooutput', e.target.value)}
-                className="w-full rounded-xl bg-[#101820] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+                className="w-full rounded-xl bg-[#111316] border border-white/15 px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
               >
                 {devices.audioOutputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
@@ -247,18 +247,18 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-slate-400 bg-[#101820]/60 rounded-xl px-3 py-2.5 border border-white/10">
+              <p className="text-xs text-slate-400 bg-[#111316]/60 rounded-xl px-3 py-2.5 border border-white/10">
                 Using system default speaker output.
               </p>
             )}
           </div>
         </div>
 
-        <div className="px-5 py-3.5 bg-[#101820]/50 border-t border-white/10 flex justify-end">
+        <div className="px-5 py-3.5 bg-[#111316]/50 border-t border-white/10 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#168B83] hover:bg-[#11706A] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="px-4 py-2 rounded-xl bg-[#2F6F68] hover:bg-[#255A54] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             Done
           </button>

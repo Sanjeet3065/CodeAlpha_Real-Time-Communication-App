@@ -52,7 +52,7 @@ export const FloatingReactions: React.FC<FloatingReactionsProps> = ({ reactions 
         >
           <span className="text-4xl drop-shadow-lg filter">{rx.emoji}</span>
           {rx.senderName && (
-            <span className="px-2 py-0.5 rounded-full bg-[#101820]/80 backdrop-blur-sm border border-white/10 text-[10px] font-medium text-[#F7F6F2] shadow-sm whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded-full bg-[#111316]/80 border border-white/10 text-[10px] font-medium text-[#EAECEE] shadow-sm whitespace-nowrap">
               {rx.senderName}
             </span>
           )}

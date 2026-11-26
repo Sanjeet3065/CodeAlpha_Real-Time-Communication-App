@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ApiError } from '@/services/authApi';
 import { sanitizeNavigationPath } from '@/lib/navigation';
 import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowLeft, Video } from 'lucide-react';
@@ -67,39 +68,39 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] flex flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] flex flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
       {/* Top minimal bar */}
       <div className="w-full max-w-md mx-auto flex items-center justify-between mb-4">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#3D5265] hover:text-[#172B3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-md px-1.5 py-1"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-md px-1.5 py-1"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Back to Home</span>
         </Link>
-        <span className="text-xs text-[#6B8092] font-mono">CONNECTLY v0.1.0</span>
+        <ThemeToggle variant="compact" />
       </div>
 
       {/* Main Login Card */}
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-2xl border border-[#E3E1D9] shadow-sm p-6 sm:p-8">
+        <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm p-6 sm:p-8">
           {/* Brand Logo & Header */}
           <div className="text-center mb-8">
             <Link
               to="/"
-              className="inline-flex items-center justify-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-lg p-1"
+              className="inline-flex items-center justify-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-lg p-1"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#168B83] flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] flex items-center justify-center text-[#FAF9F6] dark:text-[#141619] shadow-cly-sm">
                 <Video className="w-5 h-5" aria-hidden="true" />
               </div>
-              <span className="font-display font-extrabold text-2xl tracking-tight text-[#172B3A]">
+              <span className="font-display font-extrabold text-2xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                 CONNECTLY
               </span>
             </Link>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
               Welcome back
             </h1>
-            <p className="mt-1 text-sm text-[#6B8092]">
+            <p className="mt-1 text-sm text-[#7C848D] dark:text-[#A3AAB2]">
               Sign in to access your meetings and collaborate.
             </p>
           </div>
@@ -109,7 +110,7 @@ export const LoginPage: React.FC = () => {
             <div
               role="alert"
               aria-live="assertive"
-              className="mb-6 p-3.5 rounded-lg bg-[#D94F4F]/10 border border-[#D94F4F]/30 flex items-start gap-2.5 text-[#D94F4F]"
+              className="mb-6 p-3.5 rounded-lg bg-[#F6E6E6] dark:bg-[#342023] border border-[#C24D4D]/30 dark:border-[#D46A6A]/30 flex items-start gap-2.5 text-[#C24D4D] dark:text-[#D46A6A]"
             >
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
@@ -119,7 +120,7 @@ export const LoginPage: React.FC = () => {
           {infoMessage && (
             <div
               role="status"
-              className="mb-6 p-3.5 rounded-lg bg-[#DCEDE8] border border-[#168B83]/30 flex items-start gap-2.5 text-[#168B83]"
+              className="mb-6 p-3.5 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/30 dark:border-[#5FA399]/30 flex items-start gap-2.5 text-[#2F6F68] dark:text-[#5FA399]"
             >
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div className="text-sm font-medium leading-relaxed">{infoMessage}</div>
@@ -148,14 +149,14 @@ export const LoginPage: React.FC = () => {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="login-password"
-                  className="block text-sm font-medium text-[#172B3A]"
+                  className="block text-sm font-medium text-[#1F2428] dark:text-[#EAECEE]"
                 >
                   Password
                 </label>
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-xs font-semibold text-[#168B83] hover:text-[#0E5B56] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded"
+                  className="text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded"
                 >
                   Forgot password?
                 </button>
@@ -175,7 +176,7 @@ export const LoginPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="p-1 text-[#6B8092] hover:text-[#172B3A] transition-colors focus:outline-none"
+                      className="p-1 text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus:outline-none"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
@@ -196,11 +197,11 @@ export const LoginPage: React.FC = () => {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-[#168B83] border-[#E3E1D9] rounded focus:ring-[#168B83] cursor-pointer"
+                className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
               />
               <label
                 htmlFor="remember-me"
-                className="ml-2 block text-sm text-[#3D5265] select-none cursor-pointer"
+                className="ml-2 block text-sm text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
               >
                 Remember this device
               </label>
@@ -220,12 +221,12 @@ export const LoginPage: React.FC = () => {
           </form>
 
           {/* Card Footer Link */}
-          <div className="mt-6 pt-6 border-t border-[#E3E1D9] text-center">
-            <p className="text-sm text-[#6B8092]">
+          <div className="mt-6 pt-6 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+            <p className="text-sm text-[#7C848D] dark:text-[#A3AAB2]">
               Don&apos;t have an account?{' '}
               <Link
                 to="/register"
-                className="font-semibold text-[#168B83] hover:text-[#0E5B56] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded"
+                className="font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded"
               >
                 Sign Up
               </Link>
@@ -234,14 +235,14 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Security badge note */}
-        <div className="mt-6 text-center text-xs text-[#6B8092] flex items-center justify-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-[#168B83]" aria-hidden="true" />
-          <span>Argon2id cryptographic credential protection & dual-token security</span>
+        <div className="mt-6 text-center text-xs text-[#7C848D] dark:text-[#747C86] flex items-center justify-center gap-1.5">
+          <Lock className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
+          <span>Argon2id cryptographic credential protection &amp; dual-token security</span>
         </div>
       </div>
 
       {/* Empty footer spacer for balance */}
-      <div className="text-center py-2 text-xs text-[#6B8092]">
+      <div className="text-center py-2 text-xs text-[#7C848D] dark:text-[#747C86]">
         &copy; {new Date().getFullYear()} CONNECTLY. All rights reserved.
       </div>
     </div>

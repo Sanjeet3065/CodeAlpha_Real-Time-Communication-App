@@ -100,8 +100,8 @@ export const AppRouter: React.FC = () => {
           <ProtectedRoute>
             <Suspense
               fallback={
-                <div className="min-h-screen bg-[#F7F6F2] flex items-center justify-center p-6">
-                  <div className="w-8 h-8 border-2 border-[#168B83] border-t-transparent rounded-full animate-spin" />
+                <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] flex items-center justify-center p-6">
+                  <div className="w-8 h-8 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin" />
                 </div>
               }
             >
@@ -116,8 +116,8 @@ export const AppRouter: React.FC = () => {
           <ProtectedRoute>
             <Suspense
               fallback={
-                <div className="min-h-screen bg-[#101820] text-white flex items-center justify-center p-6">
-                  <div className="w-8 h-8 border-2 border-[#168B83] border-t-transparent rounded-full animate-spin" />
+                <div className="min-h-screen bg-[#111316] text-white flex items-center justify-center p-6">
+                  <div className="w-8 h-8 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin" />
                 </div>
               }
             >

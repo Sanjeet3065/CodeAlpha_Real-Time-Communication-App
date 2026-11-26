@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
 import { preferencesApi, resetClientSession } from '@/services/preferencesApi';
 import {
@@ -260,16 +261,16 @@ export const SettingsPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <Link
               to="/dashboard"
-              className="text-xs text-[#168B83] hover:text-[#11706A] flex items-center gap-1 font-medium transition-colors"
+              className="text-xs text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 font-medium transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Overview</span>
             </Link>
           </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
             Account Settings & Preferences
           </h2>
-          <p className="text-xs sm:text-sm text-[#6B8092] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] mt-0.5">
             Configure default room behaviors and account identity.
           </p>
         </div>
@@ -291,25 +292,25 @@ export const SettingsPage: React.FC = () => {
         <div className="lg:col-span-8 space-y-6">
           <form onSubmit={handleSave} className="space-y-6">
             {/* Audio & Video Defaults Card (Screen 22) */}
-            <Card className="p-6 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
-              <h3 className="font-display text-sm font-bold text-[#172B3A] mb-1 flex items-center gap-2">
-                <Mic className="w-4 h-4 text-[#168B83]" />
+            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+              <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
+                <Mic className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
                 Audio & Video Meeting Defaults
               </h3>
-              <p className="text-xs text-[#6B8092] mb-4">
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
                 These settings configure your default audio and camera state when entering pre-join lobbies.
               </p>
 
-              <div className="space-y-4 divide-y divide-[#E3E1D9]/60">
+              <div className="space-y-4 divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038]">
                 <div className="flex items-center justify-between pt-3 first:pt-0">
                   <div>
                     <label
                       htmlFor="setting-audio-muted"
-                      className="text-xs font-semibold text-[#172B3A] cursor-pointer"
+                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
                     >
                       Join with Microphone Muted
                     </label>
-                    <p className="text-[11px] text-[#6B8092]">
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
                       Recommended to prevent background audio disruption upon room admission.
                     </p>
                   </div>
@@ -319,7 +320,7 @@ export const SettingsPage: React.FC = () => {
                     checked={audioMuted}
                     onChange={(e) => setAudioMuted(e.target.checked)}
                     aria-label="Join with microphone muted"
-                    className="w-4 h-4 rounded text-[#168B83] focus:ring-[#168B83] border-[#E3E1D9] cursor-pointer"
+                    className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
                   />
                 </div>
 
@@ -327,11 +328,11 @@ export const SettingsPage: React.FC = () => {
                   <div>
                     <label
                       htmlFor="setting-video-off"
-                      className="text-xs font-semibold text-[#172B3A] cursor-pointer"
+                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
                     >
                       Join with Camera Off
                     </label>
-                    <p className="text-[11px] text-[#6B8092]">
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
                       Keep camera feeds off until manually enabled in the pre-join lobby.
                     </p>
                   </div>
@@ -341,19 +342,19 @@ export const SettingsPage: React.FC = () => {
                     checked={videoOff}
                     onChange={(e) => setVideoOff(e.target.checked)}
                     aria-label="Join with camera off"
-                    className="w-4 h-4 rounded text-[#168B83] focus:ring-[#168B83] border-[#E3E1D9] cursor-pointer"
+                    className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
                   />
                 </div>
               </div>
             </Card>
 
             {/* Notifications Card */}
-            <Card className="p-6 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
-              <h3 className="font-display text-sm font-bold text-[#172B3A] mb-1 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-[#168B83]" />
+            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+              <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
                 Notification Audio & Alerts
               </h3>
-              <p className="text-xs text-[#6B8092] mb-4">
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
                 Configure chimes and in-session notifications.
               </p>
 
@@ -361,11 +362,11 @@ export const SettingsPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="setting-notification-sounds"
-                    className="text-xs font-semibold text-[#172B3A] cursor-pointer"
+                    className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
                   >
                     Play Chimes on Participant Join & Leave
                   </label>
-                  <p className="text-[11px] text-[#6B8092]">
+                  <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
                     Audible tone when members enter or depart a room.
                   </p>
                 </div>
@@ -375,23 +376,21 @@ export const SettingsPage: React.FC = () => {
                   checked={notificationSounds}
                   onChange={(e) => setNotificationSounds(e.target.checked)}
                   aria-label="Play chimes on participant join and leave"
-                  className="w-4 h-4 rounded text-[#168B83] focus:ring-[#168B83] border-[#E3E1D9] cursor-pointer"
+                  className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
                 />
               </div>
             </Card>
 
             {/* Appearance Card */}
-            <Card className="p-6 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
-              <h3 className="font-display text-sm font-bold text-[#172B3A] mb-1 flex items-center gap-2">
-                <Sun className="w-4 h-4 text-[#168B83]" />
+            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
+              <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
+                <Sun className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
                 Interface Appearance
               </h3>
-              <p className="text-xs text-[#6B8092] mb-3">
-                Default: Modern Editorial Light Dashboard + Dark Meeting Theater.
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
+                Choose your matte workspace theme across Landing, Dashboard, and Pre-Join Lobby. Meeting theater stays low-glare dark matte for clear video contrast.
               </p>
-              <div className="p-3 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9] text-xs text-[#3D5265]">
-                <span className="font-semibold text-[#172B3A]">System Default:</span> Dual-surface architecture automatically switches from Warm Ivory for the Dashboard to Dark Theater Mode for video conferences.
-              </div>
+              <ThemeToggle variant="segmented" />
             </Card>
 
             {/* Save Button & Persistence Feedback */}
@@ -415,8 +414,8 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {isSaved && cloudSyncStatus === 'synced' && (
-                <div className="p-3 rounded-xl bg-[#DCEDE8]/50 border border-[#168B83]/30 flex items-start gap-2.5 text-xs text-[#172B3A] animate-in fade-in">
-                  <Cloud className="w-4 h-4 text-[#168B83] flex-shrink-0 mt-0.5" />
+                <div className="p-3 rounded-xl bg-[#E2ECE9]/60 dark:bg-[#1F302E]/60 border border-[#2F6F68]/30 dark:border-[#5FA399]/30 flex items-start gap-2.5 text-xs text-[#1F2428] dark:text-[#EAECEE] animate-in fade-in">
+                  <Cloud className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399] flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
                     Preferences saved and synchronized to your account in the cloud database (with local browser profile fallback). Your pre-join audio and video defaults will persist across sessions and devices.
                   </p>
@@ -424,7 +423,7 @@ export const SettingsPage: React.FC = () => {
               )}
 
               {isSaved && cloudSyncStatus === 'local-only' && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#172B3A] animate-in fade-in">
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#1F2428] dark:text-[#EAECEE] animate-in fade-in">
                   <div className="flex items-start gap-2.5">
                     <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
@@ -453,31 +452,31 @@ export const SettingsPage: React.FC = () => {
 
         {/* Right Column: Identity Card */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="p-6 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
-            <h3 className="font-display text-sm font-bold text-[#172B3A] mb-3 flex items-center gap-2">
-              <User className="w-4 h-4 text-[#168B83]" />
+          <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+            <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-3 flex items-center gap-2">
+              <User className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
               Account Identity
             </h3>
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-[#6B8092] block text-[11px]">Display Name</span>
-                <span className="font-semibold text-[#172B3A]">
+                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Display Name</span>
+                <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
                   {user?.firstName} {user?.lastName || ''}
                 </span>
               </div>
 
               <div>
-                <span className="text-[#6B8092] block text-[11px]">Email Address</span>
-                <span className="font-mono text-[#172B3A]">{user?.email}</span>
+                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Email Address</span>
+                <span className="font-mono text-[#1F2428] dark:text-[#EAECEE]">{user?.email}</span>
               </div>
 
               <div>
-                <span className="text-[#6B8092] block text-[11px]">User Identifier</span>
-                <span className="font-mono text-[11px] text-[#6B8092] break-all">{user?.id}</span>
+                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">User Identifier</span>
+                <span className="font-mono text-[11px] text-[#7C848D] dark:text-[#A3AAB2] break-all">{user?.id}</span>
               </div>
 
-              <div className="pt-2 border-t border-[#E3E1D9]">
+              <div className="pt-2 border-t border-[#DDDAD0] dark:border-[#2B3038]">
                 <div className="flex items-center gap-1.5 text-emerald-700 text-[11px] font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Argon2id + Dual Token Protection</span>

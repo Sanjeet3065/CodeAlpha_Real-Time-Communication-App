@@ -719,8 +719,8 @@ export const MeetingRoomPage: React.FC = () => {
   // Loading Screen
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#101820] text-white flex flex-col items-center justify-center p-6 text-center space-y-3">
-        <div className="w-8 h-8 border-2 border-[#168B83] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#111316] text-white flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-[#5FA399] border-t-transparent rounded-full animate-spin" />
         <p className="font-display text-sm font-semibold">Entering meeting room...</p>
         <p className="text-xs text-slate-400">Synchronizing room permissions and participant roster.</p>
       </div>
@@ -730,15 +730,15 @@ export const MeetingRoomPage: React.FC = () => {
   // Terminal Screen (Ended or Removed)
   if (terminalState) {
     return (
-      <div className="min-h-screen bg-[#F7F6F2] text-[#172B3A] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white border border-[#E3E1D9] rounded-2xl p-8 text-center space-y-4 shadow-xs">
-          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#D94F4F] flex items-center justify-center mx-auto">
+      <div className="min-h-screen bg-[#111316] text-[#EAECEE] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-[#1C1F24] border border-[#2B3038] rounded-2xl p-8 text-center space-y-4 shadow-cly-lg">
+          <div className="w-14 h-14 rounded-2xl bg-[#342023] text-[#D46A6A] flex items-center justify-center mx-auto">
             <XCircle className="w-7 h-7" aria-hidden="true" />
           </div>
-          <h1 className="font-display text-xl font-bold text-[#172B3A]">
+          <h1 className="font-display text-xl font-bold text-[#EAECEE]">
             {terminalState.type === 'removed' ? 'Removed from Meeting' : 'Meeting Ended'}
           </h1>
-          <p className="text-sm text-[#6B8092] leading-relaxed">{terminalState.message}</p>
+          <p className="text-sm text-[#A3AAB2] leading-relaxed">{terminalState.message}</p>
           <div className="pt-2">
             <Link to="/dashboard">
               <Button variant="primary" size="sm">
@@ -767,9 +767,9 @@ export const MeetingRoomPage: React.FC = () => {
           data-tab="participants"
           aria-selected={activeSideTab === 'participants'}
           onClick={() => setActiveSideTab('participants')}
-          className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-t ${
+          className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
             activeSideTab === 'participants'
-              ? 'border-[#168B83] text-white'
+              ? 'border-[#5FA399] text-white'
               : 'border-transparent text-slate-300 hover:text-white'
           }`}
         >
@@ -784,9 +784,9 @@ export const MeetingRoomPage: React.FC = () => {
             data-tab="waiting"
             aria-selected={activeSideTab === 'waiting'}
             onClick={() => setActiveSideTab('waiting')}
-            className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-t ${
+            className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
               activeSideTab === 'waiting'
-                ? 'border-[#168B83] text-white'
+                ? 'border-[#5FA399] text-white'
                 : 'border-transparent text-slate-300 hover:text-white'
             }`}
           >
@@ -802,9 +802,9 @@ export const MeetingRoomPage: React.FC = () => {
           data-tab="chat"
           aria-selected={activeSideTab === 'chat'}
           onClick={() => setActiveSideTab('chat')}
-          className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-t ${
+          className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
             activeSideTab === 'chat'
-              ? 'border-[#168B83] text-white'
+              ? 'border-[#5FA399] text-white'
               : 'border-transparent text-slate-300 hover:text-white'
           }`}
         >
@@ -813,7 +813,7 @@ export const MeetingRoomPage: React.FC = () => {
           {activeSideTab !== 'chat' && chat.unreadCount > 0 && (
             <span
               data-badge="sidebar-unread-chat"
-              className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#D94F4F] text-white animate-pulse"
+              className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#C24D4D] text-white animate-pulse"
             >
               {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
             </span>
@@ -828,9 +828,9 @@ export const MeetingRoomPage: React.FC = () => {
             data-tab="files"
             aria-selected={activeSideTab === 'files'}
             onClick={() => setActiveSideTab('files')}
-            className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-t ${
+            className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
               activeSideTab === 'files'
-                ? 'border-[#168B83] text-white'
+                ? 'border-[#5FA399] text-white'
                 : 'border-transparent text-slate-300 hover:text-white'
             }`}
           >
@@ -839,7 +839,7 @@ export const MeetingRoomPage: React.FC = () => {
             {files.files.length > 0 && (
               <span
                 data-badge="sidebar-files-count"
-                className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#168B83] text-white"
+                className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#2F6F68] text-white"
               >
                 {files.files.length}
               </span>
@@ -912,7 +912,7 @@ export const MeetingRoomPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#101820] text-white flex flex-col">
+    <div className="min-h-screen bg-[#111316] text-white flex flex-col">
       {/* Header */}
       <MeetingHeader
         meeting={meeting}
@@ -935,7 +935,7 @@ export const MeetingRoomPage: React.FC = () => {
           aria-live="polite"
           className={`mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 max-w-7xl lg:mx-auto w-[calc(100%-2rem)] ${
             actionToast.type === 'success'
-              ? 'bg-[#168B83]/20 border-[#168B83]/40 text-[#9BF3EA]'
+              ? 'bg-[#2F6F68]/20 border-[#5FA399]/40 text-[#5FA399]'
               : 'bg-rose-500/20 border-rose-400/40 text-rose-200'
           }`}
         >
@@ -964,7 +964,7 @@ export const MeetingRoomPage: React.FC = () => {
           role="alert"
           aria-live="assertive"
           data-audio-blocked-banner="true"
-          className="fixed top-16 inset-x-4 sm:inset-x-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl bg-amber-950/95 border-2 border-amber-400 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 text-amber-100 animate-in slide-in-from-top duration-200"
+          className="fixed top-16 inset-x-4 sm:inset-x-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl bg-amber-950/95 border-2 border-amber-400 shadow-2xl flex items-center justify-between gap-3 text-amber-100 animate-in slide-in-from-top duration-200"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0">
@@ -1061,7 +1061,7 @@ export const MeetingRoomPage: React.FC = () => {
         {/* Desktop Right Sidebar (Participants + Waiting Room) */}
         <aside
           aria-label="Room management panels"
-          className="hidden lg:flex lg:w-80 xl:w-96 flex-col border-l border-white/10 bg-[#253746]/55"
+          className="hidden lg:flex lg:w-80 xl:w-96 flex-col border-l border-white/10 bg-[#1C1F24]/55"
         >
           {sidebarContent}
         </aside>
@@ -1076,11 +1076,11 @@ export const MeetingRoomPage: React.FC = () => {
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsMobileDrawerOpen(false);
           }}
-          className="fixed inset-0 z-40 lg:hidden flex justify-end bg-black/65 backdrop-blur-xs"
+          className="fixed inset-0 z-40 lg:hidden flex justify-end bg-black/65 "
         >
           <div
             ref={mobileDrawerRef}
-            className="w-full max-w-xs sm:max-w-sm bg-[#253746] border-l border-white/15 h-full flex flex-col"
+            className="w-full max-w-xs sm:max-w-sm bg-[#1C1F24] border-l border-white/15 h-full flex flex-col"
           >
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10">
               <span className="font-display text-sm font-bold text-white">Room Management</span>
@@ -1089,7 +1089,7 @@ export const MeetingRoomPage: React.FC = () => {
                 type="button"
                 onClick={() => setIsMobileDrawerOpen(false)}
                 aria-label="Close room management drawer"
-                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+                className="min-w-[36px] min-h-[36px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -13,21 +13,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[#168B83] text-white hover:bg-[#11706A] active:bg-[#0E5C57] shadow-sm focus-visible:ring-[#168B83]',
+    'bg-[#2F6F68] text-[#FAF9F6] hover:bg-[#255A54] active:bg-[#1E4944] dark:bg-[#5FA399] dark:text-[#141619] dark:hover:bg-[#6EB2A8] dark:active:bg-[#4E8F85] shadow-cly-sm focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   secondary:
-    'bg-[#DCEDE8] text-[#172B3A] hover:bg-[#C8E2DB] active:bg-[#B5D7CF] focus-visible:ring-[#168B83]',
+    'bg-[#E2ECE9] text-[#1F2428] hover:bg-[#D2E1DC] active:bg-[#C3D5CE] dark:bg-[#1F302E] dark:text-[#EAECEE] dark:hover:bg-[#273C39] focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   tertiary:
-    'bg-transparent text-[#172B3A] hover:bg-[#F7F6F2] active:bg-[#ECEBE4] focus-visible:ring-[#168B83]',
+    'bg-transparent text-[#1F2428] hover:bg-[#EAE8E1] active:bg-[#DDDAD0] dark:text-[#EAECEE] dark:hover:bg-[#24282E] dark:active:bg-[#2B3038] focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   destructive:
-    'bg-[#D94F4F] text-white hover:bg-[#BF3C3C] active:bg-[#A32F2F] shadow-sm focus-visible:ring-[#D94F4F]',
+    'bg-[#C24D4D] text-[#FAF9F6] hover:bg-[#A63D3D] active:bg-[#8E3232] dark:bg-[#D46A6A] dark:text-[#141619] dark:hover:bg-[#C15858] shadow-cly-sm focus-visible:ring-[#C24D4D] dark:focus-visible:ring-[#D46A6A]',
   outline:
-    'bg-transparent border border-[#E3E1D9] text-[#172B3A] hover:bg-[#F7F6F2] active:bg-[#ECEBE4] focus-visible:ring-[#168B83]',
+    'bg-transparent border border-[#DDDAD0] text-[#1F2428] hover:bg-[#EAE8E1] active:bg-[#DDDAD0] dark:border-[#2B3038] dark:text-[#EAECEE] dark:hover:bg-[#24282E] dark:active:bg-[#2B3038] focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   icon:
-    'bg-transparent text-[#172B3A] hover:bg-[#F7F6F2] active:bg-[#ECEBE4] p-2 aspect-square focus-visible:ring-[#168B83]',
+    'bg-transparent text-[#1F2428] hover:bg-[#EAE8E1] active:bg-[#DDDAD0] dark:text-[#EAECEE] dark:hover:bg-[#24282E] p-2 aspect-square focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   fab:
-    'bg-[#168B83] text-white hover:bg-[#11706A] active:bg-[#0E5C57] rounded-full shadow-lg p-3.5 focus-visible:ring-[#168B83]',
+    'bg-[#2F6F68] text-[#FAF9F6] hover:bg-[#255A54] active:bg-[#1E4944] dark:bg-[#5FA399] dark:text-[#141619] dark:hover:bg-[#6EB2A8] dark:active:bg-[#4E8F85] rounded-full shadow-cly-md p-3.5 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
   dock:
-    'bg-[#253746] text-white hover:bg-[#334A5D] active:bg-[#1A2530] border border-white/10 rounded-full focus-visible:ring-[#2EC4B6]',
+    'bg-[#1C1F24] text-[#EAECEE] hover:bg-[#2B3038] active:bg-[#141619] border border-white/10 rounded-full focus-visible:ring-[#5FA399]',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

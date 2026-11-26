@@ -20,9 +20,11 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
 import { usePreJoinMediaPreview } from '@/hooks/usePreJoinMediaPreview';
 import { validateMeetingCode } from '@/lib/meetingCode';
+import { buildMeetingJoinUrl } from '@/lib/meetingLink';
 import { meetingApi, getMeetingErrorMessage } from '@/services/meetingApi';
 import { createMeetingSocket, subscribeToMeeting } from '@/services/meetingSocket';
 import { createRealtimeEventGuard } from '@/utils/realtimeIdempotency';
@@ -267,10 +269,9 @@ export const PreJoinLobbyPage: React.FC = () => {
     }
   };
 
-  const invitationLink =
-    typeof window !== 'undefined' && metadata
-      ? `${window.location.origin}/join/${metadata.meeting.meetingCode}`
-      : metadata?.meeting.joinUrl || '';
+  const invitationLink = metadata
+    ? buildMeetingJoinUrl(metadata.meeting.meetingCode, metadata.meeting.joinUrl)
+    : '';
 
   const userDisplayName = user
     ? `${user.firstName} ${user.lastName}`.trim()
@@ -281,36 +282,39 @@ export const PreJoinLobbyPage: React.FC = () => {
   const combinedMediaError = preview.cameraError || preview.micError;
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] text-[#172B3A] flex flex-col">
+    <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] flex flex-col">
       {/* Top Brand Header */}
-      <header className="bg-white border-b border-[#E3E1D9] px-4 sm:px-6 py-3.5">
+      <header className="bg-[#FAF9F6] dark:bg-[#1C1F24] border-b border-[#DDDAD0] dark:border-[#2B3038] px-4 sm:px-6 py-3.5">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
           <Link
             to="/dashboard"
             onClick={() => preview.releaseAllPreviewTracks()}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#168B83] text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center">
               <Video className="w-4 h-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="font-display font-bold text-sm tracking-tight text-[#172B3A] block leading-none">
+              <span className="font-display font-bold text-sm tracking-tight text-[#1F2428] dark:text-[#EAECEE] block leading-none">
                 CONNECTLY
               </span>
-              <span className="text-[10px] font-semibold tracking-wider text-[#168B83] uppercase">
+              <span className="text-[10px] font-semibold tracking-wider text-[#2F6F68] dark:text-[#5FA399] uppercase">
                 Pre-Join Lobby
               </span>
             </div>
           </Link>
 
-          <Link
-            to="/dashboard"
-            onClick={() => preview.releaseAllPreviewTracks()}
-            className="text-xs font-semibold text-[#3D5265] hover:text-[#168B83] inline-flex items-center gap-1.5 transition-colors"
-          >
+          <div className="flex items-center gap-3">
+            <ThemeToggle variant="compact" />
+            <Link
+              to="/dashboard"
+              onClick={() => preview.releaseAllPreviewTracks()}
+              className="text-xs font-semibold text-[#555D66] dark:text-[#A3AAB2] hover:text-[#2F6F68] dark:hover:text-[#5FA399] inline-flex items-center gap-1.5 transition-colors"
+            >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Dashboard</span>
           </Link>
+          </div>
         </div>
       </header>
 
@@ -318,21 +322,21 @@ export const PreJoinLobbyPage: React.FC = () => {
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-5xl">
           {isLoading ? (
-            <div className="bg-white border border-[#E3E1D9] rounded-2xl p-10 text-center space-y-3 shadow-xs">
-              <div className="w-8 h-8 border-2 border-[#168B83] border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm font-semibold text-[#172B3A]">Loading meeting room details...</p>
-              <p className="text-xs text-[#6B8092]">Verifying room availability and admission rules.</p>
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-10 text-center space-y-3 shadow-xs">
+              <div className="w-8 h-8 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-sm font-semibold text-[#1F2428] dark:text-[#EAECEE]">Loading meeting room details...</p>
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Verifying room availability and admission rules.</p>
             </div>
           ) : loadError || !metadata ? (
-            <div className="bg-white border border-[#E3E1D9] rounded-2xl p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <h1 className="font-display text-lg font-bold text-[#172B3A]">
+                <h1 className="font-display text-lg font-bold text-[#1F2428] dark:text-[#EAECEE]">
                   Cannot Join Meeting
                 </h1>
-                <p className="text-sm text-[#6B8092] leading-relaxed">
+                <p className="text-sm text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed">
                   {loadError || 'This meeting could not be loaded.'}
                 </p>
               </div>
@@ -351,28 +355,28 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
             </div>
           ) : waitingState === 'waiting' ? (
-            <div className="bg-white border border-[#E3E1D9] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-5 shadow-xs">
-              <div className="w-14 h-14 rounded-2xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-5 shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mx-auto">
                 <Clock className="w-7 h-7" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">
                   Waiting Room — Admission Pending
                 </span>
-                <h1 className="font-display text-xl font-bold text-[#172B3A]">
+                <h1 className="font-display text-xl font-bold text-[#1F2428] dark:text-[#EAECEE]">
                   {metadata.meeting.title}
                 </h1>
-                <p className="text-xs sm:text-sm text-[#6B8092] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed">
                   You are in the waiting room as{' '}
-                  <strong className="text-[#172B3A]">{userDisplayName}</strong>. Please wait while{' '}
-                  <strong className="text-[#172B3A]">{metadata.meeting.hostName}</strong> reviews
+                  <strong className="text-[#1F2428] dark:text-[#EAECEE]">{userDisplayName}</strong>. Please wait while{' '}
+                  <strong className="text-[#1F2428] dark:text-[#EAECEE]">{metadata.meeting.hostName}</strong> reviews
                   your admission request. Your media is not shared until you are admitted.
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9] flex items-center justify-center gap-2 font-mono text-xs text-[#3D5265]">
+              <div className="p-3 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-center gap-2 font-mono text-xs text-[#555D66] dark:text-[#A3AAB2]">
                 <span>Room Code:</span>
-                <strong className="text-[#172B3A]">{metadata.meeting.meetingCode}</strong>
+                <strong className="text-[#1F2428] dark:text-[#EAECEE]">{metadata.meeting.meetingCode}</strong>
               </div>
 
               <div className="flex justify-center pt-1">
@@ -388,15 +392,15 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
             </div>
           ) : waitingState === 'rejected' || waitingState === 'ended' ? (
-            <div className="bg-white border border-[#E3E1D9] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#D94F4F] flex items-center justify-center mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto">
                 <XCircle className="w-7 h-7" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
-                <h1 className="font-display text-xl font-bold text-[#172B3A]">
+                <h1 className="font-display text-xl font-bold text-[#1F2428] dark:text-[#EAECEE]">
                   {waitingState === 'rejected' ? 'Admission Declined' : 'Meeting Has Ended'}
                 </h1>
-                <p className="text-sm text-[#6B8092] leading-relaxed">
+                <p className="text-sm text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed">
                   {waitingNotice ||
                     (waitingState === 'rejected'
                       ? 'The host declined your request to join this meeting.'
@@ -414,9 +418,9 @@ export const PreJoinLobbyPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Left Card: Real Local Pre-Join Camera & Microphone Preview (Unpublished) */}
-              <div className="lg:col-span-7 bg-[#101820] text-white rounded-2xl border border-[#253746] p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-md">
+              <div className="lg:col-span-7 bg-[#111316] text-white rounded-2xl border border-[#1C1F24] p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-md">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#253746] text-[#7CE5DB]">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1C1F24] text-[#5FA399]">
                     <Shield className="w-3.5 h-3.5" aria-hidden="true" />
                     Local Preview Only
                   </span>
@@ -430,7 +434,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                   data-prejoin-preview="true"
                   data-camera-active={preview.cameraEnabled && Boolean(preview.videoTrack) ? 'true' : 'false'}
                   data-mic-active={preview.micEnabled ? 'true' : 'false'}
-                  className="relative aspect-video w-full overflow-hidden rounded-xl bg-[#182530] border border-white/10 flex items-center justify-center"
+                  className="relative aspect-video w-full overflow-hidden rounded-xl bg-[#181B20] border border-white/10 flex items-center justify-center"
                 >
                   {preview.cameraEnabled && preview.videoTrack ? (
                     <video
@@ -438,11 +442,11 @@ export const PreJoinLobbyPage: React.FC = () => {
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-full object-cover -scale-x-100 bg-[#101820]"
+                      className="w-full h-full object-cover -scale-x-100 bg-[#111316]"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center px-4 space-y-2.5">
-                      <div className="w-20 h-20 rounded-full bg-[#168B83]/25 border-2 border-[#168B83] text-[#7CE5DB] font-display text-2xl font-bold flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-[#2F6F68]/25 border-2 border-[#5FA399] text-[#5FA399] font-display text-2xl font-bold flex items-center justify-center">
                         {getInitials(user?.firstName, user?.lastName, user?.email)}
                       </div>
                       <div>
@@ -464,7 +468,7 @@ export const PreJoinLobbyPage: React.FC = () => {
 
                   {/* Bottom Preview Overlay Controls */}
                   <div className="absolute bottom-3 inset-x-3 flex items-center justify-between gap-2">
-                    <span className="px-2.5 py-1 rounded-lg bg-[#101820]/80 border border-white/10 text-xs font-semibold text-white truncate">
+                    <span className="px-2.5 py-1 rounded-lg bg-[#111316]/80 border border-white/10 text-xs font-semibold text-white truncate">
                       {userDisplayName} {metadata.isHost ? '(Host)' : ''}
                     </span>
 
@@ -476,16 +480,16 @@ export const PreJoinLobbyPage: React.FC = () => {
                         aria-label={preview.micEnabled ? 'Mute microphone' : 'Enable microphone'}
                         disabled={preview.isBusyMic}
                         onClick={() => void preview.toggleMic()}
-                        className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 ${
                           preview.micEnabled
-                            ? 'bg-[#101820]/85 border-white/20 text-white hover:bg-[#253746]'
-                            : 'bg-[#D94F4F]/90 border-rose-300/40 text-white hover:bg-[#C13E3E]'
+                            ? 'bg-[#111316]/85 border-white/20 text-white hover:bg-[#1C1F24]'
+                            : 'bg-[#C24D4D]/90 border-rose-300/40 text-white hover:bg-[#A63D3D]'
                         }`}
                       >
                         {preview.isBusyMic ? (
                           <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                         ) : preview.micEnabled ? (
-                          <Mic className="w-4 h-4 text-[#7CE5DB]" aria-hidden="true" />
+                          <Mic className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
                         ) : (
                           <MicOff className="w-4 h-4" aria-hidden="true" />
                         )}
@@ -499,16 +503,16 @@ export const PreJoinLobbyPage: React.FC = () => {
                         aria-label={preview.cameraEnabled ? 'Turn off camera' : 'Turn on camera'}
                         disabled={preview.isBusyCamera}
                         onClick={() => void preview.toggleCamera()}
-                        className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 ${
                           preview.cameraEnabled
-                            ? 'bg-[#101820]/85 border-white/20 text-white hover:bg-[#253746]'
-                            : 'bg-[#D94F4F]/90 border-rose-300/40 text-white hover:bg-[#C13E3E]'
+                            ? 'bg-[#111316]/85 border-white/20 text-white hover:bg-[#1C1F24]'
+                            : 'bg-[#C24D4D]/90 border-rose-300/40 text-white hover:bg-[#A63D3D]'
                         }`}
                       >
                         {preview.isBusyCamera ? (
                           <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                         ) : preview.cameraEnabled ? (
-                          <Video className="w-4 h-4 text-[#7CE5DB]" aria-hidden="true" />
+                          <Video className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
                         ) : (
                           <VideoOff className="w-4 h-4" aria-hidden="true" />
                         )}
@@ -523,10 +527,10 @@ export const PreJoinLobbyPage: React.FC = () => {
                   <div
                     role="alert"
                     data-prejoin-media-error="true"
-                    className="p-3 rounded-xl bg-[#D94F4F]/20 border border-[#D94F4F]/45 text-xs text-rose-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                    className="p-3 rounded-xl bg-[#C24D4D]/20 border border-[#C24D4D]/45 text-xs text-rose-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                   >
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-[#F7A3A3] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      <AlertCircle className="w-4 h-4 text-[#D46A6A] flex-shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{combinedMediaError}</span>
                     </div>
                     {hasPermissionDenied && (
@@ -534,7 +538,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                         type="button"
                         data-prejoin-control="retry-permissions"
                         onClick={() => void preview.retryPermissions()}
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
                       >
                         <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>Retry Permission</span>
@@ -550,7 +554,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       htmlFor="prejoin-mic-select"
                       className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5"
                     >
-                      <Mic className="w-3 h-3 text-[#7CE5DB]" aria-hidden="true" />
+                      <Mic className="w-3 h-3 text-[#5FA399]" aria-hidden="true" />
                       <span>Microphone</span>
                     </label>
                     <select
@@ -558,7 +562,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       value={preview.devices.selectedAudioInputId}
                       disabled={preview.devices.audioInputs.length === 0}
                       onChange={(e) => void preview.selectMicDevice(e.target.value)}
-                      className="w-full rounded-xl bg-[#253746] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+                      className="w-full rounded-xl bg-[#1C1F24] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
                     >
                       {preview.devices.audioInputs.length === 0 ? (
                         <option value="">No microphone found</option>
@@ -577,7 +581,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       htmlFor="prejoin-camera-select"
                       className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5"
                     >
-                      <Video className="w-3 h-3 text-[#7CE5DB]" aria-hidden="true" />
+                      <Video className="w-3 h-3 text-[#5FA399]" aria-hidden="true" />
                       <span>Camera</span>
                     </label>
                     <select
@@ -585,7 +589,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       value={preview.devices.selectedVideoInputId}
                       disabled={preview.devices.videoInputs.length === 0}
                       onChange={(e) => void preview.selectCameraDevice(e.target.value)}
-                      className="w-full rounded-xl bg-[#253746] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#168B83] disabled:opacity-50"
+                      className="w-full rounded-xl bg-[#1C1F24] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
                     >
                       {preview.devices.videoInputs.length === 0 ? (
                         <option value="">No camera found</option>
@@ -602,18 +606,18 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
 
               {/* Right Card: Meeting Details & Join Controls */}
-              <div className="lg:col-span-5 bg-white rounded-2xl border border-[#E3E1D9] p-6 flex flex-col justify-between gap-5 shadow-xs">
+              <div className="lg:col-span-5 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] p-6 flex flex-col justify-between gap-5 shadow-xs">
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#168B83]">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2F6F68] dark:text-[#5FA399]">
                       Ready to Join
                     </p>
-                    <h1 className="font-display text-xl font-bold text-[#172B3A] mt-1 break-words">
+                    <h1 className="font-display text-xl font-bold text-[#1F2428] dark:text-[#EAECEE] mt-1 break-words">
                       {metadata.meeting.title}
                     </h1>
-                    <p className="text-xs text-[#6B8092] mt-1">
+                    <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mt-1">
                       Hosted by{' '}
-                      <span className="font-semibold text-[#172B3A]">
+                      <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
                         {metadata.meeting.hostName}
                       </span>
                     </p>
@@ -621,12 +625,12 @@ export const PreJoinLobbyPage: React.FC = () => {
 
                   {/* Metadata Chips */}
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F7F6F2] border border-[#E3E1D9] text-xs font-medium text-[#172B3A]">
-                      <Users className="w-3.5 h-3.5 text-[#168B83]" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-xs font-medium text-[#1F2428] dark:text-[#EAECEE]">
+                      <Users className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" />
                       {metadata.meeting.activeParticipantCount} / {metadata.meeting.maxParticipants}{' '}
                       active
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F7F6F2] border border-[#E3E1D9] text-xs font-medium text-[#172B3A]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-xs font-medium text-[#1F2428] dark:text-[#EAECEE]">
                       Status: <strong className="font-mono">{metadata.meeting.status}</strong>
                     </span>
                     {metadata.meeting.isLocked && (
@@ -642,7 +646,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => copyValue(metadata.meeting.meetingCode, 'code')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F7F6F2] hover:bg-[#DCEDE8]/60 border border-[#E3E1D9] text-xs font-semibold text-[#172B3A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] border border-[#DDDAD0] dark:border-[#2B3038] text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                     >
                       {copied === 'code' ? (
                         <>
@@ -651,7 +655,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5 text-[#168B83]" />
+                          <Copy className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" />
                           <span className="font-mono">{metadata.meeting.meetingCode}</span>
                         </>
                       )}
@@ -660,7 +664,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => copyValue(invitationLink, 'link')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F7F6F2] hover:bg-[#DCEDE8]/60 border border-[#E3E1D9] text-xs font-semibold text-[#172B3A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] border border-[#DDDAD0] dark:border-[#2B3038] text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                     >
                       {copied === 'link' ? (
                         <>
@@ -669,7 +673,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <LinkIcon className="w-3.5 h-3.5 text-[#168B83]" />
+                          <LinkIcon className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" />
                           <span>Copy Invite Link</span>
                         </>
                       )}
@@ -684,24 +688,24 @@ export const PreJoinLobbyPage: React.FC = () => {
                   </div>
 
                   {/* Room Governance Summary */}
-                  <div className="p-3.5 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9] space-y-2 text-xs">
+                  <div className="p-3.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[#6B8092]">Entry Policy</span>
-                      <span className="font-semibold text-[#172B3A]">
+                      <span className="text-[#7C848D] dark:text-[#A3AAB2]">Entry Policy</span>
+                      <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
                         {metadata.meeting.settings.waitingRoomEnabled
                           ? 'Waiting Room Enabled'
                           : 'Direct Entry'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E3E1D9]/80">
-                      <span className="text-[#6B8092]">Room Access</span>
-                      <span className="font-semibold text-[#172B3A]">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#DDDAD0]/80 dark:border-[#2B3038]">
+                      <span className="text-[#7C848D] dark:text-[#A3AAB2]">Room Access</span>
+                      <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
                         {metadata.meeting.isLocked ? 'Locked by Host' : 'Open to Invited Users'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E3E1D9]/80">
-                      <span className="text-[#6B8092]">Your Room Role</span>
-                      <span className="font-semibold text-[#168B83]">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#DDDAD0]/80 dark:border-[#2B3038]">
+                      <span className="text-[#7C848D] dark:text-[#A3AAB2]">Your Room Role</span>
+                      <span className="font-semibold text-[#2F6F68] dark:text-[#5FA399]">
                         {metadata.isHost ? 'Host (Full Controls)' : 'Participant'}
                       </span>
                     </div>
@@ -740,7 +744,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-2.5 pt-3 border-t border-[#E3E1D9]">
+                <div className="space-y-2.5 pt-3 border-t border-[#DDDAD0] dark:border-[#2B3038]">
                   <Button
                     type="button"
                     variant="primary"

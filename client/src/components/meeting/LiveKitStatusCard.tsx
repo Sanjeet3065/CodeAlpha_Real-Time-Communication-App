@@ -36,7 +36,7 @@ function getStatusMeta(status: LiveKitConnectionSnapshot['status']) {
     case 'requesting_token':
       return {
         label: 'Preparing secure connection',
-        badgeClass: 'bg-[#168B83]/20 text-[#7CE5DB] border-[#168B83]/35',
+        badgeClass: 'bg-[#2F6F68]/20 text-[#5FA399] border-[#5FA399]/35',
         icon: <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />,
         description:
           'Verifying CONNECTLY admission and requesting a short-lived LiveKit room access token.',
@@ -74,7 +74,7 @@ function getStatusMeta(status: LiveKitConnectionSnapshot['status']) {
     case 'failed':
       return {
         label: 'Connection failed',
-        badgeClass: 'bg-[#D94F4F]/20 text-[#F7A3A3] border-[#D94F4F]/35',
+        badgeClass: 'bg-[#C24D4D]/20 text-[#D46A6A] border-[#C24D4D]/35',
         icon: <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />,
         description:
           'Could not establish a LiveKit SFU connection. CONNECTLY room governance remains active.',
@@ -82,14 +82,14 @@ function getStatusMeta(status: LiveKitConnectionSnapshot['status']) {
     case 'unauthorized':
       return {
         label: 'Access denied',
-        badgeClass: 'bg-[#D94F4F]/20 text-[#F7A3A3] border-[#D94F4F]/35',
+        badgeClass: 'bg-[#C24D4D]/20 text-[#D46A6A] border-[#C24D4D]/35',
         icon: <XCircle className="w-3.5 h-3.5" aria-hidden="true" />,
         description: 'LiveKit access is not permitted for your current room status.',
       };
     case 'meeting_ended':
       return {
         label: 'Meeting ended',
-        badgeClass: 'bg-[#D94F4F]/20 text-[#F7A3A3] border-[#D94F4F]/35',
+        badgeClass: 'bg-[#C24D4D]/20 text-[#D46A6A] border-[#C24D4D]/35',
         icon: <XCircle className="w-3.5 h-3.5" aria-hidden="true" />,
         description: 'This meeting has ended and LiveKit transport has been closed.',
       };
@@ -113,11 +113,11 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
     <section
       aria-label="LiveKit WebRTC transport and media status"
       data-livekit-status={livekit.status}
-      className="p-3.5 sm:p-4 rounded-2xl bg-[#253746]/80 border border-white/10 space-y-3"
+      className="p-3.5 sm:p-4 rounded-2xl bg-[#1C1F24]/80 border border-white/10 space-y-3"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-          <div className="w-8 h-8 rounded-xl bg-[#168B83]/25 text-[#7CE5DB] flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-[#2F6F68]/25 text-[#5FA399] flex items-center justify-center flex-shrink-0">
             <Radio className="w-4 h-4" aria-hidden="true" />
           </div>
           <span
@@ -133,8 +133,8 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
               media.localMicEnabled && media.localMicPublished
-                ? 'bg-[#168B83]/20 text-[#9BF3EA] border-[#168B83]/35'
-                : 'bg-[#101820]/60 text-slate-300 border-white/10'
+                ? 'bg-[#2F6F68]/20 text-[#5FA399] border-[#5FA399]/35'
+                : 'bg-[#111316]/60 text-slate-300 border-white/10'
             }`}
           >
             {media.localMicEnabled && media.localMicPublished ? (
@@ -154,8 +154,8 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
           <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
               media.localCameraEnabled && media.localCameraPublished
-                ? 'bg-[#168B83]/20 text-[#9BF3EA] border-[#168B83]/35'
-                : 'bg-[#101820]/60 text-slate-300 border-white/10'
+                ? 'bg-[#2F6F68]/20 text-[#5FA399] border-[#5FA399]/35'
+                : 'bg-[#111316]/60 text-slate-300 border-white/10'
             }`}
           >
             {media.localCameraEnabled && media.localCameraPublished ? (
@@ -174,13 +174,13 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#101820]/70 border border-white/10 text-[11px] font-semibold text-[#7CE5DB]">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#111316]/70 border border-white/10 text-[11px] font-semibold text-[#5FA399]">
             <Shield className="w-3.5 h-3.5" aria-hidden="true" />
             <span>{roleLabel}</span>
           </span>
 
           {livekit.status === 'connected' && (
-            <span className="font-mono text-[11px] text-slate-300 px-2 py-1 rounded-lg bg-[#101820]/60 border border-white/10">
+            <span className="font-mono text-[11px] text-slate-300 px-2 py-1 rounded-lg bg-[#111316]/60 border border-white/10">
               {livekit.remoteParticipantCount + 1} SFU peer(s)
             </span>
           )}
@@ -189,7 +189,7 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
             <button
               type="button"
               onClick={onReconnect}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-lg bg-[#168B83] hover:bg-[#11706A] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] rounded-lg bg-[#2F6F68] hover:bg-[#255A54] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
             >
               <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Reconnect</span>
@@ -221,7 +221,7 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
             type="button"
             data-control="enable-audio"
             onClick={onEnableAudio}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-amber-500 hover:bg-amber-400 text-[#101820] text-xs font-bold transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-amber-500 hover:bg-amber-400 text-[#111316] text-xs font-bold transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-amber-300"
           >
             <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Enable Audio</span>
@@ -234,10 +234,10 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
         <div
           role="alert"
           data-media-error="true"
-          className="p-3 rounded-xl bg-[#D94F4F]/20 border border-[#D94F4F]/40 text-xs text-rose-100 flex items-start justify-between gap-2"
+          className="p-3 rounded-xl bg-[#C24D4D]/20 border border-[#C24D4D]/40 text-xs text-rose-100 flex items-start justify-between gap-2"
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#F7A3A3] flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <AlertTriangle className="w-4 h-4 text-[#D46A6A] flex-shrink-0 mt-0.5" aria-hidden="true" />
             <span>{media.mediaError}</span>
           </div>
           <button

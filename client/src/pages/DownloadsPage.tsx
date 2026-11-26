@@ -51,7 +51,7 @@ function getFileIcon(extension: string) {
     case '7z':
       return <FileArchive className="w-5 h-5 text-amber-500" />;
     default:
-      return <FileText className="w-5 h-5 text-[#168B83]" />;
+      return <FileText className="w-5 h-5 text-[#2F6F68] dark:text-[#5FA399]" />;
   }
 }
 
@@ -133,16 +133,16 @@ export const DownloadsPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <Link
               to="/dashboard"
-              className="text-xs text-[#168B83] hover:text-[#11706A] flex items-center gap-1 font-medium transition-colors"
+              className="text-xs text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 font-medium transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Overview</span>
             </Link>
           </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
             Downloads & Shared Files
           </h2>
-          <p className="text-xs sm:text-sm text-[#6B8092] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] mt-0.5">
             Every shared document is permanently traceable to its original meeting session.
           </p>
         </div>
@@ -155,11 +155,11 @@ export const DownloadsPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <Card className="p-4 bg-white border-[#E3E1D9] shadow-xs rounded-2xl mb-6">
+      <Card className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           {/* Search Input */}
           <div className="sm:col-span-6 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B8092]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#7C848D] dark:text-[#A3AAB2]">
               <Search className="w-4 h-4" />
             </div>
             <input
@@ -168,7 +168,7 @@ export const DownloadsPage: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search files by name, meeting, or uploader..."
               aria-label="Search files by name or keyword"
-              className="w-full pl-9 pr-3 py-2 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl text-xs text-[#172B3A] placeholder-[#6B8092] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#168B83]/30 focus:border-[#168B83] transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-xs text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86] focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
             />
           </div>
 
@@ -178,7 +178,7 @@ export const DownloadsPage: React.FC = () => {
               value={selectedMeeting}
               onChange={(e) => setSelectedMeeting(e.target.value)}
               aria-label="Filter by associated meeting"
-              className="w-full px-3 py-2 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl text-xs text-[#172B3A] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#168B83]/30 focus:border-[#168B83] transition-all"
+              className="w-full px-3 py-2 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-xs text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
             >
               <option value="All">All Meetings ({uniqueMeetings.length})</option>
               {uniqueMeetings.map((m) => (
@@ -195,7 +195,7 @@ export const DownloadsPage: React.FC = () => {
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               aria-label="Filter by file type"
-              className="w-full px-3 py-2 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl text-xs text-[#172B3A] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#168B83]/30 focus:border-[#168B83] transition-all"
+              className="w-full px-3 py-2 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-xs text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
             >
               <option value="All">All File Types</option>
               <option value="pdf">PDF Documents</option>
@@ -210,16 +210,16 @@ export const DownloadsPage: React.FC = () => {
 
       {/* Content: Loading, List, or Screen 23 Empty State */}
       {isLoading ? (
-        <Card className="p-12 bg-white border-[#E3E1D9] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#168B83] mb-3" />
-          <p className="text-sm font-medium text-[#172B3A]">Loading your shared files...</p>
+        <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[300px]">
+          <Loader2 className="w-8 h-8 animate-spin text-[#2F6F68] dark:text-[#5FA399] mb-3" />
+          <p className="text-sm font-medium text-[#1F2428] dark:text-[#EAECEE]">Loading your shared files...</p>
         </Card>
       ) : filteredFiles.length > 0 ? (
-        <Card className="bg-white border-[#E3E1D9] shadow-xs rounded-2xl overflow-hidden">
+        <Card className="bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse" data-table="downloads-files">
               <thead>
-                <tr className="border-b border-[#E3E1D9] bg-[#F7F6F2]/60 text-[11px] font-semibold text-[#6B8092] uppercase tracking-wider">
+                <tr className="border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619] text-[11px] font-semibold text-[#7C848D] dark:text-[#A3AAB2] uppercase tracking-wider">
                   <th className="py-3 px-4">File Name</th>
                   <th className="py-3 px-4">Meeting Session</th>
                   <th className="py-3 px-4">Shared By</th>
@@ -228,43 +228,43 @@ export const DownloadsPage: React.FC = () => {
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E3E1D9]/60 text-xs text-[#172B3A]">
+              <tbody className="divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038] text-xs text-[#1F2428] dark:text-[#EAECEE]">
                 {filteredFiles.map((file) => (
                   <tr
                     key={file.id}
                     data-row-file={file.id}
-                    className="hover:bg-[#F7F6F2]/40 transition-colors"
+                    className="hover:bg-[#EAE8E1]/50 dark:hover:bg-[#24282E]/60 transition-colors"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#F7F6F2] border border-[#E3E1D9] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-center shrink-0">
                           {getFileIcon(file.extension)}
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold truncate max-w-[200px] sm:max-w-[260px]">
                             {file.name}
                           </p>
-                          <span className="text-[10px] text-[#6B8092] uppercase font-mono">
+                          <span className="text-[10px] text-[#7C848D] dark:text-[#A3AAB2] uppercase font-mono">
                             .{file.extension}
                           </span>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5 text-[#172B3A]">
-                        <Video className="w-3.5 h-3.5 text-[#168B83] shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[#1F2428] dark:text-[#EAECEE]">
+                        <Video className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] shrink-0" />
                         <span className="truncate max-w-[160px] font-medium">
                           {file.associatedMeetingName}
                         </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-[#6B8092]">{file.sharedBy.name}</span>
+                      <span className="text-[#7C848D] dark:text-[#A3AAB2]">{file.sharedBy.name}</span>
                     </td>
-                    <td className="py-3 px-4 font-mono text-[#6B8092]">
+                    <td className="py-3 px-4 font-mono text-[#7C848D] dark:text-[#A3AAB2]">
                       {formatBytes(file.sizeBytes)}
                     </td>
-                    <td className="py-3 px-4 text-[#6B8092]">
+                    <td className="py-3 px-4 text-[#7C848D] dark:text-[#A3AAB2]">
                       {new Date(file.sharedAt).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -278,7 +278,7 @@ export const DownloadsPage: React.FC = () => {
                         onClick={() => handleDownload(file)}
                         disabled={downloadingId === file.id}
                         aria-label={`Download ${file.name}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#DCEDE8] hover:bg-[#cbe5de] text-[#168B83] transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors disabled:opacity-50"
                       >
                         {downloadingId === file.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -296,14 +296,14 @@ export const DownloadsPage: React.FC = () => {
         </Card>
       ) : (
         /* Screen 23 Empty State */
-        <Card className="p-12 bg-white border-[#E3E1D9] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
-          <div className="w-16 h-16 rounded-2xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mb-4">
+        <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
+          <div className="w-16 h-16 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-4">
             <FolderDown className="w-8 h-8" aria-hidden="true" />
           </div>
-          <h3 className="font-display text-base sm:text-lg font-bold text-[#172B3A] mb-1">
+          <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
             No Files Downloaded or Shared Yet
           </h3>
-          <p className="text-xs sm:text-sm text-[#6B8092] max-w-md mx-auto mb-6 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
             Documents, presentations, and code snippets shared during active video rooms will automatically be indexed here with their associated meeting name and download actions.
           </p>
 

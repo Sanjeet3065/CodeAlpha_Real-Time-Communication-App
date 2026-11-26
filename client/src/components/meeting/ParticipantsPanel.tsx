@@ -65,12 +65,12 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
           <li key={p.userId} className="p-3.5 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative flex-shrink-0">
-                <div className="w-9 h-9 rounded-full bg-[#168B83]/25 border border-[#168B83]/40 text-[#7CE5DB] font-display font-bold text-xs flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-[#2F6F68]/25 border border-[#5FA399]/40 text-[#5FA399] font-display font-bold text-xs flex items-center justify-center">
                   {getInitials(p.displayName)}
                 </div>
                 <span
                   title={p.presenceStatus === 'ONLINE' ? 'Connected' : 'Reconnecting / Offline'}
-                  className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#253746] ${
+                  className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1C1F24] ${
                     p.presenceStatus === 'ONLINE' ? 'bg-emerald-400' : 'bg-slate-500'
                   }`}
                 />
@@ -88,7 +88,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
 
                 <div className="flex items-center gap-1.5 mt-1">
                   {p.role === 'host' && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#168B83]/25 text-[#7CE5DB]">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#2F6F68]/25 text-[#5FA399]">
                       <Crown className="w-2.5 h-2.5" aria-hidden="true" />
                       Host
                     </span>
@@ -144,7 +144,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
                     onClick={() => onRequestRemove(p)}
                     title="Remove Participant"
                     aria-label={`Remove ${p.displayName} from meeting`}
-                    className="min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg text-[#F28B8B] hover:bg-[#D94F4F]/20 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#D94F4F]"
+                    className="min-w-[36px] min-h-[36px] sm:min-w-[32px] sm:min-h-[32px] inline-flex items-center justify-center rounded-lg text-[#D46A6A] hover:bg-[#C24D4D]/20 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
                   >
                     <UserMinus className="w-4 h-4" />
                   </button>

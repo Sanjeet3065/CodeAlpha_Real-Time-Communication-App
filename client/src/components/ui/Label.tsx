@@ -14,13 +14,13 @@ export const Label: React.FC<LabelProps> = ({
   return (
     <label
       className={cn(
-        'block text-xs font-semibold uppercase tracking-wider text-[#172B3A] mb-1.5 select-none',
+        'block text-xs font-semibold uppercase tracking-wider text-[#1F2428] dark:text-[#EAECEE] mb-1.5 select-none',
         className
       )}
       {...props}
     >
       {children}
-      {required && <span className="text-[#D94F4F] ml-1" aria-hidden="true">*</span>}
+      {required && <span className="text-[#C24D4D] dark:text-[#D46A6A] ml-1" aria-hidden="true">*</span>}
     </label>
   );
 };

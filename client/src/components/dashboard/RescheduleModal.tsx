@@ -184,18 +184,18 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoading) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden"
+        className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-[#F7F6F2]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
               <Calendar className="w-4 h-4" />
             </div>
-            <h2 id="reschedule-meeting-title" className="font-display text-base font-bold text-[#172B3A]">
+            <h2 id="reschedule-meeting-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
               Reschedule Meeting
             </h2>
           </div>
@@ -203,7 +203,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close reschedule dialog"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -218,12 +218,12 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
           )}
 
           {/* Current Schedule Summary */}
-          <div className="p-3 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9] text-xs">
-            <span className="font-bold text-[#6B8092] block uppercase text-[10px] tracking-wider mb-0.5">
+          <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-xs">
+            <span className="font-bold text-[#7C848D] dark:text-[#A3AAB2] block uppercase text-[10px] tracking-wider mb-0.5">
               Current Schedule
             </span>
-            <p className="font-bold text-[#172B3A]">{meeting.title}</p>
-            <p className="text-[#6B8092]">
+            <p className="font-bold text-[#1F2428] dark:text-[#EAECEE]">{meeting.title}</p>
+            <p className="text-[#7C848D] dark:text-[#A3AAB2]">
               {previousDateFormatted} ({meeting.scheduledTimeZone || 'UTC'})
             </p>
           </div>
@@ -231,7 +231,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
           {/* New Date and Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#172B3A] mb-1">
+              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 New Date *
               </label>
               <input
@@ -243,11 +243,11 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   setErrorMessage(null);
                 }}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#172B3A] mb-1">
+              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 New Time *
               </label>
               <input
@@ -259,7 +259,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   setErrorMessage(null);
                 }}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
               />
             </div>
           </div>
@@ -284,8 +284,8 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   onClick={() => setDstOccurrence('earlier')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                     dstOccurrence === 'earlier'
-                      ? 'bg-[#168B83] text-white border-[#168B83] shadow-sm'
-                      : 'bg-white text-[#172B3A] border-[#E3E1D9] hover:bg-gray-50'
+                      ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
+                      : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
                   }`}
                 >
                   First occurrence (Daylight Time / {ambiguousOptions[0]?.slice(11, 16)} UTC)
@@ -295,8 +295,8 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   onClick={() => setDstOccurrence('later')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                     dstOccurrence === 'later'
-                      ? 'bg-[#168B83] text-white border-[#168B83] shadow-sm'
-                      : 'bg-white text-[#172B3A] border-[#E3E1D9] hover:bg-gray-50'
+                      ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
+                      : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
                   }`}
                 >
                   Second occurrence (Standard Time / {ambiguousOptions[1]?.slice(11, 16)} UTC)
@@ -308,13 +308,13 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
           {/* Duration & Time Zone Row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#172B3A] mb-1">
+              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 Duration
               </label>
               <select
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] bg-white focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
               >
                 <option value={15}>15 minutes</option>
                 <option value={30}>30 minutes</option>
@@ -325,7 +325,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#172B3A] mb-1">
+              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 Time Zone (IANA)
               </label>
               <select
@@ -335,7 +335,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   setAmbiguousOptions(null);
                   setErrorMessage(null);
                 }}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] bg-white focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
               >
                 {!COMMON_TIMEZONES.includes(timeZone) && (
                   <option value={timeZone}>{timeZone} (Original)</option>

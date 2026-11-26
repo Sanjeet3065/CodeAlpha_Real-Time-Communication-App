@@ -79,17 +79,17 @@ export const AccountMenu: React.FC = () => {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={`User account menu for ${displayName}`}
-        className="flex items-center gap-2 p-1.5 pl-2 rounded-full hover:bg-[#F7F6F2] transition-colors border border-transparent hover:border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+        className="flex items-center gap-2 p-1.5 pl-2 rounded-full hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors border border-transparent hover:border-[#DDDAD0] dark:hover:border-[#3A404A] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
       >
-        <div className="w-8 h-8 rounded-full bg-[#DCEDE8] text-[#168B83] font-bold text-xs flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-bold text-xs flex items-center justify-center flex-shrink-0">
           {getInitials()}
         </div>
-        <span className="hidden sm:inline-block text-xs font-semibold text-[#172B3A] max-w-[130px] truncate">
+        <span className="hidden sm:inline-block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] max-w-[130px] truncate">
           {displayName}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#6B8092] transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-[#172B3A]' : ''
+          className={`w-3.5 h-3.5 text-[#7C848D] dark:text-[#A3AAB2] transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[#1F2428] dark:text-[#EAECEE]' : ''
           }`}
           aria-hidden="true"
         />
@@ -100,17 +100,17 @@ export const AccountMenu: React.FC = () => {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-white border border-[#E3E1D9] focus:outline-none z-50 animate-in fade-in-50 zoom-in-95 duration-100"
+          className="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none z-50 animate-in fade-in-50 zoom-in-95 duration-100"
         >
           {/* User Profile Header */}
-          <div className="p-4 border-b border-[#E3E1D9] bg-[#F7F6F2]/50 rounded-t-xl">
+          <div className="p-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/70 dark:bg-[#141619]/70 rounded-t-xl">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-[#DCEDE8] text-[#168B83] font-bold text-sm flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-bold text-sm flex items-center justify-center flex-shrink-0">
                 {getInitials()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-[#172B3A] truncate">{displayName}</p>
-                <p className="text-xs text-[#6B8092] truncate flex items-center gap-1">
+                <p className="text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">{displayName}</p>
+                <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] truncate flex items-center gap-1">
                   <Mail className="w-3 h-3 flex-shrink-0" />
                   <span className="truncate">{user?.email || 'Authenticated Account'}</span>
                 </p>
@@ -129,8 +129,8 @@ export const AccountMenu: React.FC = () => {
                 <span>Email Unverified</span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-[#6B8092] text-[11px] font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#168B83]" />
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#EAE8E1] dark:bg-[#24282E] text-[#7C848D] dark:text-[#A3AAB2] text-[11px] font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" />
                 <span>Session Active</span>
               </div>
             )}
@@ -145,15 +145,15 @@ export const AccountMenu: React.FC = () => {
                 setIsOpen(false);
                 navigate('/settings');
               }}
-              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-[#3D5265] hover:text-[#172B3A] hover:bg-[#F7F6F2] transition-colors"
+              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors"
             >
-              <Settings className="w-4 h-4 text-[#6B8092]" />
+              <Settings className="w-4 h-4 text-[#7C848D] dark:text-[#A3AAB2]" />
               <span>Account Settings & Preferences</span>
             </button>
           </div>
 
           {/* Logout Section */}
-          <div className="p-2 border-t border-[#E3E1D9]" role="none">
+          <div className="p-2 border-t border-[#DDDAD0] dark:border-[#2B3038]" role="none">
             <button
               type="button"
               role="menuitem"

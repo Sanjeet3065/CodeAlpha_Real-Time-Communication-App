@@ -18,7 +18,7 @@ export const PageShell: React.FC<PageShellProps> = ({
   return (
     <div
       className={cn(
-        'w-full min-h-screen bg-[#F7F6F2] flex flex-col',
+        'w-full min-h-screen bg-[#F3F2EE] dark:bg-[#141619] flex flex-col',
         padded && 'py-6 md:py-10',
         className
       )}

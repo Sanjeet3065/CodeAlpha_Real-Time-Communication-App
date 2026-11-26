@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { meetingApi, getMeetingErrorMessage } from '@/services/meetingApi';
 import { ApiError } from '@/services/authApi';
+import { buildMeetingJoinUrl } from '@/lib/meetingLink';
 import type { MeetingSummary } from '@/types/meeting';
 
 interface InstantMeetingModalProps {
@@ -94,10 +95,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
   if (!isOpen) return null;
 
   const getInvitationLink = (meeting: MeetingSummary): string => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/join/${meeting.meetingCode}`;
-    }
-    return meeting.joinUrl;
+    return buildMeetingJoinUrl(meeting.meetingCode, meeting.joinUrl);
   };
 
   const handleCopy = async (text: string, field: 'code' | 'link') => {
@@ -148,19 +146,19 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
       role="dialog"
       aria-modal="true"
       aria-labelledby="instant-meeting-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-[#F7F6F2]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
               <Zap className="w-4 h-4" aria-hidden="true" />
             </div>
-            <h2 id="instant-meeting-title" className="font-display text-base font-bold text-[#172B3A]">
+            <h2 id="instant-meeting-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
               {createdMeeting ? 'Meeting Room Ready' : 'Start Instant Meeting'}
             </h2>
           </div>
@@ -168,7 +166,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
             type="button"
             onClick={onClose}
             aria-label="Close instant meeting modal"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
           >
             <X className="w-4 h-4" />
           </button>
@@ -181,9 +179,9 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
               <div>
                 <label
                   htmlFor="instant-meeting-name"
-                  className="block text-xs font-semibold text-[#172B3A] mb-1.5"
+                  className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
                 >
-                  Meeting Title <span className="font-normal text-[#6B8092]">(Optional)</span>
+                  Meeting Title <span className="font-normal text-[#7C848D] dark:text-[#A3AAB2]">(Optional)</span>
                 </label>
                 <input
                   ref={titleInputRef}
@@ -193,21 +191,21 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Product Architecture Sync"
-                  className="w-full px-3.5 py-2.5 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl text-sm text-[#172B3A] placeholder-[#6B8092]/70 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#168B83]/30 focus:border-[#168B83] transition-all"
+                  className="w-full px-3.5 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-sm text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86]/70 focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
                 />
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9] space-y-3">
+              <div className="p-3.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <label
                       htmlFor="instant-waiting-room"
-                      className="text-xs font-semibold text-[#172B3A] cursor-pointer flex items-center gap-1.5"
+                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer flex items-center gap-1.5"
                     >
-                      <Shield className="w-3.5 h-3.5 text-[#168B83]" aria-hidden="true" />
+                      <Shield className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                       <span>Enable Waiting Room</span>
                     </label>
-                    <p className="text-[11px] text-[#6B8092] mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] mt-0.5 leading-relaxed">
                       Require host or co-host approval before participants can enter the room.
                     </p>
                   </div>
@@ -216,23 +214,23 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                     type="checkbox"
                     checked={waitingRoomEnabled}
                     onChange={(e) => setWaitingRoomEnabled(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded text-[#168B83] focus:ring-[#168B83] border-[#E3E1D9] cursor-pointer"
+                    className="mt-1 w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
                   />
                 </div>
 
-                <div className="pt-2.5 border-t border-[#E3E1D9] flex items-center justify-between gap-3">
+                <div className="pt-2.5 border-t border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-between gap-3">
                   <label
                     htmlFor="instant-max-participants"
-                    className="text-xs font-semibold text-[#172B3A] flex items-center gap-1.5"
+                    className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5"
                   >
-                    <Users className="w-3.5 h-3.5 text-[#168B83]" aria-hidden="true" />
+                    <Users className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                     <span>Room Capacity</span>
                   </label>
                   <select
                     id="instant-max-participants"
                     value={maxParticipants}
                     onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                    className="px-2.5 py-1.5 bg-white border border-[#E3E1D9] rounded-lg text-xs font-medium text-[#172B3A] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 focus:border-[#168B83]"
+                    className="px-2.5 py-1.5 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-lg text-xs font-medium text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399]"
                   >
                     <option value={10}>Up to 10 participants</option>
                     <option value={25}>Up to 25 participants</option>
@@ -269,14 +267,14 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#DCEDE8]/50 border border-[#168B83]/25 space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#168B83]">
+              <div className="p-4 rounded-xl bg-[#E2ECE9]/60 dark:bg-[#1F302E]/60 border border-[#2F6F68]/25 dark:border-[#5FA399]/25 space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2F6F68] dark:text-[#5FA399]">
                   Room Created — You Are Host
                 </p>
-                <h3 className="font-display text-base font-bold text-[#172B3A] break-words">
+                <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] break-words">
                   {createdMeeting.title}
                 </h3>
-                <p className="text-xs text-[#3D5265]">
+                <p className="text-xs text-[#555D66] dark:text-[#A3AAB2]">
                   {createdMeeting.settings.waitingRoomEnabled
                     ? 'Waiting room admission enabled'
                     : 'Direct admission enabled'}{' '}
@@ -286,11 +284,11 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
 
               {/* Meeting Code */}
               <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold text-[#6B8092] uppercase tracking-wider">
+                <span className="block text-[11px] font-semibold text-[#7C848D] dark:text-[#A3AAB2] uppercase tracking-wider">
                   Meeting Code
                 </span>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3.5 py-2.5 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl font-mono text-sm font-semibold text-[#172B3A] tracking-wider">
+                  <code className="flex-1 px-3.5 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl font-mono text-sm font-semibold text-[#1F2428] dark:text-[#EAECEE] tracking-wider">
                     {createdMeeting.meetingCode}
                   </code>
                   <Button
@@ -317,13 +315,13 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
 
               {/* Invitation Link */}
               <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold text-[#6B8092] uppercase tracking-wider">
+                <span className="block text-[11px] font-semibold text-[#7C848D] dark:text-[#A3AAB2] uppercase tracking-wider">
                   Shareable Invitation Link
                 </span>
                 <div className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 px-3 py-2.5 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl flex items-center gap-2">
-                    <LinkIcon className="w-3.5 h-3.5 text-[#6B8092] flex-shrink-0" />
-                    <span className="font-mono text-xs text-[#172B3A] truncate">
+                  <div className="min-w-0 flex-1 px-3 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl flex items-center gap-2">
+                    <LinkIcon className="w-3.5 h-3.5 text-[#7C848D] dark:text-[#A3AAB2] flex-shrink-0" />
+                    <span className="font-mono text-xs text-[#1F2428] dark:text-[#EAECEE] truncate">
                       {getInvitationLink(createdMeeting)}
                     </span>
                   </div>

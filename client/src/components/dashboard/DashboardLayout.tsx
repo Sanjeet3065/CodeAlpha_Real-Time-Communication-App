@@ -17,11 +17,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] flex">
+    <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] flex">
       {/* Skip to Content for WCAG 2.2 AA Accessibility */}
       <a
         href="#dashboard-main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#172B3A] focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#1F2428] dark:focus:bg-[#5FA399] focus:text-[#FAF9F6] dark:focus:text-[#141619] focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
       >
         Skip to main content
       </a>

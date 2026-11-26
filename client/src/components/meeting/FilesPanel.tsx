@@ -87,7 +87,7 @@ function getFileIcon(extension: string) {
     case 'css':
       return <FileCode className="w-5 h-5 text-purple-500" />;
     default:
-      return <FileText className="w-5 h-5 text-[#168B83]" />;
+      return <FileText className="w-5 h-5 text-[#5FA399]" />;
   }
 }
 
@@ -282,14 +282,14 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
   return (
     <div
       data-panel="files-panel"
-      className="flex flex-col h-full bg-[#172B3A] text-white select-none border-l border-white/10"
+      className="flex flex-col h-full bg-[#1C1F24] text-white select-none border-l border-white/10"
     >
       {/* Panel Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <FolderDown className="w-5 h-5 text-[#7CE5DB]" />
+          <FolderDown className="w-5 h-5 text-[#5FA399]" />
           <h3 className="font-semibold text-sm text-white">Files</h3>
-          <span className="px-2 py-0.5 text-xs font-bold bg-[#168B83]/30 text-[#7CE5DB] rounded-full border border-[#7CE5DB]/20">
+          <span className="px-2 py-0.5 text-xs font-bold bg-[#2F6F68]/30 text-[#5FA399] rounded-full border border-[#5FA399]/20">
             {files.length}
           </span>
         </div>
@@ -307,7 +307,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
 
       {/* Error Banners */}
       {(error || validationError) && (
-        <div className="m-3 p-2.5 rounded-xl bg-[#D94F4F]/20 border border-[#D94F4F]/40 flex items-start justify-between gap-2 text-xs text-[#F7A3A3]">
+        <div className="m-3 p-2.5 rounded-xl bg-[#C24D4D]/20 border border-[#C24D4D]/40 flex items-start justify-between gap-2 text-xs text-[#D46A6A]">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{validationError || error}</span>
@@ -342,10 +342,10 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
               fileInputRef.current?.click();
             }
           }}
-          className={`p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#7CE5DB] focus:ring-offset-2 focus:ring-offset-[#172B3A] ${
+          className={`p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#5FA399] focus:ring-offset-2 focus:ring-offset-[#1C1F24] ${
             isDragging
-              ? 'border-[#7CE5DB] bg-[#168B83]/20'
-              : 'border-white/20 bg-white/5 hover:border-[#7CE5DB]/60 hover:bg-white/10'
+              ? 'border-[#5FA399] bg-[#2F6F68]/20'
+              : 'border-white/20 bg-white/5 hover:border-[#5FA399]/60 hover:bg-white/10'
           }`}
         >
           <input
@@ -355,11 +355,11 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
             className="hidden"
             aria-label="Upload file"
           />
-          <div className="w-8 h-8 rounded-full bg-[#168B83]/30 text-[#7CE5DB] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-[#2F6F68]/30 text-[#5FA399] flex items-center justify-center">
             <Upload className="w-4 h-4" />
           </div>
           <p className="text-xs font-medium text-white">
-            <span className="text-[#7CE5DB] underline">Click to upload</span> or drag and drop
+            <span className="text-[#5FA399] underline">Click to upload</span> or drag and drop
           </p>
           <p className="text-[10px] text-white/50">
             PDF, DOCX, XLSX, Images, ZIP up to 25 MB
@@ -392,7 +392,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                       type="button"
                       onClick={() => onCancelUpload(upload.uploadId)}
                       aria-label="Cancel upload"
-                      className="p-1 rounded text-white/60 hover:text-[#D94F4F]"
+                      className="p-1 rounded text-white/60 hover:text-[#D46A6A]"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -414,17 +414,17 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                 <div
                   className={`h-full transition-all duration-200 ${
                     upload.status === 'failed'
-                      ? 'bg-[#D94F4F]'
+                      ? 'bg-[#C24D4D]'
                       : upload.status === 'completed'
                       ? 'bg-emerald-500'
-                      : 'bg-[#168B83]'
+                      : 'bg-[#2F6F68]'
                   }`}
                   style={{ width: `${upload.progressPercent}%` }}
                 />
               </div>
 
               {upload.error && (
-                <p className="text-[10px] text-[#F7A3A3] truncate">{upload.error}</p>
+                <p className="text-[10px] text-[#D46A6A] truncate">{upload.error}</p>
               )}
             </div>
           ))}
@@ -441,7 +441,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search shared files..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#168B83]"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#5FA399]"
             />
           </div>
         </div>
@@ -451,7 +451,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {isLoading && files.length === 0 ? (
           <div className="py-8 flex flex-col items-center justify-center gap-2 text-white/60">
-            <Loader2 className="w-6 h-6 animate-spin text-[#7CE5DB]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#5FA399]" />
             <p className="text-xs">Loading files...</p>
           </div>
         ) : filteredFiles.length === 0 ? (
@@ -524,7 +524,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                   disabled={downloadingId === file.id}
                   aria-label={`Download ${file.originalFilename}`}
                   title="Download file"
-                  className="p-1.5 rounded-lg text-[#7CE5DB] hover:bg-[#168B83]/30 transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-lg text-[#5FA399] hover:bg-[#2F6F68]/30 transition-colors disabled:opacity-50"
                 >
                   {downloadingId === file.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -542,7 +542,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                     disabled={deletingId === file.id}
                     aria-label={`Delete ${file.originalFilename}`}
                     title="Delete file"
-                    className="p-1.5 rounded-lg text-white/40 hover:text-[#D94F4F] hover:bg-[#D94F4F]/10 transition-colors disabled:opacity-50"
+                    className="p-1.5 rounded-lg text-white/40 hover:text-[#D46A6A] hover:bg-[#C24D4D]/10 transition-colors disabled:opacity-50"
                   >
                     {deletingId === file.id ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -564,11 +564,11 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
           role="dialog"
           aria-modal="true"
           aria-labelledby="preview-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 "
         >
           <div
             ref={previewModalRef}
-            className="bg-[#172B3A] border border-white/20 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4"
+            className="bg-[#1C1F24] border border-white/20 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 min-w-0">
@@ -587,7 +587,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
               </button>
             </div>
 
-            <div className="bg-[#101820] rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px] text-center">
+            <div className="bg-[#111316] rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px] text-center">
               <div className="space-y-2">
                 <p className="text-xs text-white/80">
                   Shared by <span className="font-semibold text-white">{previewFile.uploaderName}</span> ({previewFile.uploaderRole})
@@ -615,7 +615,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                   handleDownload(previewFile);
                   handleClosePreview();
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#168B83] hover:bg-[#137770] text-white transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#2F6F68] hover:bg-[#255A54] text-white transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download File</span>

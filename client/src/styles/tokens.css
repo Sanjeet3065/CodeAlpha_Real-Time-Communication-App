@@ -1,44 +1,65 @@
 /**
- * CONNECTLY Design System - Tokens
- * Source: docs/COLOR_TYPOGRAPHY_TOKENS.md
+ * CONNECTLY Design System - Matte Dual-Theme Tokens (Stone & Carbon Matte)
  */
 
 :root {
-  /* 1. Core Color Tokens */
-  --cly-color-surface-canvas: #F7F6F2;
-  --cly-color-surface-card: #FFFFFF;
-  --cly-color-surface-theater: #101820;
-  --cly-color-surface-dock: #253746;
-  --cly-color-brand-primary: #172B3A;
-  --cly-color-brand-accent: #168B83;
-  --cly-color-brand-accent-hover: #11706A;
-  --cly-color-brand-subtle: #DCEDE8;
-  --cly-color-brand-subtle-hover: #C8E2DB;
-  --cly-color-brand-danger: #D94F4F;
-  --cly-color-brand-danger-hover: #BF3C3C;
+  /* Core Matte Surfaces (Light Mode - Warm Alabaster & Chalk) */
+  --cly-surface-canvas: #F3F2EE;
+  --cly-surface-card: #FAF9F6;
+  --cly-surface-elevated: #FFFFFF;
+  --cly-surface-muted: #EAE8E1;
+
+  /* Brand & Accent (Matte Mineral Pine-Slate - zero glossy glow) */
+  --cly-brand-primary: #1F2428;
+  --cly-accent: #2F6F68;
+  --cly-accent-hover: #255A54;
+  --cly-accent-active: #1E4944;
+  --cly-accent-soft: #E2ECE9;
+  --cly-accent-soft-hover: #D2E1DC;
+  --cly-danger: #C24D4D;
+  --cly-danger-hover: #A63D3D;
+  --cly-danger-soft: #F6E6E6;
+
+  /* Theater / Video Studio Surfaces (Matte Charcoal) */
+  --cly-surface-theater: #111316;
+  --cly-surface-tile: #181B20;
+  --cly-surface-dock: #1C1F24;
+
+  /* Legacy alias variables mapped to active matte tokens */
+  --cly-color-surface-canvas: var(--cly-surface-canvas);
+  --cly-color-surface-card: var(--cly-surface-card);
+  --cly-color-surface-theater: var(--cly-surface-theater);
+  --cly-color-surface-dock: var(--cly-surface-dock);
+  --cly-color-brand-primary: var(--cly-brand-primary);
+  --cly-color-brand-accent: var(--cly-accent);
+  --cly-color-brand-accent-hover: var(--cly-accent-hover);
+  --cly-color-brand-subtle: var(--cly-accent-soft);
+  --cly-color-brand-subtle-hover: var(--cly-accent-soft-hover);
+  --cly-color-brand-danger: var(--cly-danger);
+  --cly-color-brand-danger-hover: var(--cly-danger-hover);
 
   /* Text Colors */
-  --cly-text-primary: #172B3A;
-  --cly-text-secondary: #3D5265;
-  --cly-text-muted: #6B8092;
+  --cly-text-primary: #1F2428;
+  --cly-text-secondary: #555D66;
+  --cly-text-muted: #7C848D;
 
   /* Border Colors */
-  --cly-border-subtle: #E3E1D9;
-  --cly-border-focus: #168B83;
-  --cly-border-dark: rgba(255, 255, 255, 0.12);
+  --cly-border-subtle: #DDDAD0;
+  --cly-border-strong: #C9C5B8;
+  --cly-border-focus: #2F6F68;
+  --cly-border-dark: rgba(255, 255, 255, 0.08);
 
-  /* 2. Typography Tokens */
+  /* Typography */
   --cly-type-font-display: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --cly-type-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --cly-type-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Font Weights */
   --cly-type-weight-regular: 400;
   --cly-type-weight-medium: 500;
   --cly-type-weight-semibold: 600;
   --cly-type-weight-bold: 700;
 
-  /* 3. Spacing Tokens (4px baseline grid) */
+  /* Spacing (4px baseline grid) */
   --cly-space-1: 4px;
   --cly-space-2: 8px;
   --cly-space-3: 12px;
@@ -49,7 +70,7 @@
   --cly-space-12: 48px;
   --cly-space-16: 64px;
 
-  /* 4. Border Radius */
+  /* Border Radius */
   --cly-radius-none: 0px;
   --cly-radius-sm: 4px;
   --cly-radius-md: 8px;
@@ -57,36 +78,35 @@
   --cly-radius-xl: 16px;
   --cly-radius-full: 9999px;
 
-  /* 5. Shadow Tokens */
-  --cly-shadow-sm: 0 1px 2px 0 rgba(23, 43, 58, 0.05);
-  --cly-shadow-md: 0 4px 6px -1px rgba(23, 43, 58, 0.08), 0 2px 4px -2px rgba(23, 43, 58, 0.04);
-  --cly-shadow-lg: 0 10px 15px -3px rgba(23, 43, 58, 0.10), 0 4px 6px -4px rgba(23, 43, 58, 0.05);
-  --cly-shadow-theater: 0 12px 30px 0 rgba(0, 0, 0, 0.45);
+  /* Soft Diffused Matte Elevation */
+  --cly-shadow-sm: 0 1px 2px 0 rgba(31, 36, 40, 0.04);
+  --cly-shadow-md: 0 4px 12px -2px rgba(31, 36, 40, 0.06);
+  --cly-shadow-lg: 0 10px 24px -4px rgba(31, 36, 40, 0.08);
+  --cly-shadow-theater: 0 12px 28px 0 rgba(0, 0, 0, 0.42);
 
-  /* 6. Elevation Tokens */
   --cly-elevation-0: 0;
   --cly-elevation-card: var(--cly-shadow-sm);
   --cly-elevation-dropdown: var(--cly-shadow-md);
   --cly-elevation-modal: var(--cly-shadow-lg);
 
-  /* 7. Border Widths */
+  /* Border Widths */
   --cly-border-hairline: 1px solid var(--cly-border-subtle);
   --cly-border-thick: 2px solid var(--cly-border-subtle);
-  --cly-border-active-speaker: 3px solid #168B83;
+  --cly-border-active-speaker: 3px solid #5FA399;
 
-  /* 8. Container Max Widths */
+  /* Container Max Widths */
   --cly-container-sm: 640px;
   --cly-container-md: 768px;
   --cly-container-lg: 1024px;
   --cly-container-xl: 1280px;
   --cly-container-full: 100%;
 
-  /* 9. Grid Settings */
+  /* Grid Settings */
   --cly-grid-gutter-desktop: 24px;
   --cly-grid-gutter-tablet: 16px;
   --cly-grid-gutter-mobile: 12px;
 
-  /* 10. Breakpoint Values */
+  /* Breakpoints */
   --cly-bp-mobile-sm: 360px;
   --cly-bp-mobile: 480px;
   --cly-bp-tablet-portrait: 768px;
@@ -95,24 +115,22 @@
   --cly-bp-desktop: 1280px;
   --cly-bp-desktop-xl: 1440px;
 
-  /* 11. Icon Sizes */
+  /* Icon Sizes */
   --cly-icon-sm: 16px;
   --cly-icon-md: 20px;
   --cly-icon-lg: 24px;
   --cly-icon-xl: 32px;
 
-  /* 12. Animation Durations */
+  /* Animation */
   --cly-dur-instant: 75ms;
   --cly-dur-fast: 150ms;
   --cly-dur-base: 250ms;
   --cly-dur-slow: 350ms;
-
-  /* 13. Transition Easings */
   --cly-ease-default: cubic-bezier(0.16, 1, 0.3, 1);
   --cly-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --cly-ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-  /* 14. Z-Index Layers */
+  /* Z-Index */
   --cly-z-base: 1;
   --cly-z-dock: 100;
   --cly-z-drawer: 200;
@@ -120,12 +138,41 @@
   --cly-z-modal: 400;
   --cly-z-toast: 500;
 
-  /* 15. Focus Ring */
-  --cly-focus-outline: 2px solid #168B83;
+  /* Focus Ring */
+  --cly-focus-outline: 2px solid var(--cly-accent);
   --cly-focus-offset: 2px;
-  --cly-focus-dark: 2px solid #2EC4B6;
+  --cly-focus-dark: 2px solid #5FA399;
 
-  /* 16. Overlays */
-  --cly-overlay-backdrop-light: rgba(23, 43, 58, 0.40);
-  --cly-overlay-backdrop-dark: rgba(0, 0, 0, 0.70);
+  /* Overlays */
+  --cly-overlay-backdrop-light: rgba(20, 22, 25, 0.48);
+  --cly-overlay-backdrop-dark: rgba(0, 0, 0, 0.72);
+}
+
+html.dark {
+  --cly-surface-canvas: #141619;
+  --cly-surface-card: #1C1F24;
+  --cly-surface-elevated: #24282E;
+  --cly-surface-muted: #2B3038;
+
+  --cly-brand-primary: #EAECEE;
+  --cly-accent: #5FA399;
+  --cly-accent-hover: #6EB2A8;
+  --cly-accent-active: #4E8F85;
+  --cly-accent-soft: #1F302E;
+  --cly-accent-soft-hover: #273C39;
+  --cly-danger: #D46A6A;
+  --cly-danger-hover: #C15858;
+  --cly-danger-soft: #342023;
+
+  --cly-text-primary: #EAECEE;
+  --cly-text-secondary: #A3AAB2;
+  --cly-text-muted: #747C86;
+
+  --cly-border-subtle: #2B3038;
+  --cly-border-strong: #3A404A;
+  --cly-border-focus: #5FA399;
+
+  --cly-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.28);
+  --cly-shadow-md: 0 6px 16px -2px rgba(0, 0, 0, 0.36);
+  --cly-shadow-lg: 0 14px 28px -4px rgba(0, 0, 0, 0.48);
 }

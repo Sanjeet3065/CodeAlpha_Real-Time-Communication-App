@@ -5,8 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Connectly — Professional real-time video communication and collaboration web application." />
-    <meta name="theme-color" content="#F7F6F2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#101820" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F3F2EE" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141619" media="(prefers-color-scheme: dark)" />
+    <script>
+      try {
+        var m = localStorage.getItem('cly_theme_mode');
+        var d = m === 'dark' || ((!m || m === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', d);
+        document.documentElement.dataset.theme = d ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = d ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
 
     <!-- Google Fonts: Manrope (Display), Inter (UI/Body), JetBrains Mono (Technical) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,7 +27,7 @@
 
     <title>Connectly — Real-Time Video Collaboration</title>
   </head>
-  <body class="bg-[#F7F6F2] text-[#172B3A] antialiased selection:bg-[#DCEDE8] selection:text-[#172B3A]">
+  <body class="bg-[#F3F2EE] text-[#1F2428] dark:bg-[#141619] dark:text-[#EAECEE] antialiased selection:bg-[#E2ECE9] selection:text-[#1F2428] dark:selection:bg-[#1F302E] dark:selection:text-[#EAECEE]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -81,24 +81,24 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
   }, [fetchUpcoming]);
 
   return (
-    <Card className="p-6 bg-white border-[#E3E1D9] shadow-xs rounded-2xl flex flex-col h-full">
+    <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl flex flex-col h-full">
       {/* Section Header */}
-      <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#E3E1D9]/70">
+      <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#DDDAD0]/80 dark:border-[#2B3038]">
         <div className="flex items-center gap-2.5">
-          <h3 className="font-display text-base font-bold text-[#172B3A]">
+          <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
             Upcoming Meetings
           </h3>
           <Badge variant="neutral">Upcoming</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[#6B8092]">
+          <span className="text-xs font-semibold text-[#7C848D] dark:text-[#A3AAB2]">
             {meetings.length} Scheduled
           </span>
           <button
             type="button"
             onClick={fetchUpcoming}
             aria-label="Refresh upcoming meetings"
-            className="p-1 rounded text-[#6B8092] hover:text-[#172B3A] hover:bg-[#F7F6F2] transition-colors"
+            className="p-1 rounded text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -108,8 +108,8 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
       {/* Loading State */}
       {isLoading && meetings.length === 0 && (
         <div className="py-12 flex flex-col items-center justify-center space-y-3">
-          <div className="w-8 h-8 border-2 border-[#168B83] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-[#6B8092]">Loading meeting agenda...</p>
+          <div className="w-8 h-8 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Loading meeting agenda...</p>
         </div>
       )}
 
@@ -134,13 +134,13 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
       {/* Empty State */}
       {!isLoading && !error && meetings.length === 0 && (
         <div className="py-10 px-4 text-center flex-1 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-3">
             <CalendarClock className="w-6 h-6" aria-hidden="true" />
           </div>
-          <h4 className="font-display text-sm font-bold text-[#172B3A] mb-1">
+          <h4 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
             No Upcoming Meetings Scheduled
           </h4>
-          <p className="text-xs text-[#6B8092] max-w-sm mx-auto mb-5 leading-relaxed">
+          <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] max-w-sm mx-auto mb-5 leading-relaxed">
             Your schedule is currently clear. You can schedule a collaboration session in advance or start an instant room.
           </p>
           <div className="flex gap-2">
@@ -170,7 +170,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
 
       {/* Populated State */}
       {!error && meetings.length > 0 && (
-        <div className="space-y-3 divide-y divide-[#E3E1D9]/60">
+        <div className="space-y-3 divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038]">
           {meetings.map((meeting) => {
             const startDate = meeting.scheduledStartAt ? new Date(meeting.scheduledStartAt) : null;
             const timeStr = startDate
@@ -185,29 +185,29 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs font-bold text-[#168B83] flex items-center gap-1">
+                      <span className="text-xs font-bold text-[#2F6F68] dark:text-[#5FA399] flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {dateStr} at {timeStr}
                       </span>
-                      <span className="text-[10px] text-[#6B8092]">
+                      <span className="text-[10px] text-[#7C848D] dark:text-[#A3AAB2]">
                         ({meeting.scheduledTimeZone || 'UTC'})
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F7F6F2] border border-[#E3E1D9] text-[#172B3A] font-medium">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-[#1F2428] dark:text-[#EAECEE] font-medium">
                         {meeting.durationMinutes}m
                       </span>
                       {meeting.settings?.waitingRoomEnabled && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#DCEDE8] text-[#168B83] font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-semibold">
                           Waiting Room
                         </span>
                       )}
                     </div>
 
-                    <h4 className="text-sm font-semibold text-[#172B3A] truncate">
+                    <h4 className="text-sm font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
                       {meeting.title}
                     </h4>
 
-                    <div className="flex items-center gap-3 mt-1 text-xs text-[#6B8092] flex-wrap">
-                      <span className="font-mono text-[#168B83] font-semibold">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-[#7C848D] dark:text-[#A3AAB2] flex-wrap">
+                      <span className="font-mono text-[#2F6F68] dark:text-[#5FA399] font-semibold">
                         {meeting.meetingCode}
                       </span>
                       <span className="flex items-center gap-1">
@@ -246,7 +246,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
                         onClick={() =>
                           setActiveMenuId(activeMenuId === meeting.id ? null : meeting.id)
                         }
-                        className="p-1.5 rounded-lg border border-[#E3E1D9] hover:bg-[#F7F6F2] text-[#6B8092]"
+                        className="p-1.5 rounded-lg border border-[#DDDAD0] dark:border-[#2B3038] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] text-[#7C848D] dark:text-[#A3AAB2]"
                         title="More Actions"
                       >
                         <MoreVertical className="w-3.5 h-3.5" />
@@ -254,7 +254,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
 
                       {activeMenuId === meeting.id && (
                         <div
-                          className="absolute right-0 top-full mt-1 w-36 bg-white border border-[#E3E1D9] rounded-xl shadow-lg z-20 py-1 text-xs animate-in fade-in-50"
+                          className="absolute right-0 top-full mt-1 w-36 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl shadow-lg z-20 py-1 text-xs animate-in fade-in-50"
                           onMouseLeave={() => setActiveMenuId(null)}
                         >
                           <button
@@ -263,7 +263,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
                               setSelectedMeetingForReschedule(meeting);
                               setActiveMenuId(null);
                             }}
-                            className="w-full text-left px-3 py-1.5 hover:bg-[#F7F6F2] text-[#172B3A]"
+                            className="w-full text-left px-3 py-1.5 hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] text-[#1F2428] dark:text-[#EAECEE]"
                           >
                             Reschedule
                           </button>

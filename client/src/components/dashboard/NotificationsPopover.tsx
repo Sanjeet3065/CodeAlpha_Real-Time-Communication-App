@@ -110,7 +110,7 @@ export const NotificationsPopover: React.FC = () => {
   const renderIcon = (type: string) => {
     switch (type) {
       case 'MEETING_INVITATION':
-        return <Mail className="w-4 h-4 text-[#168B83]" />;
+        return <Mail className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />;
       case 'MEETING_REMINDER':
         return <Clock className="w-4 h-4 text-amber-500" />;
       case 'MEETING_RESCHEDULED':
@@ -118,7 +118,7 @@ export const NotificationsPopover: React.FC = () => {
       case 'MEETING_CANCELLED':
         return <AlertTriangle className="w-4 h-4 text-rose-500" />;
       default:
-        return <Bell className="w-4 h-4 text-[#6B8092]" />;
+        return <Bell className="w-4 h-4 text-[#7C848D] dark:text-[#A3AAB2]" />;
     }
   };
 
@@ -134,7 +134,7 @@ export const NotificationsPopover: React.FC = () => {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label={`View notifications (${unreadCount} unread)`}
-        className="relative p-1.5 sm:p-2 rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-[#F7F6F2] transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+        className="relative p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
       >
         <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
         {unreadCount > 0 && (
@@ -148,12 +148,12 @@ export const NotificationsPopover: React.FC = () => {
         <div
           role="region"
           aria-label="Notifications"
-          className="origin-top-right absolute right-0 mt-2 w-80 sm:w-96 rounded-xl shadow-lg bg-white border border-[#E3E1D9] focus:outline-none z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-[80vh] flex flex-col"
+          className="origin-top-right absolute right-0 mt-2 w-80 sm:w-96 rounded-xl shadow-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-[80vh] flex flex-col"
         >
           {/* Popover Header */}
-          <div className="flex items-center justify-between p-3.5 border-b border-[#E3E1D9] bg-[#F7F6F2]/70 rounded-t-xl shrink-0">
+          <div className="flex items-center justify-between p-3.5 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619]/80 rounded-t-xl shrink-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-[#172B3A] uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] uppercase tracking-wider">
                 Notifications
               </h3>
               {unreadCount > 0 && (
@@ -167,7 +167,7 @@ export const NotificationsPopover: React.FC = () => {
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="text-[11px] font-semibold text-[#168B83] hover:text-[#11706A] flex items-center gap-1 transition-colors"
+                className="text-[11px] font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark all read
@@ -176,20 +176,20 @@ export const NotificationsPopover: React.FC = () => {
           </div>
 
           {/* Popover Body */}
-          <div className="overflow-y-auto flex-1 divide-y divide-[#E3E1D9]/60">
+          <div className="overflow-y-auto flex-1 divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038]">
             {isLoading && notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-xs text-[#6B8092]">Loading notifications...</p>
+                <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Loading notifications...</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="w-10 h-10 rounded-xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mx-auto mb-2.5">
+                <div className="w-10 h-10 rounded-xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mx-auto mb-2.5">
                   <Inbox className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <p className="text-xs font-semibold text-[#172B3A] mb-1">
+                <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                   No New Notifications
                 </p>
-                <p className="text-[11px] text-[#6B8092] leading-relaxed max-w-xs mx-auto">
+                <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed max-w-xs mx-auto">
                   You are all caught up! When meetings are scheduled, rescheduled, or reminders fire, alerts will appear here.
                 </p>
               </div>
@@ -204,27 +204,27 @@ export const NotificationsPopover: React.FC = () => {
                       setIsOpen(false);
                     }
                   }}
-                  className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer hover:bg-[#F7F6F2]/80 ${
-                    !notif.read ? 'bg-[#DCEDE8]/20' : ''
+                  className={`p-3.5 flex items-start gap-3 transition-colors cursor-pointer hover:bg-[#EAE8E1]/70 dark:hover:bg-[#24282E] ${
+                    !notif.read ? 'bg-[#E2ECE9]/40 dark:bg-[#1F302E]/50' : ''
                   }`}
                 >
-                  <div className="mt-0.5 p-1.5 rounded-lg bg-white border border-[#E3E1D9] shrink-0">
+                  <div className="mt-0.5 p-1.5 rounded-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] shrink-0">
                     {renderIcon(notif.type)}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <p className="text-xs font-bold text-[#172B3A] truncate">
+                      <p className="text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">
                         {notif.title}
                       </p>
                       {!notif.read && (
-                        <span className="w-2 h-2 rounded-full bg-[#168B83] shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-[#2F6F68] dark:bg-[#5FA399] shrink-0" />
                       )}
                     </div>
-                    <p className="text-[11px] text-[#6B8092] line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] line-clamp-2 leading-relaxed">
                       {notif.message}
                     </p>
-                    <span className="text-[10px] text-[#6B8092]/70 mt-1 block">
+                    <span className="text-[10px] text-[#7C848D]/75 dark:text-[#747C86] mt-1 block">
                       {new Date(notif.createdAt).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { validateMeetingCode } from '@/lib/meetingCode';
 import { NavBar } from '@/components/landing/NavBar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
@@ -12,6 +14,7 @@ import { PhaseNoticeModal } from '@/components/landing/PhaseNoticeModal';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     title: string;
@@ -38,24 +41,13 @@ export const LandingPage: React.FC = () => {
   };
 
   const handleStartInstantMeeting = () => {
-    setModalState({
-      isOpen: true,
-      title: 'Instant Meeting Room Creation',
-      targetPhase: 'Phase 08 — Meeting Room Management',
-      description:
-        'Instant room generation, cryptographic room code assignment (cly-xxx-xxx), host token generation, and waiting room policies will be operational in Phase 08, powered by LiveKit SFU in Phase 09.',
-      detail: 'Prerequisite: Phase 05 (Authentication System) & Phase 07 (Backend & Database).',
-    });
+    navigate(isAuthenticated ? '/dashboard' : '/login?redirect=%2Fdashboard');
   };
 
   const handleJoinCode = (code: string) => {
-    setModalState({
-      isOpen: true,
-      title: 'Join Room by Code',
-      targetPhase: 'Phase 08 — Meeting Room Management',
-      description: `Validated room code "${code}". Live conference room connectivity, peer admission, and media negotiation will launch when the room gateway and media servers are deployed.`,
-      detail: `Validated syntax: ${code} (Format verified). Room gateway connection scheduled for Phase 08.`,
-    });
+    const parsed = validateMeetingCode(code);
+    const targetCode = parsed.isValid ? parsed.normalizedCode : code.trim();
+    navigate(`/join/${encodeURIComponent(targetCode)}`);
   };
 
   const handleExploreTech = () => {
@@ -69,14 +61,14 @@ export const LandingPage: React.FC = () => {
     setModalState({
       isOpen: true,
       title: `${topic}`,
-      targetPhase: 'Documentation & Architecture',
-      description: `CONNECTLY maintains strict adherence to ${topic}. In Phase 04, our technical and compliance specifications are fully documented in the docs/ architectural repository.`,
-      detail: 'Reference docs: docs/SECURITY_PLAN.md, docs/REQUIREMENTS.md, docs/ACCESSIBILITY_GUIDELINES.md',
+      targetPhase: 'Architecture & Security Overview',
+      description: `CONNECTLY enforces strict standards for ${topic}. Full security, encryption, and accessibility documentation is maintained alongside our live deployment.`,
+      detail: 'Encryption: Argon2id + Dual JWT + DTLS-SRTP + Supabase RLS & Private Storage',
     });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F6F2] text-[#172B3A] selection:bg-[#DCEDE8] selection:text-[#168B83]">
+    <div className="min-h-screen flex flex-col bg-[#F3F2EE] text-[#1F2428] dark:bg-[#141619] dark:text-[#EAECEE] selection:bg-[#E2ECE9] selection:text-[#2F6F68] dark:selection:bg-[#1F302E] dark:selection:text-[#5FA399]">
       {/* Primary Navigation Header */}
       <NavBar onOpenAuthNotice={handleOpenAuthNotice} />
 

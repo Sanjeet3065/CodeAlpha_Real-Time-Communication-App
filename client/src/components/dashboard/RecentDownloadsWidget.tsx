@@ -49,19 +49,19 @@ export const RecentDownloadsWidget: React.FC<RecentDownloadsWidgetProps> = ({
   };
 
   return (
-    <Card className="p-5 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
-      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E3E1D9]/70">
+    <Card className="p-5 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#DDDAD0]/80 dark:border-[#2B3038]">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
             <FolderDown className="w-3.5 h-3.5" aria-hidden="true" />
           </div>
-          <h3 className="font-display text-sm font-bold text-[#172B3A]">
+          <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE]">
             Downloads & Files
           </h3>
         </div>
         <Link
           to="/downloads"
-          className="text-xs font-semibold text-[#168B83] hover:text-[#11706A] flex items-center gap-1 transition-colors"
+          className="text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 transition-colors"
         >
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
@@ -70,16 +70,16 @@ export const RecentDownloadsWidget: React.FC<RecentDownloadsWidgetProps> = ({
 
       {files.length === 0 ? (
         <div className="py-6 px-2 text-center">
-          <FolderDown className="w-8 h-8 text-[#A0AEC0] mx-auto mb-2 opacity-60" aria-hidden="true" />
-          <p className="text-xs font-semibold text-[#172B3A] mb-1">
+          <FolderDown className="w-8 h-8 text-[#7C848D] dark:text-[#747C86] mx-auto mb-2 opacity-60" aria-hidden="true" />
+          <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1">
             No Shared Files Yet
           </p>
-          <p className="text-[11px] text-[#6B8092] leading-relaxed mb-3">
+          <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed mb-3">
             Documents, slides, and media shared during meetings will be saved here with their associated meeting name.
           </p>
           <Link
             to="/downloads"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F7F6F2] hover:bg-[#E3E1D9] text-[#172B3A] text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F3F2EE] dark:bg-[#141619] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] text-[#1F2428] dark:text-[#EAECEE] text-xs font-medium transition-colors"
           >
             <span>Open Repository</span>
             <ArrowRight className="w-3 h-3" />
@@ -90,23 +90,23 @@ export const RecentDownloadsWidget: React.FC<RecentDownloadsWidgetProps> = ({
           {files.map((file) => (
             <div
               key={file.id}
-              className="p-2.5 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9]/60 flex items-center justify-between gap-3"
+              className="p-2.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0]/70 dark:border-[#2B3038] flex items-center justify-between gap-3"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-white border border-[#E3E1D9] flex items-center justify-center text-[#168B83] shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-center text-[#2F6F68] dark:text-[#5FA399] shrink-0">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#172B3A] truncate">{file.name}</p>
-                  <p className="text-[11px] text-[#6B8092] truncate flex items-center gap-1">
-                    <Video className="w-3 h-3 text-[#168B83]" />
+                  <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">{file.name}</p>
+                  <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate flex items-center gap-1">
+                    <Video className="w-3 h-3 text-[#2F6F68] dark:text-[#5FA399]" />
                     <span className="truncate">{file.associatedMeetingName}</span>
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[11px] font-mono text-[#6B8092]">
+                <span className="text-[11px] font-mono text-[#7C848D] dark:text-[#A3AAB2]">
                   {(file.sizeBytes / (1024 * 1024)).toFixed(1)} MB
                 </span>
                 <button
@@ -114,7 +114,7 @@ export const RecentDownloadsWidget: React.FC<RecentDownloadsWidgetProps> = ({
                   onClick={() => handleDownload(file)}
                   disabled={downloadingId === file.id}
                   aria-label={`Download ${file.name} from ${file.associatedMeetingName}`}
-                  className="p-1.5 rounded-lg text-[#168B83] hover:bg-[#DCEDE8] transition-colors disabled:opacity-50"
+                  className="p-1.5 rounded-lg text-[#2F6F68] dark:text-[#5FA399] hover:bg-[#E2ECE9] dark:hover:bg-[#1F302E] transition-colors disabled:opacity-50"
                 >
                   {downloadingId === file.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -104,12 +104,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       role="region"
       aria-label="Meeting chat panel"
       data-element="chat-panel"
-      className="flex flex-col h-full bg-[#18232C] text-[#F7F6F2] select-text"
+      className="flex flex-col h-full bg-[#181B20] text-[#EAECEE] select-text"
     >
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#1E2D38]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#1C1F24]">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[#7CE5DB]" aria-hidden="true" />
+          <MessageSquare className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           <h2 className="text-sm font-semibold tracking-wide text-white">In-Call Messages</h2>
           <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-white/10 text-white/80">
             {messages.length}
@@ -131,10 +131,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {error && (
         <div
           role="alert"
-          className="flex items-center justify-between gap-2 px-3 py-2 bg-[#D94F4F]/20 border-b border-[#D94F4F]/40 text-xs text-[#F7A3A3]"
+          className="flex items-center justify-between gap-2 px-3 py-2 bg-[#C24D4D]/20 border-b border-[#C24D4D]/40 text-xs text-[#D46A6A]"
         >
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-[#F7A3A3]" />
+            <AlertCircle className="w-4 h-4 shrink-0 text-[#D46A6A]" />
             <span>{error}</span>
           </div>
           <button
@@ -165,7 +165,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             >
               {isLoadingHistory ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin text-[#7CE5DB]" />
+                  <Loader2 className="w-3 h-3 animate-spin text-[#5FA399]" />
                   <span>Loading history...</span>
                 </>
               ) : (
@@ -181,8 +181,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             data-element="chat-empty-state"
             className="flex flex-col items-center justify-center h-full text-center py-12 px-4"
           >
-            <div className="w-12 h-12 rounded-2xl bg-[#168B83]/20 border border-[#7CE5DB]/20 flex items-center justify-center mb-3">
-              <MessageSquare className="w-6 h-6 text-[#7CE5DB]" />
+            <div className="w-12 h-12 rounded-2xl bg-[#2F6F68]/20 border border-[#5FA399]/20 flex items-center justify-center mb-3">
+              <MessageSquare className="w-6 h-6 text-[#5FA399]" />
             </div>
             <p className="text-sm font-medium text-white mb-1">No messages yet</p>
             <p className="text-xs text-white/50 max-w-[240px]">
@@ -230,8 +230,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               <div
                 className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed break-words whitespace-pre-wrap shadow-sm border ${
                   isOwn
-                    ? 'bg-[#168B83]/30 border-[#7CE5DB]/30 text-white rounded-tr-sm'
-                    : 'bg-[#22313D] border-white/10 text-[#F7F6F2] rounded-tl-sm'
+                    ? 'bg-[#2F6F68]/30 border-[#5FA399]/30 text-white rounded-tr-sm'
+                    : 'bg-[#1C1F24] border-white/10 text-[#EAECEE] rounded-tl-sm'
                 }`}
               >
                 {msg.content}
@@ -242,18 +242,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="flex items-center gap-1.5 mt-0.5 px-1 text-[10px]">
                   {msg.deliveryStatus === 'sending' && (
                     <span className="inline-flex items-center gap-1 text-white/50">
-                      <Clock className="w-3 h-3 text-[#7CE5DB]" />
+                      <Clock className="w-3 h-3 text-[#5FA399]" />
                       <span>Sending...</span>
                     </span>
                   )}
                   {msg.deliveryStatus === 'failed' && (
-                    <span className="inline-flex items-center gap-1 text-[#F7A3A3]">
-                      <AlertCircle className="w-3 h-3 text-[#D94F4F]" />
+                    <span className="inline-flex items-center gap-1 text-[#D46A6A]">
+                      <AlertCircle className="w-3 h-3 text-[#D46A6A]" />
                       <span>Not delivered</span>
                       <button
                         type="button"
                         onClick={() => onRetryMessage(msg)}
-                        className="inline-flex items-center gap-0.5 ml-1 text-[#7CE5DB] hover:underline"
+                        className="inline-flex items-center gap-0.5 ml-1 text-[#5FA399] hover:underline"
                       >
                         <RotateCw className="w-2.5 h-2.5" />
                         <span>Retry</span>
@@ -271,9 +271,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {/* Message Composer Footer */}
       <form
         onSubmit={handleSend}
-        className="p-3 border-t border-white/10 bg-[#1A2630]"
+        className="p-3 border-t border-white/10 bg-[#1C1F24]"
       >
-        <div className="relative flex flex-col rounded-xl bg-[#253746] border border-white/15 focus-within:border-[#168B83] focus-within:ring-1 focus-within:ring-[#168B83] transition-colors">
+        <div className="relative flex flex-col rounded-xl bg-[#1C1F24] border border-white/15 focus-within:border-[#5FA399] focus-within:ring-1 focus-within:ring-[#2F6F68] transition-colors">
           <textarea
             ref={textareaRef}
             data-control="chat-input"
@@ -291,7 +291,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             <span
               className={`text-[10px] ${
                 isOverLimit
-                  ? 'text-[#F7A3A3] font-bold'
+                  ? 'text-[#D46A6A] font-bold'
                   : isNearLimit
                   ? 'text-amber-400'
                   : 'text-white/40'
@@ -305,7 +305,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               data-control="send-chat-message"
               disabled={!inputText.trim() || isSending || isOverLimit}
               aria-label="Send message"
-              className="inline-flex items-center justify-center p-1.5 rounded-lg bg-[#168B83] text-white hover:bg-[#137770] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center justify-center p-1.5 rounded-lg bg-[#2F6F68] text-white hover:bg-[#255A54] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {isSending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

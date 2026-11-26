@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ApiError } from '@/services/authApi';
 import {
   Eye,
@@ -142,39 +143,39 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] flex flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] flex flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
       {/* Top minimal bar */}
       <div className="w-full max-w-lg mx-auto flex items-center justify-between mb-4">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[#3D5265] hover:text-[#172B3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-md px-1.5 py-1"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-md px-1.5 py-1"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           <span>Back to Home</span>
         </Link>
-        <span className="text-xs text-[#6B8092] font-mono">CONNECTLY v0.1.0</span>
+        <ThemeToggle variant="compact" />
       </div>
 
       {/* Main Registration Card */}
       <div className="w-full max-w-lg mx-auto">
-        <div className="bg-white rounded-2xl border border-[#E3E1D9] shadow-sm p-6 sm:p-8">
+        <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm p-6 sm:p-8">
           {/* Brand Logo & Header */}
           <div className="text-center mb-8">
             <Link
               to="/"
-              className="inline-flex items-center justify-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-lg p-1"
+              className="inline-flex items-center justify-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-lg p-1"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#168B83] flex items-center justify-center text-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] flex items-center justify-center text-[#FAF9F6] dark:text-[#141619] shadow-cly-sm">
                 <Video className="w-5 h-5" aria-hidden="true" />
               </div>
-              <span className="font-display font-extrabold text-2xl tracking-tight text-[#172B3A]">
+              <span className="font-display font-extrabold text-2xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                 CONNECTLY
               </span>
             </Link>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
               Create your account
             </h1>
-            <p className="mt-1 text-sm text-[#6B8092]">
+            <p className="mt-1 text-sm text-[#7C848D] dark:text-[#A3AAB2]">
               Start crystal-clear, high-capacity meetings in seconds.
             </p>
           </div>
@@ -184,7 +185,7 @@ export const RegisterPage: React.FC = () => {
             <div
               role="alert"
               aria-live="assertive"
-              className="mb-6 p-3.5 rounded-lg bg-[#D94F4F]/10 border border-[#D94F4F]/30 flex items-start gap-2.5 text-[#D94F4F]"
+              className="mb-6 p-3.5 rounded-lg bg-[#F6E6E6] dark:bg-[#342023] border border-[#C24D4D]/30 dark:border-[#D46A6A]/30 flex items-start gap-2.5 text-[#C24D4D] dark:text-[#D46A6A]"
             >
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div className="text-sm font-medium leading-relaxed">{errorMessage}</div>
@@ -257,7 +258,7 @@ export const RegisterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="p-1 text-[#6B8092] hover:text-[#172B3A] transition-colors focus:outline-none"
+                    className="p-1 text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus:outline-none"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -271,21 +272,23 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             {/* Real-time Password Criteria Checklist */}
-            <div className="p-3.5 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9] text-xs">
-              <p className="font-semibold text-[#172B3A] mb-2">Password must contain:</p>
+            <div className="p-3.5 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-xs">
+              <p className="font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-2">Password must contain:</p>
               <ul className="space-y-1.5" aria-label="Password requirements">
                 {criteria.map((c) => (
                   <li
                     key={c.id}
                     className={`flex items-center gap-2 transition-colors duration-150 ${
-                      c.valid ? 'text-[#168B83] font-medium' : 'text-[#6B8092]'
+                      c.valid
+                        ? 'text-[#2F6F68] dark:text-[#5FA399] font-medium'
+                        : 'text-[#7C848D] dark:text-[#747C86]'
                     }`}
                   >
                     {c.valid ? (
-                      <Check className="w-3.5 h-3.5 flex-shrink-0 text-[#168B83]" aria-hidden="true" />
+                      <Check className="w-3.5 h-3.5 flex-shrink-0 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                     ) : (
                       <span className="w-3.5 h-3.5 flex items-center justify-center flex-shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#A8B2BD]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#7C848D] dark:bg-[#747C86]" />
                       </span>
                     )}
                     <span>{c.label}</span>
@@ -310,9 +313,9 @@ export const RegisterPage: React.FC = () => {
                 rightIcon={
                   confirmPassword ? (
                     passwordsMatch ? (
-                      <Check className="w-4 h-4 text-[#168B83]" aria-label="Passwords match" />
+                      <Check className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-label="Passwords match" />
                     ) : (
-                      <X className="w-4 h-4 text-[#D94F4F]" aria-label="Passwords do not match" />
+                      <X className="w-4 h-4 text-[#C24D4D] dark:text-[#D46A6A]" aria-label="Passwords do not match" />
                     )
                   ) : undefined
                 }
@@ -326,19 +329,19 @@ export const RegisterPage: React.FC = () => {
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="w-4 h-4 mt-0.5 text-[#168B83] border-[#E3E1D9] rounded focus:ring-[#168B83] cursor-pointer"
+                className="w-4 h-4 mt-0.5 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
                 required
               />
               <label
                 htmlFor="terms-conditions"
-                className="ml-2.5 block text-xs leading-relaxed text-[#3D5265] select-none cursor-pointer"
+                className="ml-2.5 block text-xs leading-relaxed text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
               >
                 I agree to the{' '}
-                <span className="text-[#172B3A] font-semibold underline underline-offset-2">
+                <span className="text-[#1F2428] dark:text-[#EAECEE] font-semibold underline underline-offset-2">
                   Terms of Service
                 </span>{' '}
                 and acknowledge the{' '}
-                <span className="text-[#172B3A] font-semibold underline underline-offset-2">
+                <span className="text-[#1F2428] dark:text-[#EAECEE] font-semibold underline underline-offset-2">
                   Privacy Policy
                 </span>
                 .
@@ -359,12 +362,12 @@ export const RegisterPage: React.FC = () => {
           </form>
 
           {/* Card Footer Link */}
-          <div className="mt-6 pt-6 border-t border-[#E3E1D9] text-center">
-            <p className="text-sm text-[#6B8092]">
+          <div className="mt-6 pt-6 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+            <p className="text-sm text-[#7C848D] dark:text-[#A3AAB2]">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-semibold text-[#168B83] hover:text-[#0E5B56] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded"
+                className="font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded"
               >
                 Sign In
               </Link>
@@ -373,14 +376,14 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         {/* Security badge note */}
-        <div className="mt-6 text-center text-xs text-[#6B8092] flex items-center justify-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-[#168B83]" aria-hidden="true" />
-          <span>Encrypted with Argon2id cryptographic parameters & zero plaintext leaks</span>
+        <div className="mt-6 text-center text-xs text-[#7C848D] dark:text-[#747C86] flex items-center justify-center gap-1.5">
+          <Lock className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
+          <span>Encrypted with Argon2id cryptographic parameters &amp; zero plaintext leaks</span>
         </div>
       </div>
 
       {/* Footer copyright */}
-      <div className="text-center py-2 text-xs text-[#6B8092]">
+      <div className="text-center py-2 text-xs text-[#7C848D] dark:text-[#747C86]">
         &copy; {new Date().getFullYear()} CONNECTLY. All rights reserved.
       </div>
     </div>

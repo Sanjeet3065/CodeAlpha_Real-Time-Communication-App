@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { schedulingApi } from '@/services/schedulingApi';
 import { zonedDateTimeToUtc } from '@/utils/timezone';
+import { buildMeetingJoinUrl } from '@/lib/meetingLink';
 import type { IScheduledMeeting } from '@/types/scheduling';
 
 interface ScheduleMeetingModalProps {
@@ -227,19 +228,19 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="schedule-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-xl bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-[#F7F6F2]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
               <Calendar className="w-4 h-4" />
             </div>
-            <h2 id="schedule-modal-title" className="font-display text-base font-bold text-[#172B3A]">
+            <h2 id="schedule-modal-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
               Schedule Collaboration Session
             </h2>
           </div>
@@ -247,7 +248,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close scheduling modal"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
           >
             <X className="w-4 h-4" />
           </button>
@@ -257,23 +258,23 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
         <div className="p-6 overflow-y-auto flex-1 space-y-5">
           {successMeeting ? (
             <div className="text-center py-6 space-y-4">
-              <div className="w-12 h-12 rounded-full bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mx-auto">
                 <Check className="w-6 h-6" />
               </div>
-              <h3 className="font-display text-lg font-bold text-[#172B3A]">
+              <h3 className="font-display text-lg font-bold text-[#1F2428] dark:text-[#EAECEE]">
                 Meeting Successfully Scheduled!
               </h3>
-              <p className="text-xs text-[#6B8092] max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] max-w-md mx-auto leading-relaxed">
                 Your collaboration session <strong>"{successMeeting.title}"</strong> has been created.
                 Invitations and automated reminders are configured.
               </p>
-              <div className="p-3 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl text-left max-w-md mx-auto space-y-1.5 text-xs">
+              <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-left max-w-md mx-auto space-y-1.5 text-xs">
                 <p>
-                  <span className="font-semibold text-[#172B3A]">Meeting Code: </span>
-                  <code className="text-[#168B83] font-bold">{successMeeting.meetingCode}</code>
+                  <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">Meeting Code: </span>
+                  <code className="text-[#2F6F68] dark:text-[#5FA399] font-bold">{successMeeting.meetingCode}</code>
                 </p>
                 <p>
-                  <span className="font-semibold text-[#172B3A]">Scheduled Time: </span>
+                  <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">Scheduled Time: </span>
                   <span>
                     {new Date(successMeeting.scheduledStartAt || '').toLocaleString([], {
                       dateStyle: 'medium',
@@ -283,8 +284,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   </span>
                 </p>
                 <p>
-                  <span className="font-semibold text-[#172B3A]">Duration: </span>
+                  <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">Duration: </span>
                   <span>{successMeeting.durationMinutes} minutes</span>
+                </p>
+                <p className="break-all">
+                  <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">Join Link: </span>
+                  <span className="font-mono text-[11px] text-[#2F6F68]">
+                    {buildMeetingJoinUrl(successMeeting.meetingCode, successMeeting.joinUrl)}
+                  </span>
                 </p>
               </div>
 
@@ -294,7 +301,9 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   variant="primary"
                   size="sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(successMeeting.joinUrl);
+                    navigator.clipboard.writeText(
+                      buildMeetingJoinUrl(successMeeting.meetingCode, successMeeting.joinUrl)
+                    );
                     alert('Join link copied to clipboard!');
                   }}
                 >
@@ -316,7 +325,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
               {/* Title Input */}
               <div>
-                <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                   Session Title *
                 </label>
                 <input
@@ -326,13 +335,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   maxLength={120}
                   required
                   placeholder="e.g. Architecture Deep Dive"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                 />
               </div>
 
               {/* Description Input */}
               <div>
-                <label className="block text-xs font-medium text-[#6B8092] mb-1">
+                <label className="block text-xs font-medium text-[#7C848D] dark:text-[#A3AAB2] mb-1">
                   Description (Optional)
                 </label>
                 <textarea
@@ -341,14 +350,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   maxLength={500}
                   rows={2}
                   placeholder="Add goals, agenda, or background details..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                 />
               </div>
 
               {/* Date & Time Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                  <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                     Date *
                   </label>
                   <div className="relative">
@@ -360,13 +369,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                         setAmbiguousOptions(null);
                       }}
                       required
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                  <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                     Start Time *
                   </label>
                   <div className="relative">
@@ -378,7 +387,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                         setAmbiguousOptions(null);
                       }}
                       required
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                     />
                   </div>
                 </div>
@@ -404,8 +413,8 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       onClick={() => setDstOccurrence('earlier')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                         dstOccurrence === 'earlier'
-                          ? 'bg-[#168B83] text-white border-[#168B83] shadow-sm'
-                          : 'bg-white text-[#172B3A] border-[#E3E1D9] hover:bg-gray-50'
+                          ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
+                          : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
                       }`}
                     >
                       First occurrence (Daylight Time / {ambiguousOptions[0]?.slice(11, 16)} UTC)
@@ -415,8 +424,8 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       onClick={() => setDstOccurrence('later')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                         dstOccurrence === 'later'
-                          ? 'bg-[#168B83] text-white border-[#168B83] shadow-sm'
-                          : 'bg-white text-[#172B3A] border-[#E3E1D9] hover:bg-gray-50'
+                          ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
+                          : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
                       }`}
                     >
                       Second occurrence (Standard Time / {ambiguousOptions[1]?.slice(11, 16)} UTC)
@@ -428,13 +437,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
               {/* Duration & Time Zone Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                  <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                     Expected Duration
                   </label>
                   <select
                     value={durationMinutes}
                     onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A] bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE] bg-[#FAF9F6] dark:bg-[#1C1F24]"
                   >
                     <option value={15}>15 minutes</option>
                     <option value={30}>30 minutes</option>
@@ -447,7 +456,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                  <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                     Time Zone (IANA)
                   </label>
                   <select
@@ -456,7 +465,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       setTimeZone(e.target.value);
                       setAmbiguousOptions(null);
                     }}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A] bg-white"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE] bg-[#FAF9F6] dark:bg-[#1C1F24]"
                   >
                     {!COMMON_TIMEZONES.includes(timeZone) && (
                       <option value={timeZone}>{timeZone} (Local)</option>
@@ -472,7 +481,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
               {/* Invitee Emails */}
               <div>
-                <label className="block text-xs font-bold text-[#172B3A] mb-1">
+                <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                   Invite Participants
                 </label>
                 <div className="flex gap-2 mb-2">
@@ -487,7 +496,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       }
                     }}
                     placeholder="Enter teammate email and press Add"
-                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                   />
                   <Button type="button" variant="outline" size="sm" onClick={handleAddInvitee}>
                     Add
@@ -495,11 +504,11 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                 </div>
 
                 {invitees.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9]">
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038]">
                     {invitees.map((email) => (
                       <span
                         key={email}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#E3E1D9] text-[11px] font-medium text-[#172B3A]"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] text-[11px] font-medium text-[#1F2428] dark:text-[#EAECEE]"
                       >
                         {email}
                         <button
@@ -517,16 +526,16 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
               {/* Reminder Preferences */}
               <div>
-                <label className="block text-xs font-bold text-[#172B3A] mb-1.5">
+                <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1.5">
                   Notification Reminders
                 </label>
-                <div className="flex flex-wrap gap-4 text-xs text-[#172B3A]">
+                <div className="flex flex-wrap gap-4 text-xs text-[#1F2428] dark:text-[#EAECEE]">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={reminders.includes(15)}
                       onChange={() => toggleReminder(15)}
-                      className="rounded border-[#E3E1D9] text-[#168B83] focus:ring-[#168B83]"
+                      className="rounded border-[#DDDAD0] dark:border-[#2B3038] text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                     />
                     <span>15 minutes before</span>
                   </label>
@@ -535,7 +544,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       type="checkbox"
                       checked={reminders.includes(60)}
                       onChange={() => toggleReminder(60)}
-                      className="rounded border-[#E3E1D9] text-[#168B83] focus:ring-[#168B83]"
+                      className="rounded border-[#DDDAD0] dark:border-[#2B3038] text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                     />
                     <span>1 hour before</span>
                   </label>
@@ -544,7 +553,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       type="checkbox"
                       checked={reminders.includes(1440)}
                       onChange={() => toggleReminder(1440)}
-                      className="rounded border-[#E3E1D9] text-[#168B83] focus:ring-[#168B83]"
+                      className="rounded border-[#DDDAD0] dark:border-[#2B3038] text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                     />
                     <span>24 hours before</span>
                   </label>
@@ -552,13 +561,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
               </div>
 
               {/* Waiting Room Security */}
-              <div className="pt-2 border-t border-[#E3E1D9]">
+              <div className="pt-2 border-t border-[#DDDAD0] dark:border-[#2B3038]">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <span className="text-xs font-bold text-[#172B3A] block">
+                    <span className="text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] block">
                       Enable Waiting Room
                     </span>
-                    <span className="text-[11px] text-[#6B8092]">
+                    <span className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
                       Participants must be approved by the host before entering the room.
                     </span>
                   </div>
@@ -566,7 +575,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                     type="checkbox"
                     checked={waitingRoomEnabled}
                     onChange={(e) => setWaitingRoomEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E3E1D9] text-[#168B83] focus:ring-[#168B83]"
+                    className="w-4 h-4 rounded border-[#DDDAD0] dark:border-[#2B3038] text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
                   />
                 </label>
               </div>

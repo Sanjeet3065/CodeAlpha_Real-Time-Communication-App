@@ -118,13 +118,13 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
     <section
       aria-label="Collaborative Whiteboard Stage"
       data-whiteboard-stage="true"
-      className="flex-1 flex flex-col h-full w-full min-h-[500px] max-h-[calc(100vh-140px)] rounded-2xl bg-[#101820] border border-white/10 shadow-2xl overflow-hidden relative"
+      className="flex-1 flex flex-col h-full w-full min-h-[500px] max-h-[calc(100vh-140px)] rounded-2xl bg-[#111316] border border-white/10 shadow-2xl overflow-hidden relative"
     >
       {/* Whiteboard Header */}
-      <header className="flex items-center justify-between px-3.5 py-2.5 bg-[#172B3A]/80 border-b border-white/10 backdrop-blur-sm z-20">
+      <header className="flex items-center justify-between px-3.5 py-2.5 bg-[#1C1F24]/80 border-b border-white/10 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-[#168B83]/20 text-[#7CE5DB] border border-[#168B83]/40">
+            <span className="p-1.5 rounded-lg bg-[#2F6F68]/20 text-[#5FA399] border border-[#5FA399]/40">
               <PenTool className="w-4 h-4" />
             </span>
             <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide">
@@ -143,7 +143,7 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
           {/* Live Collaborators Count */}
           <span
             data-badge="collaborators-count"
-            className="hidden xs:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#168B83]/25 text-[#9BF3EA] border border-[#168B83]/30"
+            className="hidden xs:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#2F6F68]/25 text-[#5FA399] border border-[#5FA399]/30"
           >
             <Users className="w-3 h-3" />
             <span>{activeCollaboratorCount} collaborating</span>
@@ -163,12 +163,12 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
           >
             {isVideoStripOpen ? (
               <>
-                <ChevronUp className="w-3.5 h-3.5 text-[#7CE5DB]" />
+                <ChevronUp className="w-3.5 h-3.5 text-[#5FA399]" />
                 <span className="hidden sm:inline">Hide Video</span>
               </>
             ) : (
               <>
-                <ChevronDown className="w-3.5 h-3.5 text-[#7CE5DB]" />
+                <ChevronDown className="w-3.5 h-3.5 text-[#5FA399]" />
                 <span className="hidden sm:inline">Show Video</span>
               </>
             )}
@@ -181,7 +181,7 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
             aria-label="Close whiteboard"
             title="Close Whiteboard (W)"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -214,12 +214,12 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
         <div
           aria-label="Active participants video strip"
           data-video-strip="compact"
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#172B3A]/50 border-b border-white/10 overflow-x-auto z-10 shrink-0 scrollbar-thin"
+          className="flex items-center gap-2 px-3 py-1.5 bg-[#1C1F24]/50 border-b border-white/10 overflow-x-auto z-10 shrink-0 scrollbar-thin"
         >
           {compactTiles.map((tile) => (
             <div
               key={tile.key}
-              className="w-32 sm:w-36 h-20 sm:h-24 shrink-0 rounded-lg overflow-hidden border border-white/10 bg-[#101820] shadow-sm relative"
+              className="w-32 sm:w-36 h-20 sm:h-24 shrink-0 rounded-lg overflow-hidden border border-white/10 bg-[#111316] shadow-sm relative"
             >
               <ParticipantVideoTile
                 participantKey={tile.key}
@@ -240,7 +240,7 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
       )}
 
       {/* Canvas Area */}
-      <div className="flex-1 relative w-full h-full overflow-hidden bg-[#0A1017]">
+      <div className="flex-1 relative w-full h-full overflow-hidden bg-[#181B20]">
         <WhiteboardCanvas
           canvasRef={canvasRef}
           elements={whiteboard.elements}

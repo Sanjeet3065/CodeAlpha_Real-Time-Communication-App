@@ -34,20 +34,20 @@ export const WelcomeHeader: React.FC = () => {
   return (
     <div className="mb-6 sm:mb-8">
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-2">
-        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-[#168B83] uppercase tracking-wider">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#168B83] flex-shrink-0" aria-hidden="true" />
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] uppercase tracking-wider">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] flex-shrink-0" aria-hidden="true" />
           <span>Active Session</span>
         </div>
-        <div className="flex items-center gap-1 text-[11px] sm:text-xs text-[#6B8092]">
+        <div className="flex items-center gap-1 text-[11px] sm:text-xs text-[#7C848D] dark:text-[#A3AAB2]">
           <Calendar className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
           <span>{formattedDate}</span>
         </div>
       </div>
 
-      <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#172B3A] break-words">
+      <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] break-words">
         {getGreeting()}, {getDisplayName()}
       </h2>
-      <p className="mt-1 text-xs sm:text-sm text-[#6B8092] max-w-2xl leading-relaxed">
+      <p className="mt-1 text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] max-w-2xl leading-relaxed">
         Welcome to your secure collaboration workspace. Launch an instant room, join a session with a code, or manage your files below.
       </p>
     </div>

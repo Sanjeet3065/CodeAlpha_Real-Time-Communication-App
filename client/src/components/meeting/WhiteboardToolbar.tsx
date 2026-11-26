@@ -95,7 +95,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
       <div
         role="toolbar"
         aria-label="Whiteboard tools"
-        className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 px-3 py-2 bg-[#172B3A]/90 backdrop-blur-md border border-white/15 rounded-2xl shadow-2xl text-white select-none max-w-full"
+        className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 px-3 py-2 bg-[#1C1F24]/90 border border-white/15 rounded-2xl shadow-2xl text-white select-none max-w-full"
       >
         {/* Navigation Tools */}
         <div className="flex items-center gap-0.5">
@@ -106,9 +106,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Select & Move (V)"
             aria-pressed={activeTool === 'select'}
             onClick={() => onSelectTool('select')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'select'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -122,9 +122,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Pan / Hand tool (H)"
             aria-pressed={activeTool === 'pan'}
             onClick={() => onSelectTool('pan')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'pan'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -143,9 +143,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Pen (P)"
             aria-pressed={activeTool === 'pen'}
             onClick={() => onSelectTool('pen')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'pen'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -159,9 +159,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Highlighter"
             aria-pressed={activeTool === 'highlighter'}
             onClick={() => onSelectTool('highlighter')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'highlighter'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -175,9 +175,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Eraser (E)"
             aria-pressed={activeTool === 'eraser'}
             onClick={() => onSelectTool('eraser')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'eraser'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -201,9 +201,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
                   setIsShapesOpen(true);
                 }
               }}
-              className={`inline-flex items-center gap-0.5 p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+              className={`inline-flex items-center gap-0.5 p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
                 isShapeActive
-                  ? 'bg-[#168B83] text-white shadow-sm'
+                  ? 'bg-[#2F6F68] text-white shadow-sm'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -214,7 +214,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             {isShapesOpen && (
               <div
                 role="menu"
-                className="absolute bottom-full mb-2 left-0 bg-[#1E293B] border border-white/20 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 z-50 min-w-[130px]"
+                className="absolute bottom-full mb-2 left-0 bg-[#24282E] border border-white/20 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 z-50 min-w-[130px]"
               >
                 {SHAPE_TOOLS.map((shape) => {
                   const Icon = shape.icon;
@@ -229,7 +229,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
                       }}
                       className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
                         activeTool === shape.tool
-                          ? 'bg-[#168B83] text-white'
+                          ? 'bg-[#2F6F68] text-white'
                           : 'text-slate-200 hover:bg-white/10'
                       }`}
                     >
@@ -250,9 +250,9 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             title="Text (T)"
             aria-pressed={activeTool === 'text'}
             onClick={() => onSelectTool('text')}
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] ${
+            className={`p-2 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               activeTool === 'text'
-                ? 'bg-[#168B83] text-white shadow-sm'
+                ? 'bg-[#2F6F68] text-white shadow-sm'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -270,7 +270,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Select stroke color"
             title="Color Palette"
             onClick={() => setIsColorsOpen((prev) => !prev)}
-            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] flex items-center gap-1"
+            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] flex items-center gap-1"
           >
             <span
               className="w-5 h-5 rounded-full border-2 border-white/40 shadow-inner block"
@@ -283,7 +283,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             <div
               role="dialog"
               aria-label="Color palette"
-              className="absolute bottom-full mb-2 left-0 bg-[#1E293B] border border-white/20 rounded-xl p-2 shadow-2xl z-50 grid grid-cols-4 gap-2 w-36"
+              className="absolute bottom-full mb-2 left-0 bg-[#24282E] border border-white/20 rounded-xl p-2 shadow-2xl z-50 grid grid-cols-4 gap-2 w-36"
             >
               {PRESET_COLORS.map((col) => (
                 <button
@@ -297,7 +297,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
                   }}
                   className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none ${
                     strokeColor.toUpperCase() === col.hex.toUpperCase()
-                      ? 'border-white scale-110 ring-2 ring-[#168B83]'
+                      ? 'border-white scale-110 ring-2 ring-[#2F6F68]'
                       : 'border-white/20'
                   }`}
                   style={{ backgroundColor: col.hex }}
@@ -315,7 +315,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Select stroke width"
             title="Stroke Width"
             onClick={() => setIsWidthsOpen((prev) => !prev)}
-            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83] flex items-center gap-1"
+            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] flex items-center gap-1"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <span
@@ -329,7 +329,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
           {isWidthsOpen && (
             <div
               role="menu"
-              className="absolute bottom-full mb-2 left-0 bg-[#1E293B] border border-white/20 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 z-50 min-w-[100px]"
+              className="absolute bottom-full mb-2 left-0 bg-[#24282E] border border-white/20 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 z-50 min-w-[100px]"
             >
               {STROKE_WIDTHS.map((w) => (
                 <button
@@ -342,7 +342,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
                   }}
                   className={`inline-flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     strokeWidth === w.value
-                      ? 'bg-[#168B83] text-white'
+                      ? 'bg-[#2F6F68] text-white'
                       : 'text-slate-200 hover:bg-white/10'
                   }`}
                 >
@@ -367,7 +367,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Undo last change (Ctrl+Z)"
             title="Undo (Ctrl+Z)"
             onClick={onUndo}
-            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <Undo2 className="w-4 h-4" />
           </button>
@@ -378,7 +378,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Redo last change (Ctrl+Y)"
             title="Redo (Ctrl+Y)"
             onClick={onRedo}
-            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <Redo2 className="w-4 h-4" />
           </button>
@@ -394,7 +394,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Zoom out"
             title="Zoom Out"
             onClick={onZoomOut}
-            className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -416,7 +416,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Zoom in"
             title="Zoom In"
             onClick={onZoomIn}
-            className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
@@ -432,7 +432,7 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
             aria-label="Export whiteboard as PNG"
             title="Export as PNG image"
             onClick={onExportPng}
-            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <Download className="w-4 h-4" />
           </button>

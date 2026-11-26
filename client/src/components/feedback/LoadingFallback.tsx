@@ -18,13 +18,13 @@ export const LoadingFallback: React.FC<LoadingFallbackProps> = ({
       role="status"
       aria-live="polite"
       className={cn(
-        'flex flex-col items-center justify-center gap-3 p-8 text-[#172B3A]',
-        fullPage ? 'min-h-screen bg-[#F7F6F2]' : 'w-full py-16',
+        'flex flex-col items-center justify-center gap-3 p-8 text-[#1F2428] dark:text-[#EAECEE]',
+        fullPage ? 'min-h-screen bg-[#F3F2EE] dark:bg-[#141619]' : 'w-full py-16',
         className
       )}
     >
-      <Spinner size="lg" className="text-[#168B83]" />
-      <p className="text-sm font-medium text-[#3D5265] animate-pulse">
+      <Spinner size="lg" className="text-[#2F6F68] dark:text-[#5FA399]" />
+      <p className="text-sm font-medium text-[#555D66] dark:text-[#A3AAB2] animate-pulse">
         {message}
       </p>
     </div>

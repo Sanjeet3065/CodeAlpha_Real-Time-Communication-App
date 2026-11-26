@@ -19,25 +19,25 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
   return (
     <div
       role="alert"
-      className="min-h-screen flex items-center justify-center bg-[#F7F6F2] py-12 px-4"
+      className="min-h-screen flex items-center justify-center bg-[#F3F2EE] dark:bg-[#141619] py-12 px-4"
     >
       <Container size="sm">
-        <div className="bg-white rounded-2xl border border-[#E3E1D9] p-8 shadow-md text-center">
-          <div className="w-14 h-14 rounded-full bg-[#FEE2E2] text-[#D94F4F] flex items-center justify-center mx-auto mb-5">
+        <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] p-8 shadow-cly-md text-center">
+          <div className="w-14 h-14 rounded-full bg-[#F6E6E6] dark:bg-[#342023] text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto mb-5">
             <AlertTriangle className="w-7 h-7" aria-hidden="true" />
           </div>
 
-          <h1 className="text-xl font-bold text-[#172B3A] mb-2 font-display">
+          <h1 className="text-xl font-bold text-[#1F2428] dark:text-[#EAECEE] mb-2 font-display">
             {title}
           </h1>
 
-          <p className="text-sm text-[#3D5265] mb-6 leading-relaxed">
+          <p className="text-sm text-[#555D66] dark:text-[#A3AAB2] mb-6 leading-relaxed">
             {message}
           </p>
 
           {error && process.env.NODE_ENV !== 'production' && (
-            <div className="text-left bg-[#101820] text-[#8A9FA8] p-3 rounded-lg text-xs font-mono mb-6 overflow-auto max-h-40 border border-white/10">
-              <p className="text-[#F87171] font-semibold mb-1">{error.name}: {error.message}</p>
+            <div className="text-left bg-[#111316] text-[#A3AAB2] p-3 rounded-lg text-xs font-mono mb-6 overflow-auto max-h-40 border border-white/10">
+              <p className="text-[#D46A6A] font-semibold mb-1">{error.name}: {error.message}</p>
               {error.stack && <pre className="whitespace-pre-wrap">{error.stack}</pre>}
             </div>
           )}

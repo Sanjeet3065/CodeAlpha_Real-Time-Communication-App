@@ -41,20 +41,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
 
   return (
     <aside
-      className={`w-64 bg-white border-r border-[#E3E1D9] flex flex-col justify-between h-full select-none ${className}`}
+      className={`w-64 bg-[#FAF9F6] dark:bg-[#1C1F24] border-r border-[#DDDAD0] dark:border-[#2B3038] flex flex-col justify-between h-full select-none ${className}`}
       aria-label="Sidebar Navigation"
     >
       {/* Top Branding Section */}
       <div>
-        <div className="h-16 px-6 flex items-center gap-3 border-b border-[#E3E1D9]">
-          <div className="w-9 h-9 rounded-xl bg-[#168B83] flex items-center justify-center text-white shadow-sm flex-shrink-0">
+        <div className="h-16 px-6 flex items-center gap-3 border-b border-[#DDDAD0] dark:border-[#2B3038]">
+          <div className="w-9 h-9 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] flex items-center justify-center text-[#FAF9F6] dark:text-[#141619] shadow-sm flex-shrink-0">
             <Video className="w-5 h-5" aria-hidden="true" />
           </div>
           <div className="flex flex-col">
-            <span className="font-display font-extrabold text-lg tracking-tight text-[#172B3A] leading-tight">
+            <span className="font-display font-extrabold text-lg tracking-tight text-[#1F2428] dark:text-[#EAECEE] leading-tight">
               CONNECTLY
             </span>
-            <span className="text-[10px] uppercase font-semibold text-[#168B83] tracking-wider">
+            <span className="text-[10px] uppercase font-semibold text-[#2F6F68] dark:text-[#5FA399] tracking-wider">
               Collaboration
             </span>
           </div>
@@ -73,8 +73,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
                 className={({ isActive }) =>
                   `flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#DCEDE8] text-[#168B83] font-semibold'
-                      : 'text-[#3D5265] hover:text-[#172B3A] hover:bg-[#F7F6F2]'
+                      ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-semibold'
+                      : 'text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
                   }`
                 }
               >
@@ -83,14 +83,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
                     <div className="flex items-center gap-3">
                       <Icon
                         className={`w-4 h-4 transition-colors ${
-                          isActive ? 'text-[#168B83]' : 'text-[#6B8092]'
+                          isActive ? 'text-[#2F6F68] dark:text-[#5FA399]' : 'text-[#7C848D] dark:text-[#A3AAB2]'
                         }`}
                       />
                       <span>{item.name}</span>
                     </div>
                     {isActive && (
                       <span
-                        className="w-1.5 h-1.5 rounded-full bg-[#168B83]"
+                        className="w-1.5 h-1.5 rounded-full bg-[#2F6F68] dark:bg-[#5FA399]"
                         aria-hidden="true"
                       />
                     )}
@@ -103,19 +103,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
       </div>
 
       {/* Bottom User Area & Session Telemetry */}
-      <div className="p-4 border-t border-[#E3E1D9]">
-        <div className="p-3 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9]/70 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#DCEDE8] text-[#168B83] font-bold text-xs flex items-center justify-center flex-shrink-0">
+      <div className="p-4 border-t border-[#DDDAD0] dark:border-[#2B3038]">
+        <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0]/80 dark:border-[#2B3038] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-bold text-xs flex items-center justify-center flex-shrink-0">
             {getInitials()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[#172B3A] truncate">
+            <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
               {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Active User'}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] text-[#6B8092] truncate flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-[#168B83]" />
+              <span className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-[#2F6F68] dark:text-[#5FA399]" />
                 Session Active
               </span>
             </div>

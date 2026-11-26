@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { AccountMenu } from './AccountMenu';
 import { NotificationsPopover } from './NotificationsPopover';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { HelpModal } from './HelpModal';
 import { JoinMeetingModal } from './JoinMeetingModal';
 import { InstantMeetingModal } from './InstantMeetingModal';
@@ -232,23 +233,23 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-[#E3E1D9] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
+      <header className="h-16 bg-[#FAF9F6] dark:bg-[#1C1F24] border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left Side: Mobile Menu Button & Page Title */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={onOpenMobileMenu}
             aria-label="Open sidebar navigation"
-            className="p-1.5 sm:p-2 -ml-1 sm:-ml-2 rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-[#F7F6F2] lg:hidden transition-colors flex-shrink-0"
+            className="p-1.5 sm:p-2 -ml-1 sm:-ml-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] lg:hidden transition-colors flex-shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <div className="flex flex-col min-w-0">
-            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-[#172B3A] leading-tight truncate">
+            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] leading-tight truncate">
               {title}
             </h1>
-            <p className="hidden xl:block text-[11px] text-[#6B8092] leading-tight truncate">
+            <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate">
               {subtitle}
             </p>
           </div>
@@ -257,7 +258,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {/* Center: Functional Search Input (Visible on Laptop & Desktop 1024px+) */}
         <div className="hidden lg:flex flex-1 max-w-md mx-4 relative" ref={searchContainerRef}>
           <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B8092]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#7C848D] dark:text-[#A3AAB2]">
               <Search className="w-4 h-4" />
             </div>
             <input
@@ -281,10 +282,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               aria-expanded={isSearchOpen}
               aria-haspopup="listbox"
               role="combobox"
-              className="w-full pl-9 pr-16 py-1.5 bg-[#F7F6F2] border border-[#E3E1D9] rounded-lg text-xs text-[#172B3A] placeholder-[#6B8092] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 focus:bg-white transition-all"
+              className="w-full pl-9 pr-16 py-1.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-lg text-xs text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] transition-all"
             />
             <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-[#6B8092] bg-white border border-[#E3E1D9] rounded shadow-xs">
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-[#7C848D] dark:text-[#A3AAB2] bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded shadow-xs">
                 ⌘K
               </kbd>
             </div>
@@ -295,21 +296,21 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <div
               role="listbox"
               aria-label="Search suggestions"
-              className="origin-top absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#E3E1D9] overflow-hidden z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-80 overflow-y-auto"
+              className="origin-top absolute top-full left-0 right-0 mt-2 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-80 overflow-y-auto"
             >
-              <div className="p-2 border-b border-[#E3E1D9] bg-[#F7F6F2]/50 flex items-center justify-between text-[11px] text-[#6B8092]">
-                <span className="font-semibold uppercase tracking-wider text-[10px] text-[#172B3A]">
+              <div className="p-2 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/70 dark:bg-[#141619]/70 flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
+                <span className="font-semibold uppercase tracking-wider text-[10px] text-[#1F2428] dark:text-[#EAECEE]">
                   {searchQuery.trim() ? 'Matching Results' : 'Quick Actions & Sections'}
                 </span>
                 <span>{filteredItems.length} found</span>
               </div>
 
               {filteredItems.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[#6B8092]">
+                <div className="p-6 text-center text-xs text-[#7C848D] dark:text-[#A3AAB2]">
                   No matching actions or destinations found for &quot;{searchQuery}&quot;.
                 </div>
               ) : (
-                <div className="p-1 divide-y divide-[#E3E1D9]/40">
+                <div className="p-1 divide-y divide-[#DDDAD0]/50 dark:divide-[#2B3038]">
                   {filteredItems.map((item, index) => {
                     const Icon = item.icon;
                     const isHighlighted = index === highlightedIndex;
@@ -322,34 +323,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         onClick={() => executeSearchItem(item)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors ${
-                          isHighlighted ? 'bg-[#DCEDE8]/70 text-[#172B3A]' : 'hover:bg-[#F7F6F2]'
+                          isHighlighted ? 'bg-[#E2ECE9]/80 dark:bg-[#1F302E]/80 text-[#1F2428] dark:text-[#EAECEE]' : 'hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div
                             className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                               item.category === 'Action'
-                                ? 'bg-[#DCEDE8] text-[#168B83]'
-                                : 'bg-[#F7F6F2] text-[#3D5265]'
+                                ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                                : 'bg-[#F3F2EE] dark:bg-[#141619] text-[#555D66] dark:text-[#A3AAB2]'
                             }`}
                           >
                             <Icon className="w-3.5 h-3.5" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#172B3A] truncate">
+                            <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
                               {item.title}
                             </p>
-                            <p className="text-[11px] text-[#6B8092] truncate">
+                            <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate">
                               {item.description}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white border border-[#E3E1D9] text-[#6B8092]">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] text-[#7C848D] dark:text-[#A3AAB2]">
                             {item.category}
                           </span>
-                          <ArrowRight className="w-3 h-3 text-[#6B8092]" />
+                          <ArrowRight className="w-3 h-3 text-[#7C848D] dark:text-[#A3AAB2]" />
                         </div>
                       </button>
                     );
@@ -360,14 +361,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           )}
         </div>
 
-        {/* Right Side: Help, Notifications, Account Menu */}
+        {/* Right Side: Theme, Help, Notifications, Account Menu */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <ThemeToggle variant="compact" />
+
           {/* Help Button */}
           <button
             type="button"
             onClick={() => setIsHelpOpen(true)}
             aria-label="Help and shortcuts"
-            className="p-1.5 sm:p-2 rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-[#F7F6F2] transition-colors focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+            className="p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
           >
             <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -375,7 +378,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Notifications Popover */}
           <NotificationsPopover />
 
-          <div className="h-5 w-px bg-[#E3E1D9] mx-0.5 sm:mx-1" aria-hidden="true" />
+          <div className="h-5 w-px bg-[#DDDAD0] dark:bg-[#2B3038] mx-0.5 sm:mx-1" aria-hidden="true" />
 
           {/* User Account Menu */}
           <AccountMenu />

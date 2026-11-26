@@ -98,14 +98,14 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoading) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden"
+        className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-rose-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-rose-50/50">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
@@ -118,7 +118,7 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close cancellation dialog"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
           >
             <X className="w-4 h-4" />
           </button>
@@ -132,14 +132,14 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
             </div>
           )}
 
-          <p className="text-xs text-[#6B8092] leading-relaxed">
+          <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed">
             Are you sure you want to cancel <strong>"{meeting.title}"</strong>?
             All invited participants will be notified and this room will no longer be joinable.
             Historical records will remain preserved.
           </p>
 
           <div>
-            <label htmlFor="cancel-reason-input" className="block text-xs font-medium text-[#172B3A] mb-1">
+            <label htmlFor="cancel-reason-input" className="block text-xs font-medium text-[#1F2428] dark:text-[#EAECEE] mb-1">
               Cancellation Reason (Optional)
             </label>
             <textarea
@@ -149,7 +149,7 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
               maxLength={240}
               rows={2}
               placeholder="e.g. Rescheduling for next sprint, project milestone met early"
-              className="w-full px-3 py-2 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-[#172B3A]"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-[#1F2428] dark:text-[#EAECEE]"
             />
           </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Copy, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { schedulingApi } from '@/services/schedulingApi';
+import { normalizeInvitationUrls } from '@/lib/meetingLink';
 import type { IMeetingInvitation } from '@/types/scheduling';
 
 interface MeetingInvitationModalProps {
@@ -88,16 +89,24 @@ export const MeetingInvitationModal: React.FC<MeetingInvitationModalProps> = ({
 
   if (!isOpen || !meetingCode) return null;
 
+  const liveInvitation = invitation
+    ? normalizeInvitationUrls(
+        invitation.invitationText,
+        invitation.joinUrl,
+        invitation.meetingCode
+      )
+    : null;
+
   const handleCopy = () => {
-    if (!invitation) return;
-    navigator.clipboard.writeText(invitation.invitationText);
+    if (!liveInvitation) return;
+    navigator.clipboard.writeText(liveInvitation.invitationText);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2500);
   };
 
   const handleCopyLinkOnly = () => {
-    if (!invitation) return;
-    navigator.clipboard.writeText(invitation.joinUrl);
+    if (!liveInvitation) return;
+    navigator.clipboard.writeText(liveInvitation.joinUrl);
     setIsLinkCopied(true);
     setTimeout(() => setIsLinkCopied(false), 2500);
   };
@@ -110,19 +119,19 @@ export const MeetingInvitationModal: React.FC<MeetingInvitationModalProps> = ({
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLoading) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden"
+        className="w-full max-w-lg bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-[#F7F6F2]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
               <Mail className="w-4 h-4" />
             </div>
-            <h2 id="meeting-invitation-title" className="font-display text-base font-bold text-[#172B3A]">
+            <h2 id="meeting-invitation-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
               Meeting Invitation
             </h2>
           </div>
@@ -130,7 +139,7 @@ export const MeetingInvitationModal: React.FC<MeetingInvitationModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close meeting invitation"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -140,26 +149,26 @@ export const MeetingInvitationModal: React.FC<MeetingInvitationModalProps> = ({
         <div className="p-6 space-y-4">
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center space-y-2">
-              <Loader2 className="w-6 h-6 text-[#168B83] animate-spin" />
-              <p className="text-xs text-[#6B8092]">Generating secure invitation...</p>
+              <Loader2 className="w-6 h-6 text-[#2F6F68] dark:text-[#5FA399] animate-spin" />
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Generating secure invitation...</p>
             </div>
           ) : invitation ? (
             <div className="space-y-3">
-              <p className="text-xs text-[#6B8092]">
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">
                 Copy and share this invitation with your participants via email or messaging:
               </p>
 
               <div
                 tabIndex={0}
                 aria-label="Invitation text"
-                className="p-3 bg-[#F7F6F2] border border-[#E3E1D9] rounded-xl font-mono text-xs text-[#172B3A] whitespace-pre-wrap select-all max-h-56 overflow-y-auto leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#168B83]"
+                className="p-3 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl font-mono text-xs text-[#1F2428] dark:text-[#EAECEE] whitespace-pre-wrap select-all max-h-56 overflow-y-auto leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
               >
-                {invitation.invitationText}
+                {liveInvitation?.invitationText}
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <span className="text-[11px] text-[#6B8092]">
-                  Code: <strong className="text-[#172B3A]">{invitation.meetingCode}</strong>
+                <span className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
+                  Code: <strong className="text-[#1F2428] dark:text-[#EAECEE]">{invitation.meetingCode}</strong>
                 </span>
 
                 <div className="flex gap-2">

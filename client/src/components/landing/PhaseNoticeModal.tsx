@@ -16,9 +16,9 @@ export interface PhaseNoticeModalProps {
 export const PhaseNoticeModal: React.FC<PhaseNoticeModalProps> = ({
   isOpen,
   onClose,
-  title = 'Roadmap Phase Boundary',
-  targetPhase = 'Phase 05 — Authentication System',
-  description = 'This feature is scheduled in the CONNECTLY engineering roadmap and will be operational once its designated phase is executed.',
+  title = 'Platform Architecture Information',
+  targetPhase = 'Security & Operations',
+  description = 'CONNECTLY operates on open WebRTC standards with isolated Supabase persistence and encrypted storage.',
   detail,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -97,7 +97,7 @@ export const PhaseNoticeModal: React.FC<PhaseNoticeModalProps> = ({
       aria-modal="true"
       aria-labelledby="phase-modal-title"
       aria-describedby="phase-modal-desc"
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6 bg-[#172B3A]/60 backdrop-blur-sm"
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6 bg-[#141619]/65"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -105,18 +105,18 @@ export const PhaseNoticeModal: React.FC<PhaseNoticeModalProps> = ({
       }}
     >
       <div ref={dialogRef} className="w-full max-w-lg">
-        <Card variant="standard" className="relative p-6 sm:p-8 bg-white shadow-2xl border border-[#E3E1D9] rounded-2xl">
+        <Card variant="standard" className="relative p-6 sm:p-8 bg-[#FAF9F6] dark:bg-[#1C1F24] shadow-cly-lg border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl">
           {/* Header Row */}
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center shrink-0">
+              <span className="w-10 h-10 rounded-xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center shrink-0">
                 <Info className="w-5 h-5" aria-hidden="true" />
               </span>
               <div>
                 <Badge variant="host" className="mb-1">
-                  Active: Phase 04 — Landing Page
+                  Connectly Platform
                 </Badge>
-                <h3 id="phase-modal-title" className="text-xl font-bold font-display text-[#172B3A]">
+                <h3 id="phase-modal-title" className="text-xl font-bold font-display text-[#1F2428] dark:text-[#EAECEE]">
                   {title}
                 </h3>
               </div>
@@ -127,26 +127,26 @@ export const PhaseNoticeModal: React.FC<PhaseNoticeModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-[#6B8092] hover:text-[#172B3A] hover:bg-[#F7F6F2] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#168B83] focus-visible:outline-none"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] focus-visible:outline-none"
             >
               <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="space-y-4 text-sm text-[#3D5265] leading-relaxed">
+          <div className="space-y-4 text-sm text-[#555D66] dark:text-[#A3AAB2] leading-relaxed">
             <p id="phase-modal-desc">{description}</p>
 
-            <div className="p-4 rounded-xl bg-[#F7F6F2] border border-[#E3E1D9]/70 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#172B3A] uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4 text-[#168B83]" aria-hidden="true" />
-                <span>Next In Sequence: {targetPhase}</span>
+            <div className="p-4 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
+                <span>{targetPhase}</span>
               </div>
-              <p className="text-xs text-[#6B8092]">
-                CONNECTLY adheres to strict engineering boundaries. Features are enabled sequentially as their underlying services and security protocols are built and verified.
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">
+                Built for strict security isolation, encrypted room admission, and accessible collaboration across browsers.
               </p>
               {detail && (
-                <p className="text-xs font-mono text-[#168B83] bg-white p-2 rounded border border-[#E3E1D9]">
+                <p className="text-xs font-mono text-[#2F6F68] dark:text-[#5FA399] bg-[#FAF9F6] dark:bg-[#1C1F24] p-2 rounded border border-[#DDDAD0] dark:border-[#2B3038]">
                   {detail}
                 </p>
               )}
@@ -154,7 +154,7 @@ export const PhaseNoticeModal: React.FC<PhaseNoticeModalProps> = ({
           </div>
 
           {/* Action Row */}
-          <div className="mt-6 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[#E3E1D9]">
+          <div className="mt-6 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038]">
             <Button
               type="button"
               variant="primary"

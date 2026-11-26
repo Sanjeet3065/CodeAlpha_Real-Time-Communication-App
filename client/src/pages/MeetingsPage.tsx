@@ -133,30 +133,30 @@ export const MeetingsPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <Link
               to="/dashboard"
-              className="text-xs text-[#168B83] hover:text-[#11706A] flex items-center gap-1 font-medium transition-colors"
+              className="text-xs text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 font-medium transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Overview</span>
             </Link>
           </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-[#172B3A]">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
             Meetings & Calendar
           </h2>
-          <p className="text-xs sm:text-sm text-[#6B8092] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] mt-0.5">
             View scheduled rooms, invitation links, and past attendance logs.
           </p>
         </div>
 
         {/* Tab Switcher & Action */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center p-1 bg-white border border-[#E3E1D9] rounded-xl">
+          <div className="flex items-center p-1 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl">
             <button
               type="button"
               onClick={() => setActiveTab('scheduled')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'scheduled'
-                  ? 'bg-[#DCEDE8] text-[#168B83]'
-                  : 'text-[#6B8092] hover:text-[#172B3A]'
+                  ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                  : 'text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE]'
               }`}
             >
               Upcoming & Scheduled
@@ -166,8 +166,8 @@ export const MeetingsPage: React.FC = () => {
               onClick={() => setActiveTab('history')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'history'
-                  ? 'bg-[#DCEDE8] text-[#168B83]'
-                  : 'text-[#6B8092] hover:text-[#172B3A]'
+                  ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                  : 'text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE]'
               }`}
             >
               Past History
@@ -193,8 +193,8 @@ export const MeetingsPage: React.FC = () => {
         <div className="space-y-4">
           {isUpcomingLoading && upcomingMeetings.length === 0 ? (
             <Card className="p-12 text-center flex flex-col items-center justify-center">
-              <RefreshCw className="w-8 h-8 text-[#168B83] animate-spin mb-3" />
-              <p className="text-xs text-[#6B8092]">Loading scheduled sessions...</p>
+              <RefreshCw className="w-8 h-8 text-[#2F6F68] dark:text-[#5FA399] animate-spin mb-3" />
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Loading scheduled sessions...</p>
             </Card>
           ) : upcomingError ? (
             <Card className="p-8 text-center bg-rose-50 border-rose-200">
@@ -206,14 +206,14 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : upcomingMeetings.length === 0 ? (
-            <Card className="p-12 bg-white border-[#E3E1D9] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
-              <div className="w-16 h-16 rounded-2xl bg-[#DCEDE8] text-[#168B83] flex items-center justify-center mb-4">
+            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
+              <div className="w-16 h-16 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-4">
                 <Calendar className="w-8 h-8" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base sm:text-lg font-bold text-[#172B3A] mb-1">
+              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 No Scheduled Meetings
               </h3>
-              <p className="text-xs sm:text-sm text-[#6B8092] max-w-md mx-auto mb-6 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
                 You do not have any upcoming meetings on your calendar. Click below to schedule a meeting and invite participants.
               </p>
               <Button
@@ -242,43 +242,43 @@ export const MeetingsPage: React.FC = () => {
                   : '';
 
                 return (
-                  <Card key={m.id} className="p-5 bg-white border-[#E3E1D9] shadow-xs rounded-2xl hover:border-[#168B83]/40 transition-all">
+                  <Card key={m.id} className="p-5 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40 transition-all">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       {/* Left Info */}
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-[#168B83] flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[#2F6F68] dark:text-[#5FA399] flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5" />
                             {formattedDate} at {formattedTime}
                           </span>
-                          <span className="text-[10px] text-[#6B8092]">
+                          <span className="text-[10px] text-[#7C848D] dark:text-[#A3AAB2]">
                             ({m.scheduledTimeZone})
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F7F6F2] border border-[#E3E1D9] font-medium text-[#172B3A]">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] font-medium text-[#1F2428] dark:text-[#EAECEE]">
                             {m.durationMinutes} mins
                           </span>
                           {m.settings?.waitingRoomEnabled && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#DCEDE8] text-[#168B83] font-semibold">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-semibold">
                               Waiting Room Active
                             </span>
                           )}
                         </div>
 
-                        <h3 className="font-display text-base font-bold text-[#172B3A] truncate">
+                        <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">
                           {m.title}
                         </h3>
 
                         {m.description && (
-                          <p className="text-xs text-[#6B8092] line-clamp-1 max-w-2xl">
+                          <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] line-clamp-1 max-w-2xl">
                             {m.description}
                           </p>
                         )}
 
-                        <div className="flex items-center gap-4 text-xs text-[#6B8092] pt-1 flex-wrap">
-                          <span className="font-mono text-[#168B83] font-semibold">
+                        <div className="flex items-center gap-4 text-xs text-[#7C848D] dark:text-[#A3AAB2] pt-1 flex-wrap">
+                          <span className="font-mono text-[#2F6F68] dark:text-[#5FA399] font-semibold">
                             {m.meetingCode}
                           </span>
-                          <span>Host: <strong className="text-[#172B3A]">{m.hostName}</strong></span>
+                          <span>Host: <strong className="text-[#1F2428] dark:text-[#EAECEE]">{m.hostName}</strong></span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3.5 h-3.5" />
                             {m.invitees?.length || 0} Invited
@@ -287,7 +287,7 @@ export const MeetingsPage: React.FC = () => {
                       </div>
 
                       {/* Right Actions */}
-                      <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#E3E1D9]">
+                      <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#DDDAD0] dark:border-[#2B3038]">
                         <Button
                           type="button"
                           variant="primary"
@@ -335,7 +335,7 @@ export const MeetingsPage: React.FC = () => {
               {/* Pagination */}
               {upcomingTotalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 px-2">
-                  <span className="text-xs text-[#6B8092]">
+                  <span className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">
                     Page {upcomingPage} of {upcomingTotalPages}
                   </span>
                   <div className="flex gap-2">
@@ -373,17 +373,17 @@ export const MeetingsPage: React.FC = () => {
       {activeTab === 'history' && (
         <div className="space-y-4">
           {/* History Filters Toolbar */}
-          <Card className="p-4 bg-white border-[#E3E1D9] shadow-xs rounded-2xl">
+          <Card className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="w-4 h-4 text-[#6B8092] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#7C848D] dark:text-[#A3AAB2] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={historySearchTerm}
                   onChange={(e) => setHistorySearchTerm(e.target.value)}
                   placeholder="Search title or cly-xxx-xxx..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#E3E1D9] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30 text-[#172B3A]"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                 />
               </div>
 
@@ -394,7 +394,7 @@ export const MeetingsPage: React.FC = () => {
                   onChange={(e) =>
                     setHistoryStatusFilter(e.target.value as 'all' | 'ENDED' | 'CANCELLED')
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E3E1D9] bg-white text-[#172B3A] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="all">All Statuses (Ended & Cancelled)</option>
                   <option value="ENDED">Completed Only</option>
@@ -409,7 +409,7 @@ export const MeetingsPage: React.FC = () => {
                   onChange={(e) =>
                     setHistoryRoleFilter(e.target.value as 'all' | 'host' | 'participant')
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E3E1D9] bg-white text-[#172B3A] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="all">All Roles (Hosted & Attended)</option>
                   <option value="host">Hosted by Me</option>
@@ -422,7 +422,7 @@ export const MeetingsPage: React.FC = () => {
                 <select
                   value={historySortOrder}
                   onChange={(e) => setHistorySortOrder(e.target.value as 'desc' | 'asc')}
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E3E1D9] bg-white text-[#172B3A] focus:outline-none focus:ring-2 focus:ring-[#168B83]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
@@ -434,8 +434,8 @@ export const MeetingsPage: React.FC = () => {
           {/* History List or Table */}
           {isHistoryLoading && historyMeetings.length === 0 ? (
             <Card className="p-12 text-center flex flex-col items-center justify-center">
-              <RefreshCw className="w-8 h-8 text-[#168B83] animate-spin mb-3" />
-              <p className="text-xs text-[#6B8092]">Loading meeting history records...</p>
+              <RefreshCw className="w-8 h-8 text-[#2F6F68] dark:text-[#5FA399] animate-spin mb-3" />
+              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Loading meeting history records...</p>
             </Card>
           ) : historyError ? (
             <Card className="p-8 text-center bg-rose-50 border-rose-200">
@@ -447,14 +447,14 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : historyMeetings.length === 0 ? (
-            <Card className="p-12 bg-white border-[#E3E1D9] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
-              <div className="w-16 h-16 rounded-2xl bg-[#F7F6F2] text-[#6B8092] flex items-center justify-center mb-4">
+            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
+              <div className="w-16 h-16 rounded-2xl bg-[#F3F2EE] dark:bg-[#141619] text-[#7C848D] dark:text-[#A3AAB2] flex items-center justify-center mb-4">
                 <History className="w-8 h-8" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base sm:text-lg font-bold text-[#172B3A] mb-1">
+              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 No Meeting History Found
               </h3>
-              <p className="text-xs sm:text-sm text-[#6B8092] max-w-md mx-auto mb-6 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
                 {historySearchTerm
                   ? 'No past sessions match your search or filter criteria.'
                   : 'Meetings you host or participate in will appear here once ended or cancelled.'}
@@ -476,16 +476,16 @@ export const MeetingsPage: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-[#6B8092] px-1">
+              <div className="flex items-center justify-between text-xs text-[#7C848D] dark:text-[#A3AAB2] px-1">
                 <span>Showing {historyMeetings.length} of {historyTotal} records</span>
               </div>
 
               {historyMeetings.map((item) => (
-                <Card key={item.id} className="p-4 bg-white border-[#E3E1D9] shadow-xs rounded-2xl hover:border-[#168B83]/30 transition-all">
+                <Card key={item.id} className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl hover:border-[#2F6F68]/30 dark:hover:border-[#5FA399]/30 transition-all">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-[#168B83]">
+                        <span className="font-mono text-xs font-bold text-[#2F6F68] dark:text-[#5FA399]">
                           {item.meetingCode}
                         </span>
                         <Badge
@@ -499,16 +499,16 @@ export const MeetingsPage: React.FC = () => {
                         >
                           {item.status}
                         </Badge>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F7F6F2] border border-[#E3E1D9] text-[#172B3A] font-semibold capitalize">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-[#1F2428] dark:text-[#EAECEE] font-semibold capitalize">
                           Role: {item.userRole}
                         </span>
                       </div>
 
-                      <h4 className="font-display text-sm font-bold text-[#172B3A] truncate">
+                      <h4 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">
                         {item.title}
                       </h4>
 
-                      <div className="flex items-center gap-4 text-xs text-[#6B8092] flex-wrap">
+                      <div className="flex items-center gap-4 text-xs text-[#7C848D] dark:text-[#A3AAB2] flex-wrap">
                         <span>
                           {new Date(item.createdAt).toLocaleDateString([], {
                             month: 'short',
@@ -517,7 +517,7 @@ export const MeetingsPage: React.FC = () => {
                           })}
                         </span>
                         <span>Host: {item.hostName}</span>
-                        <span>Duration: <strong className="text-[#172B3A]">{item.formattedDuration}</strong></span>
+                        <span>Duration: <strong className="text-[#1F2428] dark:text-[#EAECEE]">{item.formattedDuration}</strong></span>
                         {item.cancelledAt && (
                           <span className="text-rose-600 font-medium">
                             Cancelled {item.cancellationReason ? `(${item.cancellationReason})` : ''}
@@ -544,7 +544,7 @@ export const MeetingsPage: React.FC = () => {
               {/* History Pagination */}
               {historyTotalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 px-2">
-                  <span className="text-xs text-[#6B8092]">
+                  <span className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">
                     Page {historyPage} of {historyTotalPages}
                   </span>
                   <div className="flex gap-2">
@@ -583,19 +583,19 @@ export const MeetingsPage: React.FC = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172B3A]/60 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
         >
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-[#E3E1D9] overflow-hidden max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E1D9] bg-[#F7F6F2]">
+          <div className="w-full max-w-xl bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#DCEDE8] text-[#168B83] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
                   <History className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-display text-sm font-bold text-[#172B3A]">
+                  <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE]">
                     Meeting Session Record
                   </h3>
-                  <span className="font-mono text-[11px] text-[#168B83]">
+                  <span className="font-mono text-[11px] text-[#2F6F68] dark:text-[#5FA399]">
                     {selectedHistoryDetails.meeting.meetingCode}
                   </span>
                 </div>
@@ -603,36 +603,36 @@ export const MeetingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedHistoryDetails(null)}
-                className="p-1 rounded-lg text-[#6B8092] hover:text-[#172B3A] hover:bg-black/5"
+                className="p-1 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-5 text-xs text-[#172B3A]">
+            <div className="p-6 overflow-y-auto space-y-5 text-xs text-[#1F2428] dark:text-[#EAECEE]">
               {/* Meeting Summary Box */}
-              <div className="p-4 bg-[#F7F6F2] rounded-xl border border-[#E3E1D9] space-y-2">
-                <h4 className="font-display text-sm font-bold text-[#172B3A]">
+              <div className="p-4 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] space-y-2">
+                <h4 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE]">
                   {selectedHistoryDetails.meeting.title}
                 </h4>
                 {selectedHistoryDetails.meeting.description && (
-                  <p className="text-[#6B8092]">{selectedHistoryDetails.meeting.description}</p>
+                  <p className="text-[#7C848D] dark:text-[#A3AAB2]">{selectedHistoryDetails.meeting.description}</p>
                 )}
-                <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] border-t border-[#E3E1D9]">
+                <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] border-t border-[#DDDAD0] dark:border-[#2B3038]">
                   <div>
-                    <span className="font-semibold text-[#6B8092]">Host: </span>
+                    <span className="font-semibold text-[#7C848D] dark:text-[#A3AAB2]">Host: </span>
                     <span>{selectedHistoryDetails.meeting.hostName}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#6B8092]">Your Role: </span>
+                    <span className="font-semibold text-[#7C848D] dark:text-[#A3AAB2]">Your Role: </span>
                     <span className="capitalize">{selectedHistoryDetails.meeting.userRole}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#6B8092]">Status: </span>
+                    <span className="font-semibold text-[#7C848D] dark:text-[#A3AAB2]">Status: </span>
                     <span>{selectedHistoryDetails.meeting.status}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#6B8092]">Actual Duration: </span>
+                    <span className="font-semibold text-[#7C848D] dark:text-[#A3AAB2]">Actual Duration: </span>
                     <span>{selectedHistoryDetails.meeting.formattedDuration}</span>
                   </div>
                 </div>
@@ -640,17 +640,17 @@ export const MeetingsPage: React.FC = () => {
 
               {/* Participant Attendance */}
               <div>
-                <h4 className="font-bold text-xs text-[#172B3A] mb-2 uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-[#1F2428] dark:text-[#EAECEE] mb-2 uppercase tracking-wider">
                   Participant Attendance ({selectedHistoryDetails.participants.length})
                 </h4>
-                <div className="border border-[#E3E1D9] rounded-xl overflow-hidden divide-y divide-[#E3E1D9]/60">
+                <div className="border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl overflow-hidden divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038]">
                   {selectedHistoryDetails.participants.map((p, idx) => (
                     <div key={idx} className="p-2.5 flex items-center justify-between text-[11px]">
                       <div>
-                        <span className="font-semibold text-[#172B3A] block">{p.displayName}</span>
-                        <span className="text-[10px] text-[#6B8092] capitalize">{p.role}</span>
+                        <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE] block">{p.displayName}</span>
+                        <span className="text-[10px] text-[#7C848D] dark:text-[#A3AAB2] capitalize">{p.role}</span>
                       </div>
-                      <div className="text-right text-[10px] text-[#6B8092]">
+                      <div className="text-right text-[10px] text-[#7C848D] dark:text-[#A3AAB2]">
                         {p.joinedAt ? (
                           <span>Joined: {new Date(p.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         ) : (
@@ -667,17 +667,17 @@ export const MeetingsPage: React.FC = () => {
 
               {/* Lifecycle Audit Timeline */}
               <div>
-                <h4 className="font-bold text-xs text-[#172B3A] mb-2 uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-[#1F2428] dark:text-[#EAECEE] mb-2 uppercase tracking-wider">
                   Lifecycle Audit Events
                 </h4>
-                <div className="space-y-2 border-l-2 border-[#168B83]/30 pl-3 ml-2">
+                <div className="space-y-2 border-l-2 border-[#2F6F68]/30 dark:border-[#5FA399]/30 pl-3 ml-2">
                   {selectedHistoryDetails.timeline.map((entry, idx) => (
                     <div key={idx} className="relative pb-2 last:pb-0">
-                      <span className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-[#168B83]" />
+                      <span className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-[#2F6F68] dark:bg-[#5FA399]" />
                       <div className="text-[11px]">
-                        <span className="font-bold text-[#172B3A]">{entry.action}</span>
-                        {entry.details && <span className="text-[#6B8092]"> — {entry.details}</span>}
-                        <span className="text-[10px] text-[#6B8092]/70 block mt-0.5">
+                        <span className="font-bold text-[#1F2428] dark:text-[#EAECEE]">{entry.action}</span>
+                        {entry.details && <span className="text-[#7C848D] dark:text-[#A3AAB2]"> — {entry.details}</span>}
+                        <span className="text-[10px] text-[#7C848D]/75 dark:text-[#747C86] block mt-0.5">
                           {new Date(entry.timestamp).toLocaleString([], {
                             dateStyle: 'short',
                             timeStyle: 'medium',
@@ -690,7 +690,7 @@ export const MeetingsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border-t border-[#E3E1D9] bg-[#F7F6F2] flex justify-end">
+            <div className="p-4 border-t border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] flex justify-end">
               <Button type="button" variant="outline" size="sm" onClick={() => setSelectedHistoryDetails(null)}>
                 Close
               </Button>

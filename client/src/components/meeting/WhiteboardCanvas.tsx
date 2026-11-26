@@ -179,8 +179,8 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // Clear background (#101820)
-    ctx.fillStyle = '#101820';
+    // Clear background (#111316)
+    ctx.fillStyle = '#111316';
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     // Apply viewport Pan and Zoom
@@ -313,7 +313,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       const sel = elements.get(selectedElementId)!;
       if (!sel.isDeleted) {
         ctx.save();
-        ctx.strokeStyle = '#168B83';
+        ctx.strokeStyle = '#2F6F68';
         ctx.lineWidth = 1.5 / zoom;
         ctx.setLineDash([4 / zoom, 4 / zoom]);
 
@@ -745,7 +745,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden select-none bg-[#101820]"
+      className="relative w-full h-full overflow-hidden select-none bg-[#111316]"
     >
       <canvas
         ref={canvasRef}
@@ -803,7 +803,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
               color: strokeColor,
               lineHeight: 1.25,
             }}
-            className="bg-[#253746]/90 border border-[#168B83] text-white rounded p-1 outline-none resize-none shadow-lg"
+            className="bg-[#1C1F24]/90 border border-[#5FA399] text-white rounded p-1 outline-none resize-none shadow-lg"
             rows={Math.max(1, textInput.text.split('\n').length)}
           />
         </div>

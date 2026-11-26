@@ -9,32 +9,32 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 const variantStyles: Record<BadgeVariant, { container: string; dot: string }> = {
   success: {
-    container: 'bg-[#DCEDE8] text-[#168B83] border-[#168B83]/20',
-    dot: 'bg-[#168B83]',
+    container: 'bg-[#E2ECE9] text-[#2F6F68] border-[#2F6F68]/20 dark:bg-[#1F302E] dark:text-[#5FA399] dark:border-[#5FA399]/25',
+    dot: 'bg-[#2F6F68] dark:bg-[#5FA399]',
   },
   warning: {
-    container: 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]/20',
-    dot: 'bg-[#D97706]',
+    container: 'bg-[#F6EDE0] text-[#8F5819] border-[#B87323]/25 dark:bg-[#302719] dark:text-[#D49A4A] dark:border-[#D49A4A]/25',
+    dot: 'bg-[#B87323] dark:bg-[#D49A4A]',
   },
   error: {
-    container: 'bg-[#FEE2E2] text-[#991B1B] border-[#EF4444]/20',
-    dot: 'bg-[#D94F4F]',
+    container: 'bg-[#F6E6E6] text-[#9E3939] border-[#C24D4D]/25 dark:bg-[#342023] dark:text-[#D46A6A] dark:border-[#D46A6A]/25',
+    dot: 'bg-[#C24D4D] dark:bg-[#D46A6A]',
   },
   info: {
-    container: 'bg-[#EFF6FF] text-[#1E40AF] border-[#3B82F6]/20',
-    dot: 'bg-[#1D4ED8]',
+    container: 'bg-[#E6EDF5] text-[#2D5078] border-[#3E6899]/25 dark:bg-[#1E2936] dark:text-[#6E95C2] dark:border-[#6E95C2]/25',
+    dot: 'bg-[#3E6899] dark:bg-[#6E95C2]',
   },
   neutral: {
-    container: 'bg-[#F2F1EC] text-[#3D5265] border-[#E3E1D9]',
-    dot: 'bg-[#6B8092]',
+    container: 'bg-[#EAE8E1] text-[#555D66] border-[#DDDAD0] dark:bg-[#24282E] dark:text-[#A3AAB2] dark:border-[#2B3038]',
+    dot: 'bg-[#7C848D] dark:bg-[#747C86]',
   },
   host: {
-    container: 'bg-[#DCEDE8] text-[#168B83] border-[#168B83]/30 font-semibold',
-    dot: 'bg-[#168B83]',
+    container: 'bg-[#E2ECE9] text-[#2F6F68] border-[#2F6F68]/25 dark:bg-[#1F302E] dark:text-[#5FA399] dark:border-[#5FA399]/25 font-semibold',
+    dot: 'bg-[#2F6F68] dark:bg-[#5FA399]',
   },
   'co-host': {
-    container: 'bg-[#E8EBF2] text-[#172B3A] border-[#172B3A]/20 font-semibold',
-    dot: 'bg-[#172B3A]',
+    container: 'bg-[#E6EDF5] text-[#1F2428] border-[#3E6899]/25 dark:bg-[#1E2936] dark:text-[#EAECEE] dark:border-[#6E95C2]/30 font-semibold',
+    dot: 'bg-[#3E6899] dark:bg-[#6E95C2]',
   },
 };
 

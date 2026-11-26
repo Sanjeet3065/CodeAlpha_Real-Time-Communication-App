@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { Video, Menu, X, ArrowRight, User as UserIcon, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -80,9 +81,11 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 w-full transition-all duration-200',
-        'bg-white/90 backdrop-blur-md border-b',
-        isScrolled ? 'border-[#E3E1D9] shadow-cly-sm py-2.5' : 'border-[#E3E1D9]/70 py-3.5'
+        'sticky top-0 z-40 w-full transition-all duration-200 border-b',
+        'bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95',
+        isScrolled
+          ? 'border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm py-2.5'
+          : 'border-[#DDDAD0]/70 dark:border-[#2B3038]/70 py-3.5'
       )}
     >
       <Container size="xl">
@@ -90,14 +93,14 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
           {/* Brand Mark */}
           <a
             href="/"
-            className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-lg px-1 py-0.5"
+            className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-lg px-1 py-0.5"
             aria-label="CONNECTLY home"
           >
-            <span className="w-9 h-9 rounded-xl bg-[#172B3A] text-white flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-              <Video className="w-5 h-5 text-[#168B83]" aria-hidden="true" />
+            <span className="w-9 h-9 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center transition-transform group-hover:scale-105 shadow-cly-sm">
+              <Video className="w-5 h-5" aria-hidden="true" />
             </span>
             <div className="flex flex-col">
-              <span className="font-display font-extrabold text-xl tracking-tight text-[#172B3A]">
+              <span className="font-display font-extrabold text-xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                 CONNECTLY
               </span>
             </div>
@@ -106,13 +109,13 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
           {/* Center Navigation Links (Desktop >= 1024px) */}
           <nav
             aria-label="Main Navigation"
-            className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#3D5265]"
+            className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#555D66] dark:text-[#A3AAB2]"
           >
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="hover:text-[#172B3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83] rounded-md px-1 py-0.5"
+                className="hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-md px-1 py-0.5"
               >
                 {link.label}
               </a>
@@ -120,14 +123,15 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
           </nav>
 
           {/* Right Action CTAs (Desktop) */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2.5">
+            <ThemeToggle variant="compact" />
             {isAuthenticated ? (
               <>
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-2 text-sm font-medium text-[#172B3A] hover:text-[#168B83] px-2 py-1 rounded-md transition-colors"
+                  className="flex items-center gap-2 text-sm font-medium text-[#1F2428] dark:text-[#EAECEE] hover:text-[#2F6F68] dark:hover:text-[#5FA399] px-2 py-1 rounded-md transition-colors"
                 >
-                  <UserIcon className="w-4 h-4 text-[#168B83]" aria-hidden="true" />
+                  <UserIcon className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                   <span>{user?.firstName}</span>
                 </Link>
                 <Button
@@ -163,15 +167,16 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
             )}
           </div>
 
-          {/* Mobile Menu Hamburger Button */}
+          {/* Mobile Controls */}
           <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle variant="compact" />
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation-drawer"
-              className="p-2.5 rounded-lg text-[#172B3A] hover:bg-[#F7F6F2] active:bg-[#ECEBE4] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83]"
+              className="p-2.5 rounded-lg text-[#1F2428] dark:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
             >
               {isMobileMenuOpen ? (
                 <X className="w-6 h-6" aria-hidden="true" />
@@ -190,12 +195,12 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
           role="dialog"
           aria-modal="true"
           aria-label="Mobile Navigation"
-          className="lg:hidden fixed inset-x-0 top-[60px] bottom-0 z-50 bg-[#172B3A]/40 backdrop-blur-sm"
+          className="lg:hidden fixed inset-x-0 top-[60px] bottom-0 z-50 bg-[#141619]/50"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsMobileMenuOpen(false);
           }}
         >
-          <div className="bg-white border-b border-[#E3E1D9] shadow-xl p-6 flex flex-col gap-6 animate-in slide-in-from-top-2 duration-200">
+          <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border-b border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-lg p-6 flex flex-col gap-6 animate-in slide-in-from-top-2 duration-200">
             {/* Mobile Nav Links */}
             <nav aria-label="Mobile Main Navigation" className="flex flex-col gap-3">
               {navLinks.map((link) => (
@@ -203,7 +208,7 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
                   key={link.label}
                   href={link.href}
                   onClick={handleLinkClick}
-                  className="px-3 py-2 text-base font-medium text-[#172B3A] hover:bg-[#F7F6F2] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#168B83]"
+                  className="px-3 py-2 text-base font-medium text-[#1F2428] dark:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
                 >
                   {link.label}
                 </a>
@@ -211,7 +216,7 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
             </nav>
 
             {/* Mobile CTAs */}
-            <div className="flex flex-col gap-3 pt-4 border-t border-[#E3E1D9]">
+            <div className="flex flex-col gap-3 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038]">
               {isAuthenticated ? (
                 <Button
                   type="button"
@@ -257,10 +262,9 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
               )}
             </div>
 
-            {/* Roadmap Badge Notice */}
-            <div className="p-3 bg-[#F7F6F2] rounded-lg text-xs text-[#3D5265] flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#168B83] shrink-0" aria-hidden="true" />
-              <span>Phase 05 Active · Production Authentication Operational</span>
+            <div className="p-3 bg-[#EAE8E1] dark:bg-[#141619] rounded-lg text-xs text-[#555D66] dark:text-[#A3AAB2] flex items-center gap-2 border border-[#DDDAD0] dark:border-[#2B3038]">
+              <ShieldCheck className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399] shrink-0" aria-hidden="true" />
+              <span>Encrypted Real-Time Workspace · LiveKit SFU &amp; Supabase</span>
             </div>
           </div>
         </div>

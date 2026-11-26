@@ -7,9 +7,12 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<CardVariant, string> = {
-  standard: 'bg-white border border-[#E3E1D9] shadow-sm text-[#172B3A]',
-  elevated: 'bg-white border-0 shadow-md text-[#172B3A]',
-  theater: 'bg-[#253746] border border-white/10 text-white shadow-xl',
+  standard:
+    'bg-[#FAF9F6] border border-[#DDDAD0] shadow-cly-sm text-[#1F2428] dark:bg-[#1C1F24] dark:border-[#2B3038] dark:text-[#EAECEE]',
+  elevated:
+    'bg-[#FFFFFF] border border-[#DDDAD0]/80 shadow-cly-md text-[#1F2428] dark:bg-[#24282E] dark:border-[#3A404A]/80 dark:text-[#EAECEE]',
+  theater:
+    'bg-[#1C1F24] border border-white/10 text-[#EAECEE] shadow-cly-theater',
 };
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(

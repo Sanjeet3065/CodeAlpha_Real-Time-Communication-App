@@ -8,7 +8,7 @@
   html {
     font-family: var(--cly-type-font-ui);
     color: var(--cly-text-primary);
-    background-color: var(--cly-color-surface-canvas);
+    background-color: var(--cly-surface-canvas);
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -20,6 +20,8 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: var(--cly-surface-canvas);
+    color: var(--cly-text-primary);
   }
 
   /* Accessible focus indicators: WCAG 2.2 Level AA compliance */
@@ -58,7 +60,7 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .font-display {
     font-family: var(--cly-type-font-display);
   }
