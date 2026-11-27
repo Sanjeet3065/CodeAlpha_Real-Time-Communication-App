@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { PhaseNoticeModal } from '@/components/landing/PhaseNoticeModal';
 import { ApiError, authApi } from '@/services/authApi';
@@ -48,7 +49,7 @@ const GoogleContinueSection: React.FC<{
   isLoading: boolean;
   onClick: () => void;
 }> = ({ disabled, isLoading, onClick }) => (
-  <div className="mb-3.5 space-y-3">
+  <div className="mb-4 space-y-3.5">
     <button
       type="button"
       onClick={onClick}
@@ -449,7 +450,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
         {/* LEFT COLUMN: Editorial Video Studio Visual + Subtle Animation + Text */}
         <section
           aria-label="Connectly Workspace Preview"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
+          className="lg:col-span-6 px-5 sm:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
         >
           <div className="w-full max-w-xl mx-auto space-y-4">
             <motion.div
@@ -576,10 +577,10 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
         {/* RIGHT COLUMN: Sign In / Create Account Workspace */}
         <main
           id="main-content"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-center outline-none"
+          className="lg:col-span-6 px-5 sm:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col justify-center outline-none"
         >
-          <div className="w-full max-w-md mx-auto">
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-md p-5 sm:p-6">
+          <div className="w-full max-w-[500px] mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-lg p-6 sm:p-7">
               {/* Segmented Sign In / Create Account Switcher */}
               <div
                 role="tablist"
@@ -665,14 +666,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                     exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
                   >
-                    <div className="mb-4">
-                      <h2 className="font-display text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
-                        Welcome back
-                      </h2>
-                      <p className="mt-0.5 text-sm text-[#646D77] dark:text-[#A3AAB2]">
-                        Enter your credentials to enter the studio.
-                      </p>
-                    </div>
+                    <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
+                      Welcome back
+                    </h2>
 
                     <GoogleContinueSection
                       disabled={isSubmitting}
@@ -697,12 +693,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <label
-                            htmlFor="login-password"
-                            className="block text-sm font-medium text-[#1F2428] dark:text-[#EAECEE]"
-                          >
+                          <Label htmlFor="login-password" required className="mb-0">
                             Password
-                          </label>
+                          </Label>
                           <button
                             type="button"
                             onClick={() =>
@@ -743,17 +736,17 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         />
                       </div>
 
-                      <div className="flex items-center pt-0.5">
+                      <div className="flex items-center gap-2.5 pt-0.5">
                         <input
                           id="remember-me"
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
+                          className="w-4 h-4 shrink-0 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
                         />
                         <label
                           htmlFor="remember-me"
-                          className="ml-2 block text-sm text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
+                          className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
                         >
                           Remember this device
                         </label>
@@ -793,7 +786,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                     exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
                   >
-                    <h2 className="mb-3.5 font-display text-lg sm:text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
+                    <h2 className="mb-4 font-display text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                       Create your account
                     </h2>
 
@@ -803,8 +796,8 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       onClick={handleGoogleAuth}
                     />
 
-                    <form onSubmit={handleSignUpSubmit} className="space-y-2.5" noValidate>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <form onSubmit={handleSignUpSubmit} className="space-y-3" noValidate>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input
                           label="First name"
                           id="register-firstname"
@@ -814,7 +807,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter first name"
                           required
                           disabled={isSubmitting}
-                          className="h-9"
+                          className="h-[38px]"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                         <Input
@@ -826,13 +819,13 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter last name"
                           required
                           disabled={isSubmitting}
-                          className="h-9"
+                          className="h-[38px]"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                       </div>
 
                       <Input
-                        label="Work or personal email"
+                        label="Email address"
                         id="register-email"
                         type="email"
                         value={signupEmail}
@@ -841,7 +834,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="email"
                         disabled={isSubmitting}
-                        className="h-9"
+                        className="h-[38px]"
                         leftIcon={<Mail className="w-4 h-4" aria-hidden="true" />}
                       />
 
@@ -855,7 +848,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="new-password"
                         disabled={isSubmitting}
-                        className="h-9"
+                        className="h-[38px]"
                         leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
                         rightIcon={
                           <button
@@ -873,36 +866,32 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         }
                       />
 
-                      <div className="px-3 py-2 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-[11px]">
-                        <ul
-                          className="grid grid-cols-2 gap-x-3 gap-y-0.5"
-                          aria-label="Password requirements"
-                        >
-                          {criteria.map((c) => (
-                            <li
-                              key={c.id}
-                              className={cn(
-                                'flex items-center gap-1.5 transition-colors duration-150',
-                                c.valid
-                                  ? 'text-[#2F6F68] dark:text-[#5FA399] font-medium'
-                                  : 'text-[#7C848D] dark:text-[#747C86]'
-                              )}
-                            >
-                              {c.valid ? (
-                                <Check
-                                  className="w-3 h-3 shrink-0 text-[#2F6F68] dark:text-[#5FA399]"
-                                  aria-hidden="true"
-                                />
-                              ) : (
-                                <span className="w-3 h-3 flex items-center justify-center shrink-0">
-                                  <span className="w-1 h-1 rounded-full bg-[#7C848D] dark:bg-[#747C86]" />
-                                </span>
-                              )}
-                              <span className="truncate">{c.label}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <ul
+                        className="flex flex-wrap gap-1.5 pt-0.5"
+                        aria-label="Password requirements"
+                      >
+                        {criteria.map((c) => (
+                          <li
+                            key={c.id}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] leading-none transition-colors duration-150',
+                              c.valid
+                                ? 'border-[#2F6F68]/40 dark:border-[#5FA399]/40 bg-[#E2ECE9]/70 dark:bg-[#1F302E]/70 text-[#2F6F68] dark:text-[#5FA399] font-medium'
+                                : 'border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619] text-[#7C848D] dark:text-[#8E96A0]'
+                            )}
+                          >
+                            {c.valid ? (
+                              <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
+                            ) : (
+                              <span
+                                className="w-1 h-1 rounded-full bg-current opacity-70"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <span>{c.label}</span>
+                          </li>
+                        ))}
+                      </ul>
 
                       <Input
                         label="Confirm password"
@@ -914,7 +903,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="new-password"
                         disabled={isSubmitting}
-                        className="h-9"
+                        className="h-[38px]"
                         leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
                         rightIcon={
                           confirmPassword ? (
@@ -933,18 +922,18 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         }
                       />
 
-                      <div className="flex items-start pt-0.5">
+                      <div className="flex items-start gap-2.5 pt-0.5">
                         <input
                           id="terms-conditions"
                           type="checkbox"
                           checked={agreedToTerms}
                           onChange={(e) => setAgreedToTerms(e.target.checked)}
-                          className="w-4 h-4 mt-0.5 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
+                          className="w-4 h-4 mt-0.5 shrink-0 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
                           required
                         />
                         <label
                           htmlFor="terms-conditions"
-                          className="ml-2.5 block text-xs leading-snug text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
+                          className="text-xs leading-snug text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
                         >
                           I agree to the{' '}
                           <button
@@ -969,7 +958,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       <Button
                         type="submit"
                         variant="primary"
-                        size="md"
+                        size="lg"
                         className="w-full h-10"
                         isLoading={isSubmitting}
                         disabled={isSubmitting}
@@ -979,7 +968,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       </Button>
                     </form>
 
-                    <div className="mt-4 pt-3.5 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+                    <div className="mt-4 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
                       <p className="text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
                         Already have an account?{' '}
                         <button
