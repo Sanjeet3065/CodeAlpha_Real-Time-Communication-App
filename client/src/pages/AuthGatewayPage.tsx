@@ -12,7 +12,6 @@ import {
   Mail,
   ShieldCheck,
   User as UserIcon,
-  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -125,7 +124,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
   const [lastName, setLastName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
@@ -174,10 +172,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
   const criteria = useMemo(() => evaluatePasswordCriteria(signupPassword), [signupPassword]);
   const allCriteriaMet = useMemo(() => criteria.every((c) => c.valid), [criteria]);
-  const passwordsMatch = useMemo(
-    () => confirmPassword.length > 0 && signupPassword === confirmPassword,
-    [signupPassword, confirmPassword]
-  );
 
   const getDestination = () => {
     const rawRedirect = searchParams.get('redirect');
@@ -313,10 +307,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
     }
     if (!allCriteriaMet) {
       setErrorMessage('Please satisfy all password security requirements before continuing.');
-      return;
-    }
-    if (signupPassword !== confirmPassword) {
-      setErrorMessage('Passwords do not match. Please ensure both fields are identical.');
       return;
     }
     if (!agreedToTerms) {
@@ -676,7 +666,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       onClick={handleGoogleAuth}
                     />
 
-                    <form onSubmit={handleSignInSubmit} className="space-y-3.5" noValidate>
+                    <form onSubmit={handleSignInSubmit} className="space-y-4" noValidate>
                       <Input
                         ref={loginEmailInputRef}
                         label="Email address"
@@ -765,7 +755,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       </Button>
                     </form>
 
-                    <div className="mt-5 pt-5 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+                    <div className="mt-5 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
                       <p className="text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
                         New to Connectly?{' '}
                         <button
@@ -796,8 +786,8 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       onClick={handleGoogleAuth}
                     />
 
-                    <form onSubmit={handleSignUpSubmit} className="space-y-3" noValidate>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <form onSubmit={handleSignUpSubmit} className="space-y-3.5" noValidate>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <Input
                           label="First name"
                           id="register-firstname"
@@ -807,7 +797,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter first name"
                           required
                           disabled={isSubmitting}
-                          className="h-[38px]"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                         <Input
@@ -819,7 +808,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter last name"
                           required
                           disabled={isSubmitting}
-                          className="h-[38px]"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                       </div>
@@ -834,106 +822,77 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="email"
                         disabled={isSubmitting}
-                        className="h-[38px]"
                         leftIcon={<Mail className="w-4 h-4" aria-hidden="true" />}
                       />
 
-                      <Input
-                        label="Password"
-                        id="register-password"
-                        type={showSignupPassword ? 'text' : 'password'}
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        placeholder="Create a strong password"
-                        required
-                        autoComplete="new-password"
-                        disabled={isSubmitting}
-                        className="h-[38px]"
-                        leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
-                        rightIcon={
-                          <button
-                            type="button"
-                            onClick={() => setShowSignupPassword((prev) => !prev)}
-                            className="p-1 text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus:outline-none"
-                            aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
-                          >
-                            {showSignupPassword ? (
-                              <EyeOff className="w-4 h-4" aria-hidden="true" />
-                            ) : (
-                              <Eye className="w-4 h-4" aria-hidden="true" />
-                            )}
-                          </button>
-                        }
-                      />
+                      <div className="space-y-2.5">
+                        <Input
+                          label="Password"
+                          id="register-password"
+                          type={showSignupPassword ? 'text' : 'password'}
+                          value={signupPassword}
+                          onChange={(e) => setSignupPassword(e.target.value)}
+                          placeholder="Create a strong password"
+                          required
+                          autoComplete="new-password"
+                          disabled={isSubmitting}
+                          leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
+                          rightIcon={
+                            <button
+                              type="button"
+                              onClick={() => setShowSignupPassword((prev) => !prev)}
+                              className="p-1 text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors focus:outline-none"
+                              aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showSignupPassword ? (
+                                <EyeOff className="w-4 h-4" aria-hidden="true" />
+                              ) : (
+                                <Eye className="w-4 h-4" aria-hidden="true" />
+                              )}
+                            </button>
+                          }
+                        />
 
-                      <ul
-                        className="flex flex-wrap gap-1.5 pt-0.5"
-                        aria-label="Password requirements"
-                      >
-                        {criteria.map((c) => (
-                          <li
-                            key={c.id}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] leading-none transition-colors duration-150',
-                              c.valid
-                                ? 'border-[#2F6F68]/40 dark:border-[#5FA399]/40 bg-[#E2ECE9]/70 dark:bg-[#1F302E]/70 text-[#2F6F68] dark:text-[#5FA399] font-medium'
-                                : 'border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619] text-[#7C848D] dark:text-[#8E96A0]'
-                            )}
-                          >
-                            {c.valid ? (
-                              <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
-                            ) : (
-                              <span
-                                className="w-1 h-1 rounded-full bg-current opacity-70"
-                                aria-hidden="true"
-                              />
-                            )}
-                            <span>{c.label}</span>
-                          </li>
-                        ))}
-                      </ul>
+                        <ul
+                          className="flex flex-wrap gap-1.5"
+                          aria-label="Password requirements"
+                        >
+                          {criteria.map((c) => (
+                            <li
+                              key={c.id}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] leading-none transition-colors duration-150',
+                                c.valid
+                                  ? 'border-[#2F6F68]/40 dark:border-[#5FA399]/40 bg-[#E2ECE9]/70 dark:bg-[#1F302E]/70 text-[#2F6F68] dark:text-[#5FA399] font-medium'
+                                  : 'border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619] text-[#7C848D] dark:text-[#8E96A0]'
+                              )}
+                            >
+                              {c.valid ? (
+                                <Check className="w-3 h-3 shrink-0" aria-hidden="true" />
+                              ) : (
+                                <span
+                                  className="w-1 h-1 rounded-full bg-current opacity-70"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              <span>{c.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                      <Input
-                        label="Confirm password"
-                        id="register-confirm-password"
-                        type={showSignupPassword ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter your password"
-                        required
-                        autoComplete="new-password"
-                        disabled={isSubmitting}
-                        className="h-[38px]"
-                        leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
-                        rightIcon={
-                          confirmPassword ? (
-                            passwordsMatch ? (
-                              <Check
-                                className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]"
-                                aria-label="Passwords match"
-                              />
-                            ) : (
-                              <X
-                                className="w-4 h-4 text-[#C24D4D] dark:text-[#D46A6A]"
-                                aria-label="Passwords do not match"
-                              />
-                            )
-                          ) : undefined
-                        }
-                      />
-
-                      <div className="flex items-start gap-2.5 pt-0.5">
+                      <div className="flex items-start sm:items-center gap-2.5 pt-0.5">
                         <input
                           id="terms-conditions"
                           type="checkbox"
                           checked={agreedToTerms}
                           onChange={(e) => setAgreedToTerms(e.target.checked)}
-                          className="w-4 h-4 mt-0.5 shrink-0 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
+                          className="w-4 h-4 mt-0.5 sm:mt-0 shrink-0 text-[#2F6F68] dark:text-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] bg-transparent rounded focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] cursor-pointer"
                           required
                         />
                         <label
                           htmlFor="terms-conditions"
-                          className="text-xs leading-snug text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
+                          className="text-xs sm:text-sm leading-snug text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
                         >
                           I agree to the{' '}
                           <button
@@ -959,7 +918,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         type="submit"
                         variant="primary"
                         size="lg"
-                        className="w-full h-10"
+                        className="w-full"
                         isLoading={isSubmitting}
                         disabled={isSubmitting}
                         rightIcon={<ArrowRight className="w-4 h-4" aria-hidden="true" />}
@@ -968,7 +927,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       </Button>
                     </form>
 
-                    <div className="mt-4 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+                    <div className="mt-5 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
                       <p className="text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
                         Already have an account?{' '}
                         <button

@@ -54,5 +54,6 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.ok(!gatewaySource.includes('Enter your credentials to enter the studio.'));
     assert.ok(gatewaySource.includes('max-w-[500px]'));
     assert.ok(gatewaySource.includes('<Label htmlFor="login-password"'));
+    assert.ok(!gatewaySource.includes('Confirm password'));
   });
 });
