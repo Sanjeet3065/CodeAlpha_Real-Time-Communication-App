@@ -155,5 +155,15 @@ describe('Dashboard Utilities & Data Contracts', () => {
     assert.ok(themeToggle.includes("'dock'"), 'ThemeToggle should provide a borderless dock variant for the header utility bar');
     assert.ok(helpModal.includes('dark:bg-emerald-950'), 'HelpModal security note should include dark-mode contrast styles');
     assert.ok(!notifications.includes('ring-white'), 'NotificationsPopover unread badge should use dark-compatible ring color');
+    assert.ok(
+      header.includes('aria-controls="header-command-listbox"') &&
+        header.includes('aria-activedescendant') &&
+        header.includes('role="group"'),
+      'DashboardHeader combobox should expose complete ARIA controls, activedescendant, and option groups'
+    );
+    assert.ok(
+      header.includes('suppressFocusOpenRef') && header.includes('[role="dialog"][aria-modal="true"]'),
+      'DashboardHeader should guard modal focus restoration and Ctrl+K activation when dialogs are open'
+    );
   });
 });

@@ -140,14 +140,43 @@ export function detectShortcutHint(userAgent?: string): ShortcutHint {
   };
 }
 
+const EXPLICIT_CLY_PATTERN = /^cly-?[a-z0-9]{3}-?[a-z0-9]{3}$/i;
+const MEETING_PATH_PATTERN = /^\/(?:join|lobby|meeting)\/([^/?#]+)\/?$/i;
+
 /**
- * Extracts a canonical room code (`cly-xxx-xxx`) when the user types or pastes a room code or invite link.
+ * Extracts a canonical room code (`cly-xxx-xxx`) when the user enters an explicit `cly` room code or meeting link.
  */
 export function extractMeetingCodeFromSearch(query: string): string | null {
   const trimmed = query.trim();
   if (!trimmed) return null;
 
-  const validated = validateMeetingCode(trimmed);
+  let candidate = '';
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      const pathMatch = parsed.pathname.match(MEETING_PATH_PATTERN);
+      if (!pathMatch?.[1] || !EXPLICIT_CLY_PATTERN.test(pathMatch[1])) {
+        return null;
+      }
+      candidate = pathMatch[1];
+    } catch {
+      return null;
+    }
+  } else if (trimmed.startsWith('/')) {
+    const cleanPath = trimmed.split('?')[0].split('#')[0];
+    const pathMatch = cleanPath.match(MEETING_PATH_PATTERN);
+    if (!pathMatch?.[1] || !EXPLICIT_CLY_PATTERN.test(pathMatch[1])) {
+      return null;
+    }
+    candidate = pathMatch[1];
+  } else if (EXPLICIT_CLY_PATTERN.test(trimmed)) {
+    candidate = trimmed;
+  } else {
+    return null;
+  }
+
+  const validated = validateMeetingCode(candidate);
   return validated.isValid ? validated.normalizedCode : null;
 }
 
@@ -181,7 +210,17 @@ function deduplicateMeetings(
 
 function toMeetingSearchItem(meeting: HeaderMeetingCandidate): HeaderSearchItem {
   const formattedTime = formatMeetingWhen(meeting.startAt);
-  const roleLabel = meeting.isHost ? 'Host' : meeting.kind === 'upcoming' ? 'Scheduled' : 'Attended';
+  const statusUpper = (meeting.status || '').toUpperCase();
+  const roleLabel =
+    statusUpper === 'CANCELLED'
+      ? 'Cancelled'
+      : statusUpper === 'EXPIRED'
+        ? 'Expired'
+        : meeting.isHost
+          ? 'Host'
+          : meeting.kind === 'upcoming'
+            ? 'Scheduled'
+            : 'Attended';
   const subtitleParts = [meeting.meetingCode, formattedTime, roleLabel].filter(Boolean);
 
   return {
@@ -198,6 +237,7 @@ function toMeetingSearchItem(meeting: HeaderMeetingCandidate): HeaderSearchItem 
       meeting.title || '',
       meeting.meetingCode,
       meeting.kind,
+      statusUpper.toLowerCase(),
       meeting.isHost ? 'host' : 'participant',
     ],
   };

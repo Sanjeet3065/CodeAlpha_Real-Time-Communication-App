@@ -142,13 +142,13 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
         aria-haspopup="true"
         aria-label={`View notifications (${unreadCount} unread)`}
         className={cn(
-          'relative p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30',
+          'relative p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68]/40 dark:focus-visible:ring-[#5FA399]/40',
           triggerClassName
         )}
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-[#FAF9F6] dark:ring-[#141619]">
+          <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-[#F3F2EE] dark:ring-[#141619]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

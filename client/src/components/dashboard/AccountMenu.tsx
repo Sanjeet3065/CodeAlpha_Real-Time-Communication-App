@@ -83,12 +83,12 @@ export const AccountMenu: React.FC = () => {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={`User account menu for ${displayName}`}
-        className="h-10 inline-flex items-center gap-2 p-1.5 sm:pr-3 rounded-full bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] hover:border-[#C5C1B4] dark:hover:border-[#3A404A] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+        className="h-10 inline-flex items-center gap-2 p-1.5 sm:pr-3 lg:pr-1.5 xl:pr-3 rounded-full bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] hover:border-[#C5C1B4] dark:hover:border-[#3A404A] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68]/30 dark:focus-visible:ring-[#5FA399]/30"
       >
         <div className={`w-7 h-7 rounded-full font-bold text-xs flex items-center justify-center flex-shrink-0 ${getAvatarAccentClasses(user?.avatarColor)}`}>
           {getInitials()}
         </div>
-        <span className="hidden sm:inline-block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] max-w-[128px] truncate">
+        <span className="hidden sm:inline-block lg:hidden xl:inline-block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] max-w-[128px] truncate">
           {displayName}
         </span>
         <ChevronDown

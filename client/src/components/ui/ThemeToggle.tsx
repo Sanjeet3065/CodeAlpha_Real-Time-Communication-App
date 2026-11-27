@@ -84,7 +84,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] shrink-0"
           aria-hidden="true"
         />
-        <span className="hidden sm:inline">{activeMeta.shortLabel}</span>
+        <span className="hidden sm:inline lg:hidden xl:inline">{activeMeta.shortLabel}</span>
       </button>
     );
   }

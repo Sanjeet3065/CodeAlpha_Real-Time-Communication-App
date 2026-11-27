@@ -22,13 +22,23 @@ describe('Header Command Search Utilities', () => {
     assert.strictEqual(linux.compactLabel, 'Ctrl K');
   });
 
-  it('2. extracts canonical room codes from plain codes or full invite URLs and rejects unsafe strings', () => {
+  it('2. extracts canonical room codes only from explicit room patterns or join/lobby URLs', () => {
     assert.strictEqual(extractMeetingCodeFromSearch('CLY-789-QWA'), 'cly-789-qwa');
+    assert.strictEqual(extractMeetingCodeFromSearch('clyabc123'), 'cly-abc-123');
     assert.strictEqual(
       extractMeetingCodeFromSearch('https://connectly-meet.vercel.app/join/cly-789-qwa?ref=mail'),
       'cly-789-qwa'
     );
     assert.strictEqual(extractMeetingCodeFromSearch('/lobby/CLY-123-XYZ'), 'cly-123-xyz');
+
+    // Ordinary 6-char words & unrelated paths must never masquerade as direct-join room codes
+    for (const nonCode of ['design', 'review', 'shared', 'recent', 'launch', 'weekly', 'studio']) {
+      assert.strictEqual(extractMeetingCodeFromSearch(nonCode), null);
+    }
+    assert.strictEqual(
+      extractMeetingCodeFromSearch('https://connectly-meet.vercel.app/signup'),
+      null
+    );
     assert.strictEqual(extractMeetingCodeFromSearch('architecture'), null);
     assert.strictEqual(extractMeetingCodeFromSearch('javascript:alert(1)'), null);
     assert.strictEqual(extractMeetingCodeFromSearch(''), null);
@@ -142,5 +152,41 @@ describe('Header Command Search Utilities', () => {
       groupedDefault.map((g) => g.group),
       ['Meetings', 'Actions', 'Navigation']
     );
+  });
+
+  it('6. labels cancelled and expired recent meetings accurately instead of Attended', () => {
+    const recent: HeaderMeetingCandidate[] = [
+      {
+        id: 'c1',
+        meetingCode: 'cly-can-001',
+        title: 'Cancelled Sync',
+        startAt: '2026-11-26T10:00:00.000Z',
+        status: 'CANCELLED',
+        isHost: false,
+        kind: 'recent',
+      },
+      {
+        id: 'e1',
+        meetingCode: 'cly-exp-002',
+        title: 'Expired Room',
+        startAt: '2026-11-26T12:00:00.000Z',
+        status: 'EXPIRED',
+        isHost: false,
+        kind: 'recent',
+      },
+    ];
+
+    const results = buildHeaderSearchResults({
+      query: '',
+      upcomingMeetings: [],
+      recentMeetings: recent,
+    });
+
+    const cancelled = results.find((r) => r.meetingCode === 'cly-can-001');
+    const expired = results.find((r) => r.meetingCode === 'cly-exp-002');
+    assert.ok(cancelled?.subtitle.includes('Cancelled'));
+    assert.ok(!cancelled?.subtitle.includes('Attended'));
+    assert.ok(expired?.subtitle.includes('Expired'));
+    assert.ok(!expired?.subtitle.includes('Attended'));
   });
 });

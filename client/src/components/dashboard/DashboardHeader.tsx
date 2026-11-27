@@ -81,6 +81,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const currentUserId = user?.id;
+
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isInstantOpen, setIsInstantOpen] = useState(false);
@@ -96,6 +97,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
+  const suppressFocusOpenRef = useRef<boolean>(false);
+  const keyboardNavRef = useRef<boolean>(false);
+  const optionRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const lastFetchedAtRef = useRef<number>(0);
   const fetchSeqRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
@@ -109,6 +113,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       fetchSeqRef.current += 1;
     };
   }, []);
+
+  // Reset cached meeting suggestions whenever the authenticated user changes
+  useEffect(() => {
+    lastFetchedAtRef.current = 0;
+    setUpcomingMeetings([]);
+    setRecentMeetings([]);
+  }, [currentUserId]);
 
   const loadSearchMeetings = useCallback(async () => {
     const now = Date.now();
@@ -155,7 +166,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         );
       }
 
-      if (upcomingRes.status === 'fulfilled' || recentRes.status === 'fulfilled') {
+      if (upcomingRes.status === 'fulfilled' && recentRes.status === 'fulfilled') {
         lastFetchedAtRef.current = Date.now();
       }
     } finally {
@@ -170,10 +181,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     void loadSearchMeetings();
   }, [loadSearchMeetings]);
 
-  const closeSearchPalette = useCallback(() => {
+  const dismissSearchOnEscape = useCallback(() => {
     setIsSearchOpen(false);
-    if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-      prevFocusRef.current.focus();
+    const returnTarget = prevFocusRef.current;
+    prevFocusRef.current = null;
+    if (returnTarget && returnTarget.isConnected && returnTarget !== searchInputRef.current) {
+      returnTarget.focus();
+    } else {
+      searchInputRef.current?.blur();
     }
   }, []);
 
@@ -202,11 +217,41 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const activeHighlightIndex =
     filteredItems.length > 0 ? Math.min(highlightedIndex, filteredItems.length - 1) : -1;
+  const activeOptionId =
+    isSearchOpen && activeHighlightIndex >= 0 && filteredItems[activeHighlightIndex]
+      ? `header-command-option-${filteredItems[activeHighlightIndex].id}`
+      : undefined;
 
-  // Global ⌘K (macOS) / Ctrl+K (Windows/Linux) keyboard shortcut
+  useEffect(() => {
+    if (!isSearchOpen || activeHighlightIndex < 0 || !keyboardNavRef.current) return;
+    keyboardNavRef.current = false;
+    const activeItem = filteredItems[activeHighlightIndex];
+    if (!activeItem) return;
+    const node = optionRefs.current.get(activeItem.id);
+    if (node && typeof node.scrollIntoView === 'function') {
+      node.scrollIntoView({ block: 'nearest' });
+    }
+  }, [isSearchOpen, activeHighlightIndex, filteredItems]);
+
+  // Global Ctrl+K / Cmd+K shortcut guarded against background inputs, hidden mobile header, and active dialogs
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        const container = searchContainerRef.current;
+        if (!container || container.offsetParent === null) {
+          return;
+        }
+
+        if (
+          isHelpOpen ||
+          isJoinOpen ||
+          isInstantOpen ||
+          isScheduleOpen ||
+          document.querySelector('[role="dialog"][aria-modal="true"]')
+        ) {
+          return;
+        }
+
         const activeEl = document.activeElement;
         const isTypingInOtherInput =
           activeEl &&
@@ -220,42 +265,47 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         }
 
         e.preventDefault();
-        if (!isSearchOpen) {
-          prevFocusRef.current = activeEl as HTMLElement | null;
+        if (activeEl instanceof HTMLElement && activeEl !== searchInputRef.current) {
+          prevFocusRef.current = activeEl;
         }
+        suppressFocusOpenRef.current = false;
         searchInputRef.current?.focus();
         openSearchPalette();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isSearchOpen, openSearchPalette]);
+  }, [isHelpOpen, isJoinOpen, isInstantOpen, isScheduleOpen, openSearchPalette]);
 
-  // Close search on outside click
+  // Close search on outside mousedown without pulling focus back into the input
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
-        closeSearchPalette();
+        setIsSearchOpen(false);
+        prevFocusRef.current = null;
       }
     };
     if (isSearchOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
     }
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [isSearchOpen, closeSearchPalette]);
+  }, [isSearchOpen]);
 
   const executeSearchItem = (item: HeaderSearchItem) => {
     setIsSearchOpen(false);
     setSearchQuery('');
     setHighlightedIndex(0);
-    if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-      prevFocusRef.current.focus();
-    }
+    prevFocusRef.current = null;
 
     if (item.route) {
+      searchInputRef.current?.blur();
       navigate(item.route);
       return;
     }
+
+    // Prevent modal close focus restoration from spuriously reopening the search palette
+    suppressFocusOpenRef.current = true;
+    searchInputRef.current?.blur();
 
     switch (item.actionId) {
       case 'instant-meeting':
@@ -278,23 +328,28 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      closeSearchPalette();
+      dismissSearchOnEscape();
       return;
     }
 
     if (!isSearchOpen) {
-      openSearchPalette();
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+        e.preventDefault();
+        openSearchPalette();
+      }
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (filteredItems.length > 0) {
+        keyboardNavRef.current = true;
         setHighlightedIndex((prev) => (prev + 1) % filteredItems.length);
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (filteredItems.length > 0) {
+        keyboardNavRef.current = true;
         setHighlightedIndex((prev) => (prev <= 0 ? filteredItems.length - 1 : prev - 1));
       }
     } else if (e.key === 'Enter') {
@@ -307,14 +362,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-5">
+      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-5 xl:px-8 flex items-center justify-between gap-2 sm:gap-3 xl:gap-5">
         {/* Left Zone: Mobile Menu Trigger & Workspace Title */}
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 lg:min-w-[160px]">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 lg:max-w-[175px] xl:max-w-[230px]">
           <button
             type="button"
             onClick={onOpenMobileMenu}
             aria-label="Open sidebar navigation"
-            className="w-9 h-9 inline-flex items-center justify-center -ml-1 rounded-xl bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] lg:hidden transition-colors flex-shrink-0"
+            className="w-9 h-9 inline-flex items-center justify-center -ml-1 rounded-lg bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] lg:hidden transition-colors flex-shrink-0"
           >
             <Menu className="w-4 h-4" />
           </button>
@@ -332,10 +387,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
 
         {/* Center Zone: Spacious Studio Command & Meeting Search Bar */}
-        <div className="hidden lg:flex flex-1 max-w-lg mx-auto relative" ref={searchContainerRef}>
+        <div
+          className="hidden lg:flex flex-1 min-w-[250px] max-w-lg mx-auto relative"
+          ref={searchContainerRef}
+          onBlur={(e) => {
+            if (!searchContainerRef.current?.contains(e.relatedTarget as Node)) {
+              setIsSearchOpen(false);
+              prevFocusRef.current = null;
+            }
+          }}
+        >
           <div className="relative w-full h-10 rounded-lg bg-[#F3F2EE]/90 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] hover:border-[#C5C1B4] dark:hover:border-[#3A404A] focus-within:bg-[#FAF9F6] dark:focus-within:bg-[#1C1F24] focus-within:border-[#2F6F68]/60 dark:focus-within:border-[#5FA399]/60 focus-within:ring-2 focus-within:ring-[#2F6F68]/20 dark:focus-within:ring-[#5FA399]/20 transition-all shadow-cly-sm flex items-center">
             <div
-              className={`pl-3.5 pr-2.5 flex items-center pointer-events-none transition-colors ${
+              className={`pl-3 pr-2 flex items-center pointer-events-none transition-colors ${
                 isSearchOpen
                   ? 'text-[#2F6F68] dark:text-[#5FA399]'
                   : 'text-[#7C848D] dark:text-[#8E96A0]'
@@ -348,14 +412,21 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ref={searchInputRef}
               type="text"
               value={searchQuery}
+              onMouseDown={() => {
+                suppressFocusOpenRef.current = false;
+                if (document.activeElement === searchInputRef.current && !isSearchOpen) {
+                  openSearchPalette();
+                }
+              }}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setHighlightedIndex(0);
                 if (!isSearchOpen) openSearchPalette();
               }}
               onFocus={() => {
-                if (!isSearchOpen) {
-                  prevFocusRef.current = document.activeElement as HTMLElement | null;
+                if (suppressFocusOpenRef.current) {
+                  suppressFocusOpenRef.current = false;
+                  return;
                 }
                 openSearchPalette();
               }}
@@ -364,6 +435,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               aria-label="Search meetings and actions"
               aria-expanded={isSearchOpen}
               aria-haspopup="listbox"
+              aria-controls="header-command-listbox"
+              aria-activedescendant={activeOptionId}
               role="combobox"
               className="flex-1 min-w-0 h-full pr-2 bg-transparent text-xs sm:text-[13px] text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#7E8791] focus:outline-none"
             />
@@ -373,6 +446,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    suppressFocusOpenRef.current = false;
                     setSearchQuery('');
                     setHighlightedIndex(0);
                     searchInputRef.current?.focus();
@@ -386,7 +460,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
               <kbd
                 aria-label={`Shortcut ${shortcutHint.readableLabel}`}
-                className="px-2 py-0.5 text-[10px] font-mono font-medium text-[#6B737C] dark:text-[#A3AAB2] bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-md select-none pointer-events-none"
+                className="hidden xl:inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-medium text-[#6B737C] dark:text-[#A3AAB2] bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-md select-none pointer-events-none"
               >
                 {isSearchOpen && !searchQuery ? 'Esc' : shortcutHint.compactLabel}
               </kbd>
@@ -396,9 +470,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Grouped Command & Live Meeting Palette */}
           {isSearchOpen && (
             <div
+              id="header-command-listbox"
               role="listbox"
               aria-label="Search suggestions"
-              className="origin-top absolute top-full left-0 right-0 mt-2 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-96 flex flex-col"
+              className="origin-top absolute top-full left-0 right-0 min-w-[340px] mt-2 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden z-50 transition-opacity duration-100 max-h-96 flex flex-col"
             >
               <div className="px-3.5 py-2 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619]/80 flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#A3AAB2] shrink-0">
                 <span className="font-semibold uppercase tracking-wider text-[10px] text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5">
@@ -418,78 +493,101 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </div>
               ) : (
                 <div className="p-1.5 overflow-y-auto space-y-2">
-                  {groupedSections.map((section) => (
-                    <div key={section.group} className="space-y-0.5">
-                      <p className="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]">
-                        {section.group}
-                      </p>
+                  {groupedSections.map((section, sectionIdx) => {
+                    const groupHeadingId = `header-search-group-${sectionIdx}`;
+                    return (
+                      <div
+                        key={section.group}
+                        role="group"
+                        aria-labelledby={groupHeadingId}
+                        className="space-y-0.5"
+                      >
+                        <p
+                          id={groupHeadingId}
+                          className="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]"
+                        >
+                          {section.group}
+                        </p>
 
-                      {section.items.map((item) => {
-                        const itemIndex = flatIndexById.get(item.id) ?? 0;
-                        const isHighlighted = itemIndex === activeHighlightIndex;
+                        {section.items.map((item) => {
+                          const itemIndex = flatIndexById.get(item.id) ?? 0;
+                          const isHighlighted = itemIndex === activeHighlightIndex;
 
-                        const iconBadgeClasses =
-                          item.kind === 'direct-join'
-                            ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619]'
-                            : item.kind === 'action' || item.meetingKind === 'upcoming'
-                              ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
-                              : 'bg-[#F3F2EE] dark:bg-[#141619] text-[#555D66] dark:text-[#A3AAB2]';
+                          const iconBadgeClasses =
+                            item.kind === 'direct-join'
+                              ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619]'
+                              : item.kind === 'action' || item.meetingKind === 'upcoming'
+                                ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                                : 'bg-[#F3F2EE] dark:bg-[#141619] text-[#555D66] dark:text-[#A3AAB2]';
 
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            role="option"
-                            aria-selected={isHighlighted}
-                            onClick={() => executeSearchItem(item)}
-                            onMouseEnter={() => setHighlightedIndex(itemIndex)}
-                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors ${
-                              isHighlighted
-                                ? 'bg-[#E2ECE9]/80 dark:bg-[#1F302E]/85 text-[#1F2428] dark:text-[#EAECEE]'
-                                : 'hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBadgeClasses}`}
-                              >
-                                {renderSearchItemIcon(item)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
-                                  {item.title}
-                                </p>
-                                <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate">
-                                  {item.subtitle}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                              {item.badge && (
-                                <span
-                                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
-                                    item.kind === 'direct-join'
-                                      ? 'bg-[#E2ECE9] dark:bg-[#1F302E] border-[#2F6F68]/30 dark:border-[#5FA399]/30 text-[#2F6F68] dark:text-[#5FA399]'
-                                      : 'bg-[#FAF9F6] dark:bg-[#141619] border-[#DDDAD0] dark:border-[#2B3038] text-[#7C848D] dark:text-[#A3AAB2]'
-                                  }`}
+                          return (
+                            <button
+                              key={item.id}
+                              id={`header-command-option-${item.id}`}
+                              ref={(el) => {
+                                if (el) {
+                                  optionRefs.current.set(item.id, el);
+                                } else {
+                                  optionRefs.current.delete(item.id);
+                                }
+                              }}
+                              type="button"
+                              role="option"
+                              tabIndex={-1}
+                              aria-selected={isHighlighted}
+                              onClick={() => executeSearchItem(item)}
+                              onMouseEnter={() => {
+                                keyboardNavRef.current = false;
+                                setHighlightedIndex(itemIndex);
+                              }}
+                              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-left transition-colors ${
+                                isHighlighted
+                                  ? 'bg-[#E2ECE9]/80 dark:bg-[#1F302E]/85 text-[#1F2428] dark:text-[#EAECEE]'
+                                  : 'hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                  className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${iconBadgeClasses}`}
                                 >
-                                  {item.badge}
-                                </span>
-                              )}
-                              <ArrowRight
-                                className={`w-3 h-3 transition-transform ${
-                                  isHighlighted
-                                    ? 'text-[#2F6F68] dark:text-[#5FA399] translate-x-0.5'
-                                    : 'text-[#7C848D] dark:text-[#A3AAB2]'
-                                }`}
-                              />
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
+                                  {renderSearchItemIcon(item)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
+                                    {item.title}
+                                  </p>
+                                  <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate">
+                                    {item.subtitle}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                {item.badge && (
+                                  <span
+                                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded-sm border ${
+                                      item.kind === 'direct-join'
+                                        ? 'bg-[#E2ECE9] dark:bg-[#1F302E] border-[#2F6F68]/30 dark:border-[#5FA399]/30 text-[#2F6F68] dark:text-[#5FA399]'
+                                        : 'bg-[#FAF9F6] dark:bg-[#141619] border-[#DDDAD0] dark:border-[#2B3038] text-[#7C848D] dark:text-[#A3AAB2]'
+                                    }`}
+                                  >
+                                    {item.badge}
+                                  </span>
+                                )}
+                                <ArrowRight
+                                  className={`w-3 h-3 transition-transform ${
+                                    isHighlighted
+                                      ? 'text-[#2F6F68] dark:text-[#5FA399] translate-x-0.5'
+                                      : 'text-[#7C848D] dark:text-[#A3AAB2]'
+                                  }`}
+                                />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
