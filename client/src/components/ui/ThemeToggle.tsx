@@ -5,7 +5,7 @@ import type { ThemeMode } from '@/context/themeUtils';
 import { cn } from '@/lib/utils';
 
 export interface ThemeToggleProps {
-  variant?: 'compact' | 'segmented';
+  variant?: 'compact' | 'segmented' | 'dock';
   className?: string;
 }
 
@@ -65,6 +65,29 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   const activeMeta = MODE_OPTIONS.find((item) => item.id === mode) || MODE_OPTIONS[2];
   const ActiveIcon = mode === 'system' ? (resolvedTheme === 'dark' ? Moon : Sun) : activeMeta.icon;
+
+  if (variant === 'dock') {
+    return (
+      <button
+        type="button"
+        onClick={cycleMode}
+        title={`Theme: ${activeMeta.label} (click to switch)`}
+        aria-label={`Switch theme mode (current: ${activeMeta.label})`}
+        className={cn(
+          'inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md text-xs font-medium transition-colors select-none',
+          'text-[#1F2428] dark:text-[#EAECEE] hover:bg-[#FAF9F6] dark:hover:bg-[#24282E]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68]/40 dark:focus-visible:ring-[#5FA399]/40',
+          className
+        )}
+      >
+        <ActiveIcon
+          className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] shrink-0"
+          aria-hidden="true"
+        />
+        <span className="hidden sm:inline">{activeMeta.shortLabel}</span>
+      </button>
+    );
+  }
 
   return (
     <button

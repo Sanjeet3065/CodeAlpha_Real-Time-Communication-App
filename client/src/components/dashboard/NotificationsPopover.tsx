@@ -11,9 +11,16 @@ import {
 } from 'lucide-react';
 import { schedulingApi } from '@/services/schedulingApi';
 import { meetingSocket } from '@/services/meetingSocket';
+import { cn } from '@/lib/utils';
 import type { IInAppNotification } from '@/types/scheduling';
 
-export const NotificationsPopover: React.FC = () => {
+interface NotificationsPopoverProps {
+  triggerClassName?: string;
+}
+
+export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
+  triggerClassName,
+}) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<IInAppNotification[]>([]);
@@ -134,11 +141,14 @@ export const NotificationsPopover: React.FC = () => {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label={`View notifications (${unreadCount} unread)`}
-        className="relative p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+        className={cn(
+          'relative p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30',
+          triggerClassName
+        )}
       >
-        <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+        <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-[#FAF9F6] dark:ring-[#141619]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -157,7 +167,7 @@ export const NotificationsPopover: React.FC = () => {
                 Notifications
               </h3>
               {unreadCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700 font-semibold">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-500/30 font-semibold">
                   {unreadCount} New
                 </span>
               )}

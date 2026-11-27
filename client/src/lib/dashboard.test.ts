@@ -142,5 +142,18 @@ describe('Dashboard Utilities & Data Contracts', () => {
     assert.ok(studioWidget.includes('preferencesApi.getPreferences'), 'PreCallStudioWidget should hydrate fieldVersions via getPreferences on mount');
     assert.ok(studioWidget.includes('stopStudioTest') && studioWidget.includes('testSessionSeqRef'), 'PreCallStudioWidget should cancel/stop tracks safely including mid-prompt unmount');
     assert.ok(editProfileModal.includes('createPortal') && editProfileModal.includes('wasOpenRef'), 'EditProfileModal should portal to document.body and preserve open tab/feedback state across user updates');
+
+    const header = fs.readFileSync(path.resolve(libDir, '../components/dashboard/DashboardHeader.tsx'), 'utf8');
+    const themeToggle = fs.readFileSync(path.resolve(libDir, '../components/ui/ThemeToggle.tsx'), 'utf8');
+    const notifications = fs.readFileSync(path.resolve(libDir, '../components/dashboard/NotificationsPopover.tsx'), 'utf8');
+    const helpModal = fs.readFileSync(path.resolve(libDir, '../components/dashboard/HelpModal.tsx'), 'utf8');
+    assert.ok(
+      header.includes('buildHeaderSearchResults') && header.includes('detectShortcutHint'),
+      'DashboardHeader should use headerCommandSearch helpers for OS shortcuts and live meeting/code search'
+    );
+    assert.ok(!header.includes('Search meetings, files, and actions...'), 'DashboardHeader should replace outdated placeholder copy');
+    assert.ok(themeToggle.includes("'dock'"), 'ThemeToggle should provide a borderless dock variant for the header utility bar');
+    assert.ok(helpModal.includes('dark:bg-emerald-950'), 'HelpModal security note should include dark-mode contrast styles');
+    assert.ok(!notifications.includes('ring-white'), 'NotificationsPopover unread badge should use dark-compatible ring color');
   });
 });

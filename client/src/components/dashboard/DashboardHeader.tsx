@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Menu,
@@ -7,10 +7,15 @@ import {
   Video,
   Hash,
   Calendar,
+  CalendarClock,
   FolderDown,
   Settings,
   LayoutDashboard,
   ArrowRight,
+  CornerDownLeft,
+  History,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { AccountMenu } from './AccountMenu';
 import { NotificationsPopover } from './NotificationsPopover';
@@ -19,6 +24,15 @@ import { HelpModal } from './HelpModal';
 import { JoinMeetingModal } from './JoinMeetingModal';
 import { InstantMeetingModal } from './InstantMeetingModal';
 import { ScheduleNoticeModal } from './ScheduleNoticeModal';
+import { schedulingApi } from '@/services/schedulingApi';
+import { useAuth } from '@/context/AuthContext';
+import {
+  buildHeaderSearchResults,
+  detectShortcutHint,
+  groupHeaderSearchResults,
+  type HeaderMeetingCandidate,
+  type HeaderSearchItem,
+} from '@/lib/headerCommandSearch';
 
 interface DashboardHeaderProps {
   onOpenMobileMenu: () => void;
@@ -26,14 +40,37 @@ interface DashboardHeaderProps {
   subtitle?: string;
 }
 
-interface SearchItem {
-  id: string;
-  title: string;
-  description: string;
-  category: 'Action' | 'Navigation';
-  icon: React.ComponentType<{ className?: string }>;
-  action: () => void;
-  keywords: string[];
+const SEARCH_CACHE_TTL_MS = 30_000;
+
+function renderSearchItemIcon(item: HeaderSearchItem): React.ReactNode {
+  if (item.kind === 'direct-join') {
+    return <CornerDownLeft className="w-4 h-4" />;
+  }
+  if (item.kind === 'meeting') {
+    return item.meetingKind === 'upcoming' ? (
+      <CalendarClock className="w-4 h-4" />
+    ) : (
+      <History className="w-4 h-4" />
+    );
+  }
+
+  switch (item.id) {
+    case 'instant-meeting':
+      return <Video className="w-4 h-4" />;
+    case 'join-code':
+      return <Hash className="w-4 h-4" />;
+    case 'schedule-meeting':
+    case 'nav-meetings':
+      return <Calendar className="w-4 h-4" />;
+    case 'nav-downloads':
+      return <FolderDown className="w-4 h-4" />;
+    case 'nav-settings':
+      return <Settings className="w-4 h-4" />;
+    case 'help-shortcuts':
+      return <HelpCircle className="w-4 h-4" />;
+    default:
+      return <LayoutDashboard className="w-4 h-4" />;
+  }
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -42,6 +79,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   subtitle = '',
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const currentUserId = user?.id;
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isInstantOpen, setIsInstantOpen] = useState(false);
@@ -50,101 +89,121 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [upcomingMeetings, setUpcomingMeetings] = useState<HeaderMeetingCandidate[]>([]);
+  const [recentMeetings, setRecentMeetings] = useState<HeaderMeetingCandidate[]>([]);
+  const [isFetchingMeetings, setIsFetchingMeetings] = useState(false);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
+  const lastFetchedAtRef = useRef<number>(0);
+  const fetchSeqRef = useRef<number>(0);
+  const mountedRef = useRef<boolean>(true);
 
-  // Available Phase 06 Searchable Content & Actions (Strictly Phase 06 scope only)
-  const searchItems: SearchItem[] = [
-    {
-      id: 'instant-meeting',
-      title: 'Start Instant Meeting',
-      description: 'Launch an ephemeral zero-latency collaboration room',
-      category: 'Action',
-      icon: Video,
-      action: () => setIsInstantOpen(true),
-      keywords: ['instant', 'room', 'start', 'call', 'video', 'launch'],
-    },
-    {
-      id: 'join-code',
-      title: 'Join Meeting with Code',
-      description: 'Enter a 10-character code (cly-xxx-xxx) to enter a room',
-      category: 'Action',
-      icon: Hash,
-      action: () => setIsJoinOpen(true),
-      keywords: ['join', 'code', 'room', 'enter', 'cly'],
-    },
-    {
-      id: 'schedule-meeting',
-      title: 'Schedule Meeting',
-      description: 'Plan upcoming sessions and calendar integration',
-      category: 'Action',
-      icon: Calendar,
-      action: () => setIsScheduleOpen(true),
-      keywords: ['schedule', 'calendar', 'plan', 'invite'],
-    },
-    {
-      id: 'nav-overview',
-      title: 'Dashboard Overview',
-      description: 'View collaboration schedule and quick widgets',
-      category: 'Navigation',
-      icon: LayoutDashboard,
-      action: () => navigate('/dashboard'),
-      keywords: ['dashboard', 'overview', 'home', 'main'],
-    },
-    {
-      id: 'nav-meetings',
-      title: 'Meetings & History',
-      description: 'View scheduled rooms and past attendance logs',
-      category: 'Navigation',
-      icon: Calendar,
-      action: () => navigate('/meetings'),
-      keywords: ['meetings', 'history', 'calendar', 'sessions'],
-    },
-    {
-      id: 'nav-downloads',
-      title: 'Downloads & Shared Files',
-      description: 'Access files and media exchanged during meetings',
-      category: 'Navigation',
-      icon: FolderDown,
-      action: () => navigate('/downloads'),
-      keywords: ['downloads', 'files', 'documents', 'repository', 'shared'],
-    },
-    {
-      id: 'nav-settings',
-      title: 'Account Settings & Preferences',
-      description: 'Configure hardware join defaults and identity',
-      category: 'Navigation',
-      icon: Settings,
-      action: () => navigate('/settings'),
-      keywords: ['settings', 'preferences', 'audio', 'video', 'account', 'profile'],
-    },
-    {
-      id: 'help-shortcuts',
-      title: 'Help & Keyboard Shortcuts',
-      description: 'Review room code formats, shortcuts, and security',
-      category: 'Action',
-      icon: HelpCircle,
-      action: () => setIsHelpOpen(true),
-      keywords: ['help', 'shortcuts', 'keyboard', 'support', 'docs'],
-    },
-  ];
+  const shortcutHint = useMemo(() => detectShortcutHint(), []);
 
-  // Filter items in real time
-  const filteredItems = searchQuery.trim()
-    ? searchItems.filter((item) => {
-        const query = searchQuery.toLowerCase();
-        return (
-          item.title.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query) ||
-          item.keywords.some((kw) => kw.includes(query))
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      fetchSeqRef.current += 1;
+    };
+  }, []);
+
+  const loadSearchMeetings = useCallback(async () => {
+    const now = Date.now();
+    if (lastFetchedAtRef.current > 0 && now - lastFetchedAtRef.current < SEARCH_CACHE_TTL_MS) {
+      return;
+    }
+
+    const seq = ++fetchSeqRef.current;
+    setIsFetchingMeetings(true);
+
+    try {
+      const [upcomingRes, recentRes] = await Promise.allSettled([
+        schedulingApi.listUpcomingMeetings({ page: 1, limit: 8 }),
+        schedulingApi.listMeetingHistory({ page: 1, limit: 6, sort: 'desc' }),
+      ]);
+
+      if (!mountedRef.current || fetchSeqRef.current !== seq) return;
+
+      if (upcomingRes.status === 'fulfilled') {
+        setUpcomingMeetings(
+          upcomingRes.value.meetings.map((m) => ({
+            id: m.id,
+            meetingCode: m.meetingCode,
+            title: m.title,
+            startAt: m.scheduledStartAt || m.createdAt,
+            status: m.status,
+            isHost: Boolean(currentUserId && m.hostId === currentUserId),
+            kind: 'upcoming',
+          }))
         );
-      })
-    : searchItems;
+      }
+
+      if (recentRes.status === 'fulfilled') {
+        setRecentMeetings(
+          recentRes.value.meetings.map((m) => ({
+            id: m.id,
+            meetingCode: m.meetingCode,
+            title: m.title,
+            startAt: m.endedAt || m.activatedAt || m.scheduledStartAt || m.createdAt,
+            status: m.status,
+            isHost: m.userRole === 'host',
+            kind: 'recent',
+          }))
+        );
+      }
+
+      if (upcomingRes.status === 'fulfilled' || recentRes.status === 'fulfilled') {
+        lastFetchedAtRef.current = Date.now();
+      }
+    } finally {
+      if (mountedRef.current && fetchSeqRef.current === seq) {
+        setIsFetchingMeetings(false);
+      }
+    }
+  }, [currentUserId]);
+
+  const openSearchPalette = useCallback(() => {
+    setIsSearchOpen(true);
+    void loadSearchMeetings();
+  }, [loadSearchMeetings]);
+
+  const closeSearchPalette = useCallback(() => {
+    setIsSearchOpen(false);
+    if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
+      prevFocusRef.current.focus();
+    }
+  }, []);
+
+  const filteredItems = useMemo(
+    () =>
+      buildHeaderSearchResults({
+        query: searchQuery,
+        upcomingMeetings,
+        recentMeetings,
+      }),
+    [searchQuery, upcomingMeetings, recentMeetings]
+  );
+
+  const groupedSections = useMemo(
+    () => groupHeaderSearchResults(filteredItems),
+    [filteredItems]
+  );
+
+  const flatIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredItems.forEach((item, index) => {
+      map.set(item.id, index);
+    });
+    return map;
+  }, [filteredItems]);
+
+  const activeHighlightIndex =
+    filteredItems.length > 0 ? Math.min(highlightedIndex, filteredItems.length - 1) : -1;
 
   // Global ⌘K (macOS) / Ctrl+K (Windows/Linux) keyboard shortcut
-  // Does not interfere when typing inside other inputs or textareas
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -157,7 +216,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             (activeEl as HTMLElement).isContentEditable);
 
         if (isTypingInOtherInput) {
-          // Do not interfere with user typing inside form inputs
           return;
         }
 
@@ -166,12 +224,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           prevFocusRef.current = activeEl as HTMLElement | null;
         }
         searchInputRef.current?.focus();
-        setIsSearchOpen(true);
+        openSearchPalette();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isSearchOpen]);
+  }, [isSearchOpen, openSearchPalette]);
 
   // Close search on outside click
   useEffect(() => {
@@ -184,16 +242,39 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       document.addEventListener('mousedown', handleOutsideClick);
     }
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [isSearchOpen]);
+  }, [isSearchOpen, closeSearchPalette]);
 
-  const closeSearchPalette = () => {
+  const executeSearchItem = (item: HeaderSearchItem) => {
     setIsSearchOpen(false);
+    setSearchQuery('');
+    setHighlightedIndex(0);
     if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
       prevFocusRef.current.focus();
     }
+
+    if (item.route) {
+      navigate(item.route);
+      return;
+    }
+
+    switch (item.actionId) {
+      case 'instant-meeting':
+        setIsInstantOpen(true);
+        break;
+      case 'join-code':
+        setIsJoinOpen(true);
+        break;
+      case 'schedule-meeting':
+        setIsScheduleOpen(true);
+        break;
+      case 'help-shortcuts':
+        setIsHelpOpen(true);
+        break;
+      default:
+        break;
+    }
   };
 
-  // Handle Search Input Keyboard Navigation
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -202,47 +283,40 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
 
     if (!isSearchOpen) {
-      setIsSearchOpen(true);
+      openSearchPalette();
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % (filteredItems.length || 1));
+      if (filteredItems.length > 0) {
+        setHighlightedIndex((prev) => (prev + 1) % filteredItems.length);
+      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlightedIndex((prev) =>
-        prev <= 0 ? (filteredItems.length || 1) - 1 : prev - 1
-      );
+      if (filteredItems.length > 0) {
+        setHighlightedIndex((prev) => (prev <= 0 ? filteredItems.length - 1 : prev - 1));
+      }
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredItems[highlightedIndex]) {
-        executeSearchItem(filteredItems[highlightedIndex]);
+      if (activeHighlightIndex >= 0 && filteredItems[activeHighlightIndex]) {
+        executeSearchItem(filteredItems[activeHighlightIndex]);
       }
     }
   };
 
-  const executeSearchItem = (item: SearchItem) => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-      prevFocusRef.current.focus();
-    }
-    item.action();
-  };
-
   return (
     <>
-      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Left Side: Mobile Menu Button & Page Title */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-5">
+        {/* Left Zone: Mobile Menu Trigger & Workspace Title */}
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 lg:min-w-[160px]">
           <button
             type="button"
             onClick={onOpenMobileMenu}
             aria-label="Open sidebar navigation"
-            className="p-1.5 sm:p-2 -ml-1 sm:-ml-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] lg:hidden transition-colors flex-shrink-0"
+            className="w-9 h-9 inline-flex items-center justify-center -ml-1 rounded-xl bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] lg:hidden transition-colors flex-shrink-0"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4 h-4" />
           </button>
 
           <div className="flex flex-col min-w-0">
@@ -250,19 +324,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               {title}
             </h1>
             {subtitle && (
-              <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate">
+              <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate mt-0.5">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
 
-        {/* Center: Functional Search Input (Visible on Laptop & Desktop 1024px+) */}
-        <div className="hidden lg:flex flex-1 max-w-md mx-4 relative" ref={searchContainerRef}>
-          <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#7C848D] dark:text-[#A3AAB2]">
+        {/* Center Zone: Spacious Studio Command & Meeting Search Bar */}
+        <div className="hidden lg:flex flex-1 max-w-lg mx-auto relative" ref={searchContainerRef}>
+          <div className="relative w-full h-10 rounded-lg bg-[#F3F2EE]/90 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038] hover:border-[#C5C1B4] dark:hover:border-[#3A404A] focus-within:bg-[#FAF9F6] dark:focus-within:bg-[#1C1F24] focus-within:border-[#2F6F68]/60 dark:focus-within:border-[#5FA399]/60 focus-within:ring-2 focus-within:ring-[#2F6F68]/20 dark:focus-within:ring-[#5FA399]/20 transition-all shadow-cly-sm flex items-center">
+            <div
+              className={`pl-3.5 pr-2.5 flex items-center pointer-events-none transition-colors ${
+                isSearchOpen
+                  ? 'text-[#2F6F68] dark:text-[#5FA399]'
+                  : 'text-[#7C848D] dark:text-[#8E96A0]'
+              }`}
+            >
               <Search className="w-4 h-4" />
             </div>
+
             <input
               ref={searchInputRef}
               type="text"
@@ -270,119 +351,175 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setHighlightedIndex(0);
-                setIsSearchOpen(true);
+                if (!isSearchOpen) openSearchPalette();
               }}
               onFocus={() => {
                 if (!isSearchOpen) {
                   prevFocusRef.current = document.activeElement as HTMLElement | null;
                 }
-                setIsSearchOpen(true);
+                openSearchPalette();
               }}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Search meetings, files, and actions..."
+              placeholder="Search meetings, room code, or action..."
               aria-label="Search meetings and actions"
               aria-expanded={isSearchOpen}
               aria-haspopup="listbox"
               role="combobox"
-              className="w-full pl-9 pr-16 py-1.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-lg text-xs text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] transition-all"
+              className="flex-1 min-w-0 h-full pr-2 bg-transparent text-xs sm:text-[13px] text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#7E8791] focus:outline-none"
             />
-            <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-[#7C848D] dark:text-[#A3AAB2] bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded shadow-xs">
-                ⌘K
+
+            <div className="pr-2.5 flex items-center gap-1.5 flex-shrink-0">
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setHighlightedIndex(0);
+                    searchInputRef.current?.focus();
+                  }}
+                  aria-label="Clear search"
+                  className="w-5 h-5 rounded-md inline-flex items-center justify-center text-[#7C848D] dark:text-[#8E96A0] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <kbd
+                aria-label={`Shortcut ${shortcutHint.readableLabel}`}
+                className="px-2 py-0.5 text-[10px] font-mono font-medium text-[#6B737C] dark:text-[#A3AAB2] bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-md select-none pointer-events-none"
+              >
+                {isSearchOpen && !searchQuery ? 'Esc' : shortcutHint.compactLabel}
               </kbd>
             </div>
           </div>
 
-          {/* Quick Search Dropdown Palette */}
+          {/* Grouped Command & Live Meeting Palette */}
           {isSearchOpen && (
             <div
               role="listbox"
               aria-label="Search suggestions"
-              className="origin-top absolute top-full left-0 right-0 mt-2 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-80 overflow-y-auto"
+              className="origin-top absolute top-full left-0 right-0 mt-2 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden z-50 animate-in fade-in-50 zoom-in-95 duration-100 max-h-96 flex flex-col"
             >
-              <div className="p-2 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/70 dark:bg-[#141619]/70 flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
-                <span className="font-semibold uppercase tracking-wider text-[10px] text-[#1F2428] dark:text-[#EAECEE]">
-                  {searchQuery.trim() ? 'Matching Results' : 'Quick Actions & Sections'}
+              <div className="px-3.5 py-2 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE]/80 dark:bg-[#141619]/80 flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#A3AAB2] shrink-0">
+                <span className="font-semibold uppercase tracking-wider text-[10px] text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5">
+                  <span>{searchQuery.trim() ? 'Matching Results' : 'Quick Command Bar'}</span>
+                  {isFetchingMeetings && (
+                    <Loader2 className="w-3 h-3 animate-spin text-[#2F6F68] dark:text-[#5FA399]" />
+                  )}
                 </span>
-                <span>{filteredItems.length} found</span>
+                <span>
+                  {filteredItems.length} {filteredItems.length === 1 ? 'result' : 'results'}
+                </span>
               </div>
 
               {filteredItems.length === 0 ? (
                 <div className="p-6 text-center text-xs text-[#7C848D] dark:text-[#A3AAB2]">
-                  No matching actions or destinations found for &quot;{searchQuery}&quot;.
+                  No meetings, room codes, or actions match &quot;{searchQuery}&quot;.
                 </div>
               ) : (
-                <div className="p-1 divide-y divide-[#DDDAD0]/50 dark:divide-[#2B3038]">
-                  {filteredItems.map((item, index) => {
-                    const Icon = item.icon;
-                    const isHighlighted = index === highlightedIndex;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="option"
-                        aria-selected={isHighlighted}
-                        onClick={() => executeSearchItem(item)}
-                        onMouseEnter={() => setHighlightedIndex(index)}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors ${
-                          isHighlighted ? 'bg-[#E2ECE9]/80 dark:bg-[#1F302E]/80 text-[#1F2428] dark:text-[#EAECEE]' : 'hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                              item.category === 'Action'
-                                ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
-                                : 'bg-[#F3F2EE] dark:bg-[#141619] text-[#555D66] dark:text-[#A3AAB2]'
+                <div className="p-1.5 overflow-y-auto space-y-2">
+                  {groupedSections.map((section) => (
+                    <div key={section.group} className="space-y-0.5">
+                      <p className="px-2.5 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]">
+                        {section.group}
+                      </p>
+
+                      {section.items.map((item) => {
+                        const itemIndex = flatIndexById.get(item.id) ?? 0;
+                        const isHighlighted = itemIndex === activeHighlightIndex;
+
+                        const iconBadgeClasses =
+                          item.kind === 'direct-join'
+                            ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619]'
+                            : item.kind === 'action' || item.meetingKind === 'upcoming'
+                              ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                              : 'bg-[#F3F2EE] dark:bg-[#141619] text-[#555D66] dark:text-[#A3AAB2]';
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isHighlighted}
+                            onClick={() => executeSearchItem(item)}
+                            onMouseEnter={() => setHighlightedIndex(itemIndex)}
+                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors ${
+                              isHighlighted
+                                ? 'bg-[#E2ECE9]/80 dark:bg-[#1F302E]/85 text-[#1F2428] dark:text-[#EAECEE]'
+                                : 'hover:bg-[#F3F2EE] dark:hover:bg-[#24282E]'
                             }`}
                           >
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
-                              {item.title}
-                            </p>
-                            <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBadgeClasses}`}
+                              >
+                                {renderSearchItemIcon(item)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] truncate">
+                                  {item.title}
+                                </p>
+                                <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] truncate">
+                                  {item.subtitle}
+                                </p>
+                              </div>
+                            </div>
 
-                        <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] text-[#7C848D] dark:text-[#A3AAB2]">
-                            {item.category}
-                          </span>
-                          <ArrowRight className="w-3 h-3 text-[#7C848D] dark:text-[#A3AAB2]" />
-                        </div>
-                      </button>
-                    );
-                  })}
+                            <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                              {item.badge && (
+                                <span
+                                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
+                                    item.kind === 'direct-join'
+                                      ? 'bg-[#E2ECE9] dark:bg-[#1F302E] border-[#2F6F68]/30 dark:border-[#5FA399]/30 text-[#2F6F68] dark:text-[#5FA399]'
+                                      : 'bg-[#FAF9F6] dark:bg-[#141619] border-[#DDDAD0] dark:border-[#2B3038] text-[#7C848D] dark:text-[#A3AAB2]'
+                                  }`}
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                              <ArrowRight
+                                className={`w-3 h-3 transition-transform ${
+                                  isHighlighted
+                                    ? 'text-[#2F6F68] dark:text-[#5FA399] translate-x-0.5'
+                                    : 'text-[#7C848D] dark:text-[#A3AAB2]'
+                                }`}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Right Side: Theme, Help, Notifications, Account Menu */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <ThemeToggle variant="compact" />
-
-          {/* Help Button */}
-          <button
-            type="button"
-            onClick={() => setIsHelpOpen(true)}
-            aria-label="Help and shortcuts"
-            className="p-1.5 sm:p-2 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+        {/* Right Zone: Cohesive Studio Utility Dock & Profile Chip (Aligned h-10) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+          <div
+            role="group"
+            aria-label="Workspace utilities"
+            className="h-10 inline-flex items-center gap-0.5 p-1 rounded-lg bg-[#F3F2EE]/85 dark:bg-[#141619]/90 border border-[#DDDAD0] dark:border-[#2B3038]"
           >
-            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+            <ThemeToggle variant="dock" />
 
-          {/* Notifications Popover */}
-          <NotificationsPopover />
+            <span className="h-4 w-px bg-[#DDDAD0] dark:bg-[#2B3038] mx-0.5" aria-hidden="true" />
 
-          <div className="h-5 w-px bg-[#DDDAD0] dark:bg-[#2B3038] mx-0.5 sm:mx-1" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={() => setIsHelpOpen(true)}
+              title="Help & keyboard shortcuts"
+              aria-label="Help and shortcuts"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-md text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#FAF9F6] dark:hover:bg-[#24282E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68]/40 dark:focus-visible:ring-[#5FA399]/40"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
 
-          {/* User Account Menu */}
+            <NotificationsPopover triggerClassName="w-8 h-8 p-0 sm:p-0 inline-flex items-center justify-center rounded-md text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#FAF9F6] dark:hover:bg-[#24282E]" />
+          </div>
+
           <AccountMenu />
         </div>
       </header>

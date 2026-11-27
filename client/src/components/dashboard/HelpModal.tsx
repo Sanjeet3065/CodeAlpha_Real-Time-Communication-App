@@ -19,13 +19,17 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         const closeBtn = modalRef.current?.querySelector<HTMLButtonElement>('button[data-close="true"]');
         closeBtn?.focus();
       }, 50);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = '';
+      };
     } else {
       document.body.style.overflow = '';
       if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
         prevFocusRef.current.focus();
       }
     }
+    return undefined;
   }, [isOpen]);
 
   useEffect(() => {
@@ -124,9 +128,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-emerald-900 leading-relaxed">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-500/30 flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
               <span className="font-semibold">Security Architecture:</span> Connectly enforces Argon2id hashing and HttpOnly dual-token sessions. Plaintext credentials are never retained in browser storage or client state.
             </div>
           </div>
