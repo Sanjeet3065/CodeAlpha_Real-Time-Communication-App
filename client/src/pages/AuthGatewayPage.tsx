@@ -90,11 +90,12 @@ const GoogleContinueSection: React.FC<{
       <span>{isLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
     </button>
 
-    <div className="relative flex items-center justify-center">
-      <span className="w-full border-t border-[#DDDAD0] dark:border-[#2B3038]" />
-      <span className="relative px-2.5 bg-[#FAF9F6] dark:bg-[#1C1F24] text-[10px] font-medium uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]">
+    <div className="flex items-center gap-3">
+      <span className="flex-1 border-t border-[#DDDAD0] dark:border-[#2B3038]" aria-hidden="true" />
+      <span className="shrink-0 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]">
         or continue with email
       </span>
+      <span className="flex-1 border-t border-[#DDDAD0] dark:border-[#2B3038]" aria-hidden="true" />
     </div>
   </div>
 );
