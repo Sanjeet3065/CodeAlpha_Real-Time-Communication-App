@@ -14,6 +14,7 @@ import {
 import { livekitRevocationCoordinator } from './realtime/livekitRevocationCoordinator.js';
 import { chatRedisService } from './services/chatRedis.service.js';
 import { fileCleanupWorker } from './services/fileCleanupWorker.service.js';
+import { meetingHistoryRetentionWorker } from './services/meetingHistoryRetentionWorker.service.js';
 import { reminderWorker } from './services/reminderWorker.service.js';
 import { livekitEvictionWorker } from './workers/livekitEvictionWorker.js';
 import { keyManager } from './services/keyManagement.service.js';
@@ -84,6 +85,7 @@ async function bootstrap() {
     }
 
     await fileCleanupWorker.start();
+    await meetingHistoryRetentionWorker.start();
     reminderWorker.start();
     await livekitEvictionWorker.start();
 
@@ -105,6 +107,7 @@ async function bootstrap() {
         unsubMeetingEndSync();
         reminderWorker.stop();
         await livekitEvictionWorker.stop();
+        await meetingHistoryRetentionWorker.stop();
         await fileCleanupWorker.stop();
         await meetingOutboxDispatcher.stop();
         livekitSignalGateway.close();

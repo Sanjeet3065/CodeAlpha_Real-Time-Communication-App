@@ -28,6 +28,7 @@ import type {
 } from '../schemas/meeting.schema.js';
 import { reminderWorker } from './reminderWorker.service.js';
 import { notificationService } from './notification.service.js';
+import { isMeetingHistoryExpired } from './meetingHistoryRetentionWorker.service.js';
 import { meetingRealtime } from '../realtime/meetingSocket.js';
 
 const MAX_CODE_GENERATION_RETRIES = 6;
@@ -953,15 +954,19 @@ export class SchedulingService {
     }
 
     const sortOrder = query.sort === 'asc' ? 1 : -1;
+    const now = new Date();
 
-    const [docs, total] = await Promise.all([
-      Meeting.find(filter)
-        .sort({ createdAt: sortOrder, _id: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .populate('hostId', 'firstName lastName email'),
-      Meeting.countDocuments(filter),
-    ]);
+    const matchedDocs = await Meeting.find(filter)
+      .sort({ createdAt: sortOrder, _id: sortOrder })
+      .populate('hostId', 'firstName lastName email');
+
+    const retainedDocs =
+      query.status === 'ACTIVE'
+        ? matchedDocs
+        : matchedDocs.filter((doc) => !isMeetingHistoryExpired(doc, now));
+
+    const total = retainedDocs.length;
+    const docs = retainedDocs.slice(skip, skip + limit);
 
     // Calculate accurate attended participant counts from MeetingParticipant (DEF-16-05)
     const meetingIds = docs.map((d) => d._id);
@@ -1081,6 +1086,10 @@ export class SchedulingService {
     const meeting = await Meeting.findById(meetingId).populate('hostId', 'firstName lastName email');
     if (!meeting) {
       throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
+    }
+
+    if (isMeetingHistoryExpired(meeting)) {
+      throw new NotFoundError('Meeting history has expired after the 2-day retention window.', 'HISTORY_EXPIRED');
     }
 
     // Verify object-level authorization: User must have been the host or an admitted participant
