@@ -5,6 +5,9 @@ import type {
   LoginData,
   GoogleAuthData,
   GoogleAuthConfigResponse,
+  UpdateProfileData,
+  UpdateEmailData,
+  UpdatePasswordData,
   ApiProblemDetails,
 } from '@/types/auth';
 
@@ -238,5 +241,49 @@ export const authApi = {
       throw await parseErrorResponse(res);
     }
     return res.json();
+  },
+
+  async updateProfile(data: UpdateProfileData): Promise<User> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/users/me`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw await parseErrorResponse(res);
+    }
+    const payload = await res.json();
+    return (payload?.data ?? payload) as User;
+  },
+
+  async updateEmail(data: UpdateEmailData): Promise<{ user: User; accessToken: string }> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/users/me/email`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw await parseErrorResponse(res);
+    }
+    const payload = await res.json();
+    const result = (payload?.data ?? payload) as { user: User; accessToken: string };
+    if (result?.accessToken) {
+      authStorage.setAccessToken(result.accessToken);
+    }
+    return result;
+  },
+
+  async updatePassword(data: UpdatePasswordData): Promise<{ user: User; accessToken: string }> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/users/me/password`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw await parseErrorResponse(res);
+    }
+    const payload = await res.json();
+    const result = (payload?.data ?? payload) as { user: User; accessToken: string };
+    if (result?.accessToken) {
+      authStorage.setAccessToken(result.accessToken);
+    }
+    return result;
   },
 };

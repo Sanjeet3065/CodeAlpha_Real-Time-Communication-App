@@ -18,6 +18,7 @@ export interface AuthContextType {
   register: (data: RegisterData) => Promise<{ success: boolean; user: User }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateUser: (updated: User) => void;
   updateUserPreferences: (prefs: {
     defaultAudioMuted?: boolean;
     defaultVideoOff?: boolean;
@@ -90,6 +91,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateUser = useCallback((updated: User): void => {
+    setUser(updated);
+  }, []);
+
   const updateUserPreferences = useCallback(
     (prefs: { defaultAudioMuted?: boolean; defaultVideoOff?: boolean }): void => {
       setUser((prev) => {
@@ -122,6 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register,
         logout,
         refreshUser,
+        updateUser,
         updateUserPreferences,
       }}
     >

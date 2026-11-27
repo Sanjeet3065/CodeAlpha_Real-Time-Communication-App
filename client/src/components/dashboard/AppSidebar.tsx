@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { BrandMark } from '@/components/ui/BrandMark';
+import { getAvatarAccentClasses } from '@/lib/avatarAccent';
 import {
   LayoutDashboard,
   Calendar,
@@ -115,7 +116,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
           onClick={onCloseMobile}
           className="p-2.5 bg-[#F3F2EE] dark:bg-[#141619] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E] rounded-xl border border-[#DDDAD0]/80 dark:border-[#2B3038] flex items-center gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
         >
-          <div className="w-8 h-8 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-bold text-xs flex items-center justify-center flex-shrink-0">
+          <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center flex-shrink-0 ${getAvatarAccentClasses(user?.avatarColor)}`}>
             {getInitials()}
           </div>
           <div className="flex-1 min-w-0">

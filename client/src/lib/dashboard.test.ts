@@ -114,5 +114,15 @@ describe('Dashboard Utilities & Data Contracts', () => {
     assert.ok(quickBar.includes('validateMeetingCode') && quickBar.includes('Join Room'), 'QuickActionBar should support direct room code entry and Join Room trigger');
     assert.ok(!welcomeHeader.includes('Active Session'), 'WelcomeHeader should omit redundant Active Session chrome');
     assert.ok(activityWidget.includes('schedulingApi.listMeetingHistory'), 'RecentActivityWidget should fetch live meeting history');
+
+    const accountMenu = fs.readFileSync(path.resolve(libDir, '../components/dashboard/AccountMenu.tsx'), 'utf8');
+    const editProfileModal = fs.readFileSync(path.resolve(libDir, '../components/dashboard/EditProfileModal.tsx'), 'utf8');
+    assert.ok(accountMenu.includes('Edit Profile') && accountMenu.includes('EditProfileModal'), 'AccountMenu should include Edit Profile trigger');
+    assert.ok(
+      editProfileModal.includes('authApi.updateProfile') &&
+        editProfileModal.includes('authApi.updateEmail') &&
+        editProfileModal.includes('authApi.updatePassword'),
+      'EditProfileModal should support DB-backed profile, email, and password updates'
+    );
   });
 });

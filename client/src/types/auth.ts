@@ -1,3 +1,5 @@
+export type AvatarAccentColor = 'sage' | 'slate' | 'amber' | 'rose' | 'indigo';
+
 export interface IUserPreferences {
   defaultAudioMuted: boolean;
   defaultVideoOff: boolean;
@@ -8,13 +10,38 @@ export interface IUserPreferences {
 
 export interface User {
   id: string;
+  name?: string;
   email: string;
   firstName: string;
   lastName: string;
   avatarUrl?: string | null;
+  avatarColor?: AvatarAccentColor;
+  jobTitle?: string | null;
+  bio?: string | null;
+  timeZone?: string | null;
+  hasLocalPassword?: boolean;
   preferences?: IUserPreferences;
   createdAt?: string;
   isEmailVerified?: boolean;
+}
+
+export interface UpdateProfileData {
+  firstName?: string;
+  lastName?: string;
+  jobTitle?: string | null;
+  bio?: string | null;
+  timeZone?: string | null;
+  avatarColor?: AvatarAccentColor;
+}
+
+export interface UpdateEmailData {
+  email: string;
+  currentPassword?: string;
+}
+
+export interface UpdatePasswordData {
+  currentPassword?: string;
+  newPassword: string;
 }
 
 export interface AuthResponse {

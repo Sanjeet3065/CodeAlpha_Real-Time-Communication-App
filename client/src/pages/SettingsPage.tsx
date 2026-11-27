@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { EditProfileModal } from '@/components/dashboard/EditProfileModal';
 import { useAuth } from '@/context/AuthContext';
 import { preferencesApi, resetClientSession } from '@/services/preferencesApi';
 import {
@@ -87,6 +88,7 @@ export const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'idle' | 'synced' | 'local-only'>('idle');
   const [cloudError, setCloudError] = useState<string | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   // Synchronize on mount and whenever authenticated account switches
   useEffect(() => {
@@ -453,10 +455,20 @@ export const SettingsPage: React.FC = () => {
         {/* Right Column: Identity Card */}
         <div className="lg:col-span-4 space-y-6">
           <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
-            <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-3 flex items-center gap-2">
-              <User className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
-              Account Identity
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-2">
+                <User className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
+                Account Identity
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditProfileOpen(true)}
+              >
+                Edit Profile
+              </Button>
+            </div>
 
             <div className="space-y-3 text-xs">
               <div>
@@ -466,10 +478,31 @@ export const SettingsPage: React.FC = () => {
                 </span>
               </div>
 
+              {user?.jobTitle && (
+                <div>
+                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Role / Title</span>
+                  <span className="font-medium text-[#1F2428] dark:text-[#EAECEE]">{user.jobTitle}</span>
+                </div>
+              )}
+
               <div>
                 <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Email Address</span>
                 <span className="font-mono text-[#1F2428] dark:text-[#EAECEE]">{user?.email}</span>
               </div>
+
+              {user?.timeZone && (
+                <div>
+                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Time Zone</span>
+                  <span className="text-[#1F2428] dark:text-[#EAECEE]">{user.timeZone}</span>
+                </div>
+              )}
+
+              {user?.bio && (
+                <div>
+                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Bio</span>
+                  <p className="text-[#555D66] dark:text-[#A3AAB2] leading-relaxed">{user.bio}</p>
+                </div>
+              )}
 
               <div>
                 <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">User Identifier</span>
@@ -477,7 +510,7 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               <div className="pt-2 border-t border-[#DDDAD0] dark:border-[#2B3038]">
-                <div className="flex items-center gap-1.5 text-emerald-700 text-[11px] font-semibold">
+                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Argon2id + Dual Token Protection</span>
                 </div>
@@ -486,6 +519,11 @@ export const SettingsPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+      />
     </DashboardLayout>
   );
 };
