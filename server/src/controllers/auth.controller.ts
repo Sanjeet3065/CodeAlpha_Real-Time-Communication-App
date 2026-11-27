@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { User, type IUser } from '../models/User.model.js';
 import { AuthSession } from '../models/Session.model.js';
 import { env } from '../config/env.js';
-import { userService } from '../services/user.service.js';
+import { userService, buildUserProfileResponse } from '../services/user.service.js';
 import {
   GoogleAuthError,
   isAllowedGoogleRedirectUri,
@@ -50,6 +50,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       passwordHash,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      hasLocalPassword: true,
     });
 
     res.status(201).json({
@@ -174,9 +175,17 @@ export interface SessionUserLike {
   firstName: string;
   lastName: string;
   avatarUrl?: string | null;
+  avatarColor?: 'sage' | 'slate' | 'amber' | 'rose' | 'indigo' | string;
+  jobTitle?: string | null;
+  bio?: string | null;
+  timeZone?: string | null;
+  googleSub?: string | null;
+  hasLocalPassword?: boolean;
   role?: 'user' | 'admin' | string;
   isEmailVerified?: boolean;
   preferences?: IUser['preferences'];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface GoogleAuthDeps {
@@ -188,6 +197,9 @@ export interface GoogleAuthDeps {
     redirectUri?: string,
     config?: GoogleAuthConfig
   ) => Promise<VerifiedGoogleProfile>;
+  findUserByGoogleSub?: (
+    googleSub: string
+  ) => Promise<(SessionUserLike & { failedLoginAttempts?: number; lockoutUntil?: Date | null }) | null>;
   findUserByEmail?: (
     email: string
   ) => Promise<(SessionUserLike & { failedLoginAttempts?: number; lockoutUntil?: Date | null }) | null>;
@@ -198,8 +210,14 @@ export interface GoogleAuthDeps {
     lastName: string;
     avatarUrl: string | null;
     isEmailVerified: boolean;
+    googleSub?: string;
+    hasLocalPassword?: boolean;
   }) => Promise<SessionUserLike>;
-  resetLockoutAndVerify?: (user: SessionUserLike, avatarUrl: string | null) => Promise<void>;
+  resetLockoutAndVerify?: (
+    user: SessionUserLike,
+    avatarUrl: string | null,
+    googleSub?: string
+  ) => Promise<void>;
   createSession?: (payload: {
     userId: unknown;
     familyId: string;
@@ -239,18 +257,19 @@ async function issueAuthenticatedSession(
     details: options?.details,
   });
 
+  const refreshToken = generateRefreshToken();
+  const refreshTokenHash = hashToken(refreshToken);
+  const familyId = generateFamilyId();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
   const accessToken = generateAccessToken({
     sub: userIdStr,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role || 'user',
+    familyId,
   });
-
-  const refreshToken = generateRefreshToken();
-  const refreshTokenHash = hashToken(refreshToken);
-  const familyId = generateFamilyId();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
   await createSessionFn({
     userId: user._id,
@@ -270,10 +289,16 @@ async function issueAuthenticatedSession(
     success: true,
     user: {
       id: userIdStr,
+      name: `${user.firstName} ${user.lastName}`.trim(),
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       avatarUrl: user.avatarUrl ?? null,
+      avatarColor: user.avatarColor ?? 'sage',
+      jobTitle: user.jobTitle ?? null,
+      bio: user.bio ?? null,
+      timeZone: user.timeZone ?? null,
+      hasLocalPassword: user.hasLocalPassword !== false,
       isEmailVerified: Boolean(user.isEmailVerified),
       preferences: resolvedPreferences,
     },
@@ -462,13 +487,16 @@ export async function googleAuth(
     const verifyFn = deps.verifyCodeFn ?? verifyGoogleAuthorizationCode;
     const profile = await verifyFn(code, redirectUri, googleConfig);
 
+    const findUserBySubFn =
+      deps.findUserByGoogleSub ??
+      (deps.findUserByEmail ? undefined : (googleSub: string) => User.findOne({ googleSub }));
     const findUserFn =
       deps.findUserByEmail ?? ((email: string) => User.findOne({ email }));
     const createUserFn =
       deps.createUser ?? ((payload) => User.create(payload));
     const resetFn =
       deps.resetLockoutAndVerify ??
-      (async (existingUser: SessionUserLike, avatarUrl: string | null) => {
+      (async (existingUser: SessionUserLike, avatarUrl: string | null, googleSub?: string) => {
         const updateSet: Record<string, unknown> = {
           failedLoginAttempts: 0,
           isEmailVerified: true,
@@ -477,6 +505,10 @@ export async function googleAuth(
           updateSet.avatarUrl = avatarUrl;
           existingUser.avatarUrl = avatarUrl;
         }
+        if (googleSub && !existingUser.googleSub) {
+          updateSet.googleSub = googleSub;
+          existingUser.googleSub = googleSub;
+        }
         existingUser.isEmailVerified = true;
         await User.updateOne(
           { _id: existingUser._id },
@@ -484,7 +516,9 @@ export async function googleAuth(
         );
       });
 
-    let user = await findUserFn(profile.email);
+    let user =
+      (profile.subjectId && findUserBySubFn ? await findUserBySubFn(profile.subjectId) : null) ??
+      (await findUserFn(profile.email));
     let isNewAccount = false;
 
     if (!user) {
@@ -500,6 +534,8 @@ export async function googleAuth(
           lastName: profile.lastName,
           avatarUrl: profile.avatarUrl,
           isEmailVerified: true,
+          googleSub: profile.subjectId,
+          hasLocalPassword: false,
         });
       } catch (err: unknown) {
         if (typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 11000) {
@@ -510,7 +546,7 @@ export async function googleAuth(
         }
       }
     } else {
-      await resetFn(user, profile.avatarUrl);
+      await resetFn(user, profile.avatarUrl, profile.subjectId);
     }
 
     if (!user) {
@@ -621,6 +657,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role || 'user',
+        familyId: activeSession.familyId,
       });
 
       setRefreshCookie(res, newRefreshToken);
@@ -638,15 +675,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
       res.status(200).json({
         success: true,
         accessToken: newAccessToken,
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          avatarUrl: user.avatarUrl,
-          isEmailVerified: user.isEmailVerified,
-          preferences: resolvedPreferences,
-        },
+        user: buildUserProfileResponse(user, resolvedPreferences),
       });
       return;
     }
@@ -787,16 +816,7 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 
     const resolvedPreferences = await userService.resolveUserPreferences(user);
 
-    res.status(200).json({
-      id: user._id.toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      avatarUrl: user.avatarUrl,
-      isEmailVerified: user.isEmailVerified,
-      preferences: resolvedPreferences,
-      createdAt: user.createdAt,
-    });
+    res.status(200).json(buildUserProfileResponse(user, resolvedPreferences));
   } catch (error) {
     console.error('[Auth Controller] GetMe error:', error);
     res.status(500).json({

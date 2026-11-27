@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import { createApp } from '../app.js';
 import { User } from '../models/User.model.js';
+import { AuthSession } from '../models/Session.model.js';
 import { generateAccessToken } from '../utils/tokens.js';
 import { hashPassword } from '../utils/password.js';
 import type { Server } from 'node:http';
@@ -209,5 +210,224 @@ describe('User Profile API & Security Suite', () => {
     const userBRecord = await User.findById(userBId);
     assert.strictEqual(userBRecord?.firstName, 'Marcus');
     assert.strictEqual(userBRecord?.lastName, 'Vance');
+  });
+
+  it('9. PATCH /api/v1/users/me — updates jobTitle, bio, timeZone, avatarColor while rejecting restricted keys', async () => {
+    const res = await fetch(`${baseUrl}/api/v1/users/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+      },
+      body: JSON.stringify({
+        jobTitle: 'Principal Architect',
+        bio: 'Leading crystal-clear WebRTC meetings',
+        timeZone: 'Asia/Kolkata',
+        avatarColor: 'indigo',
+      }),
+    });
+
+    assert.strictEqual(res.status, 200);
+    const body = (await res.json()) as any;
+    assert.strictEqual(body.data.jobTitle, 'Principal Architect');
+    assert.strictEqual(body.data.bio, 'Leading crystal-clear WebRTC meetings');
+    assert.strictEqual(body.data.timeZone, 'Asia/Kolkata');
+    assert.strictEqual(body.data.avatarColor, 'indigo');
+
+    const badTz = await fetch(`${baseUrl}/api/v1/users/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+      },
+      body: JSON.stringify({ timeZone: 'Invalid/Zone_XYZ' }),
+    });
+    assert.strictEqual(badTz.status, 400);
+  });
+
+  it('10. PATCH /api/v1/users/me/email — enforces password verification, uniqueness, and updates DB', async () => {
+    const badPwd = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+      },
+      body: JSON.stringify({
+        email: 'sarah.new@connectly.io',
+        currentPassword: 'WrongPassword999!',
+      }),
+    });
+    assert.strictEqual(badPwd.status, 401);
+
+    const dupEmail = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+      },
+      body: JSON.stringify({
+        email: 'marcus.vance@connectly.io',
+        currentPassword: 'SecurePassword123!',
+      }),
+    });
+    assert.strictEqual(dupEmail.status, 409);
+
+    const okRes = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+      },
+      body: JSON.stringify({
+        email: 'sarah.updated@connectly.io',
+        currentPassword: 'SecurePassword123!',
+      }),
+    });
+    assert.strictEqual(okRes.status, 200);
+    const okBody = (await okRes.json()) as any;
+    assert.strictEqual(okBody.data.user.email, 'sarah.updated@connectly.io');
+    assert.strictEqual(okBody.data.user.isEmailVerified, true);
+    assert.ok(okBody.data.accessToken);
+    tokenA = okBody.data.accessToken;
+
+    const persisted = await User.findById(userAId);
+    assert.strictEqual(persisted?.email, 'sarah.updated@connectly.io');
+  });
+
+  it('11. PATCH /api/v1/users/me/password — verifies current password, revokes sibling sessions, and allows new login', async () => {
+    await AuthSession.deleteMany({});
+    const loginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'sarah.updated@connectly.io',
+        password: 'SecurePassword123!',
+      }),
+    });
+    assert.strictEqual(loginRes.status, 200);
+    const loginBody = (await loginRes.json()) as any;
+    const callerCookie = (loginRes.headers.get('set-cookie') || '').split(';')[0];
+    const callerToken = loginBody.accessToken;
+
+    const siblingSession = await AuthSession.create({
+      userId: userAId,
+      familyId: 'sibling-family-999',
+      refreshTokenHash: 'sibling-hash-999',
+      userAgent: 'OtherBrowser',
+      ipAddress: '127.0.0.2',
+      isValid: true,
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+
+    const weakPwd = await fetch(`${baseUrl}/api/v1/users/me/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${callerToken}`,
+      },
+      body: JSON.stringify({
+        currentPassword: 'SecurePassword123!',
+        newPassword: 'weak',
+      }),
+    });
+    assert.strictEqual(weakPwd.status, 400);
+
+    const wrongCur = await fetch(`${baseUrl}/api/v1/users/me/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${callerToken}`,
+      },
+      body: JSON.stringify({
+        currentPassword: 'WrongPassword123!',
+        newPassword: 'BrandNewStrongPassword99!',
+      }),
+    });
+    assert.strictEqual(wrongCur.status, 401);
+
+    const okPwd = await fetch(`${baseUrl}/api/v1/users/me/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${callerToken}`,
+        Cookie: callerCookie,
+      },
+      body: JSON.stringify({
+        currentPassword: 'SecurePassword123!',
+        newPassword: 'BrandNewStrongPassword99!',
+      }),
+    });
+    assert.strictEqual(okPwd.status, 200);
+    const okPwdBody = (await okPwd.json()) as any;
+    assert.strictEqual(okPwdBody.data.user.hasLocalPassword, true);
+
+    const updatedSibling = await AuthSession.findById(siblingSession._id);
+    assert.strictEqual(updatedSibling?.isValid, false);
+
+    const newLoginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'sarah.updated@connectly.io',
+        password: 'BrandNewStrongPassword99!',
+      }),
+    });
+    assert.strictEqual(newLoginRes.status, 200);
+  });
+
+  it('12. Google-only user (hasLocalPassword: false) must set initial password before changing email', async () => {
+    const sentinelHash = await hashPassword('RandomGoogleSentinel!234');
+    const googleUser = await User.create({
+      email: 'google.only@connectly.io',
+      passwordHash: sentinelHash,
+      firstName: 'Google',
+      lastName: 'Member',
+      isEmailVerified: true,
+      hasLocalPassword: false,
+      googleSub: 'google-sub-12345',
+    });
+    const gToken = generateAccessToken({
+      sub: googleUser._id.toString(),
+      email: googleUser.email,
+      firstName: googleUser.firstName,
+      lastName: googleUser.lastName,
+    });
+
+    const blockedEmail = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${gToken}`,
+      },
+      body: JSON.stringify({ email: 'newgoogle@connectly.io' }),
+    });
+    assert.strictEqual(blockedEmail.status, 403);
+    const blockedBody = (await blockedEmail.json()) as any;
+    assert.strictEqual(blockedBody.code, 'LOCAL_PASSWORD_REQUIRED');
+
+    const setPwd = await fetch(`${baseUrl}/api/v1/users/me/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${gToken}`,
+      },
+      body: JSON.stringify({ newPassword: 'MyFirstLocalPass2026!' }),
+    });
+    assert.strictEqual(setPwd.status, 200);
+    const setPwdBody = (await setPwd.json()) as any;
+    assert.strictEqual(setPwdBody.data.user.hasLocalPassword, true);
+
+    const emailAfter = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${gToken}`,
+      },
+      body: JSON.stringify({
+        email: 'newgoogle@connectly.io',
+        currentPassword: 'MyFirstLocalPass2026!',
+      }),
+    });
+    assert.strictEqual(emailAfter.status, 200);
   });
 });

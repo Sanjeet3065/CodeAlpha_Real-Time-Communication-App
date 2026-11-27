@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { passwordCriteriaRegex } from './auth.schema.js';
+import { isValidIanaTimeZone } from '../utils/timezone.js';
+
+export const AVATAR_ACCENT_COLORS = ['sage', 'slate', 'amber', 'rose', 'indigo'] as const;
 
 export const updateProfileSchema = z
   .strictObject(
@@ -15,17 +19,112 @@ export const updateProfileSchema = z
         .min(1, 'Last name cannot be empty')
         .max(50, 'Last name cannot exceed 50 characters')
         .optional(),
+      jobTitle: z
+        .union([
+          z
+            .string({ error: 'Job title must be a string' })
+            .trim()
+            .max(80, 'Job title cannot exceed 80 characters'),
+          z.null(),
+        ])
+        .optional(),
+      bio: z
+        .union([
+          z
+            .string({ error: 'Bio must be a string' })
+            .trim()
+            .max(160, 'Bio cannot exceed 160 characters'),
+          z.null(),
+        ])
+        .optional(),
+      timeZone: z
+        .union([
+          z
+            .string({ error: 'Time zone must be a string' })
+            .trim()
+            .min(1, 'Time zone cannot be empty')
+            .max(64, 'Time zone cannot exceed 64 characters')
+            .refine((tz) => isValidIanaTimeZone(tz), {
+              message: 'Please choose a valid IANA time zone (e.g. Asia/Kolkata or UTC).',
+            }),
+          z.null(),
+        ])
+        .optional(),
+      avatarColor: z
+        .enum(AVATAR_ACCENT_COLORS, {
+          error: 'Avatar accent must be one of sage, slate, amber, rose, or indigo.',
+        })
+        .optional(),
     },
     {
       error:
         'Forbidden property in payload: Mass assignment of security or unauthorized fields is rejected.',
     }
   )
-  .refine((data) => data.firstName !== undefined || data.lastName !== undefined, {
-    message: 'At least one profile field (firstName or lastName) must be provided for an update.',
-  });
+  .refine(
+    (data) =>
+      data.firstName !== undefined ||
+      data.lastName !== undefined ||
+      data.jobTitle !== undefined ||
+      data.bio !== undefined ||
+      data.timeZone !== undefined ||
+      data.avatarColor !== undefined,
+    {
+      message: 'At least one allowed profile field must be provided for an update.',
+    }
+  );
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const updateEmailSchema = z.strictObject(
+  {
+    email: z
+      .string({ error: 'Email address must be a string' })
+      .trim()
+      .max(254, 'Email cannot exceed 254 characters')
+      .email('Please enter a valid email address'),
+    currentPassword: z
+      .string({ error: 'Current password must be a string' })
+      .min(1, 'Current password is required')
+      .max(128, 'Password cannot exceed 128 characters')
+      .optional(),
+  },
+  {
+    error: 'Forbidden property in email update payload.',
+  }
+);
+
+export type UpdateEmailInput = z.infer<typeof updateEmailSchema>;
+
+export const updatePasswordSchema = z.strictObject(
+  {
+    currentPassword: z
+      .string({ error: 'Current password must be a string' })
+      .max(128, 'Password cannot exceed 128 characters')
+      .optional(),
+    newPassword: z
+      .string({ error: 'New password must be a string' })
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password cannot exceed 128 characters')
+      .refine((val) => passwordCriteriaRegex.uppercase.test(val), {
+        message: 'Password must contain at least one uppercase letter',
+      })
+      .refine((val) => passwordCriteriaRegex.lowercase.test(val), {
+        message: 'Password must contain at least one lowercase letter',
+      })
+      .refine((val) => passwordCriteriaRegex.number.test(val), {
+        message: 'Password must contain at least one number',
+      })
+      .refine((val) => passwordCriteriaRegex.symbol.test(val), {
+        message: 'Password must contain at least one special character/symbol',
+      }),
+  },
+  {
+    error: 'Forbidden property in password update payload.',
+  }
+);
+
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
 
 // Upper bound for valid Unix epoch millisecond timestamps (Year 2100-01-01T00:00:00.000Z)
 export const MAX_VALID_CLIENT_TIMESTAMP = 4_102_444_800_000;

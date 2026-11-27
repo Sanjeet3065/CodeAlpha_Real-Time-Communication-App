@@ -404,6 +404,8 @@ export function installSupabaseBridge(): void {
       uniqueKeys: [{ fields: ['email'] }],
       defaults: () => ({
         role: 'user',
+        avatarColor: 'sage',
+        hasLocalPassword: true,
         isEmailVerified: true,
         failedLoginAttempts: 0,
         lockoutUntil: null,

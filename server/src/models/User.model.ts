@@ -9,12 +9,20 @@ export interface IUserPreferences {
   notificationSounds: boolean;
 }
 
+export type AvatarAccentColor = 'sage' | 'slate' | 'amber' | 'rose' | 'indigo';
+
 export interface IUser extends Document {
   email: string;
   passwordHash: string;
   firstName: string;
   lastName: string;
   avatarUrl?: string;
+  avatarColor?: AvatarAccentColor;
+  jobTitle?: string | null;
+  bio?: string | null;
+  timeZone?: string | null;
+  googleSub?: string | null;
+  hasLocalPassword?: boolean;
   role?: 'user' | 'admin';
   isEmailVerified: boolean;
   emailVerificationToken?: string;
@@ -78,6 +86,38 @@ const UserSchema = new Schema<IUser>(
       type: String,
       default: null,
     },
+    avatarColor: {
+      type: String,
+      enum: ['sage', 'slate', 'amber', 'rose', 'indigo'],
+      default: 'sage',
+    },
+    jobTitle: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: null,
+    },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+      default: null,
+    },
+    timeZone: {
+      type: String,
+      trim: true,
+      maxlength: 64,
+      default: null,
+    },
+    googleSub: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    hasLocalPassword: {
+      type: Boolean,
+      default: true,
+    },
     role: {
       type: String,
       enum: ['user', 'admin'],
@@ -128,6 +168,7 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.index({ passwordResetToken: 1 }, { sparse: true });
+UserSchema.index({ googleSub: 1 }, { sparse: true });
 UserSchema.index({ createdAt: -1 });
 
 // Phase 15: DEF-15-01 - Bearer Token Hashing Support (SHA-256)

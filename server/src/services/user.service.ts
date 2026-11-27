@@ -1,13 +1,28 @@
 import crypto from 'node:crypto';
 import { Types } from 'mongoose';
-import { User, type IUser } from '../models/User.model.js';
+import { User, type AvatarAccentColor, type IUser } from '../models/User.model.js';
+import { AuthSession } from '../models/Session.model.js';
 import {
   UserPreferences,
   type IUserPreferencesDoc,
   type IPreferenceFieldVersions,
 } from '../models/UserPreferences.model.js';
-import { NotFoundError, BadRequestError, ConflictError } from '../utils/errors.js';
-import type { UpdateProfileInput, UpdatePreferencesInput } from '../schemas/user.schema.js';
+import {
+  AppError,
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+  UnauthorizedError,
+} from '../utils/errors.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
+import { securityAudit } from '../utils/securityAudit.js';
+import { generateAccessToken, generateRefreshToken, hashToken } from '../utils/tokens.js';
+import type {
+  UpdateProfileInput,
+  UpdatePreferencesInput,
+  UpdateEmailInput,
+  UpdatePasswordInput,
+} from '../schemas/user.schema.js';
 
 /**
  * Maximum permitted client clock lead ahead of server UTC time (30 seconds).
@@ -32,10 +47,51 @@ export interface UserProfileResponse {
   lastName: string;
   email: string;
   avatarUrl: string | null;
+  avatarColor: AvatarAccentColor;
+  jobTitle: string | null;
+  bio: string | null;
+  timeZone: string | null;
+  hasLocalPassword: boolean;
   isEmailVerified: boolean;
   preferences: ResolvedUserPreferences;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CredentialMutationContext {
+  callerFamilyId?: string;
+  rawRefreshToken?: string;
+  ip?: string;
+  userAgent?: string;
+}
+
+export interface CredentialMutationResult {
+  user: UserProfileResponse;
+  accessToken: string;
+  rotatedRefreshToken?: string;
+}
+
+export function buildUserProfileResponse(
+  user: IUser,
+  preferences: ResolvedUserPreferences
+): UserProfileResponse {
+  return {
+    id: user._id.toString(),
+    name: `${user.firstName} ${user.lastName}`.trim(),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    avatarUrl: user.avatarUrl || null,
+    avatarColor: user.avatarColor || 'sage',
+    jobTitle: user.jobTitle || null,
+    bio: user.bio || null,
+    timeZone: user.timeZone || null,
+    hasLocalPassword: user.hasLocalPassword !== false,
+    isEmailVerified: Boolean(user.isEmailVerified),
+    preferences,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }
 
 export interface UserPreferencesResponse {
@@ -125,18 +181,7 @@ export class UserService {
 
     const preferences = await this.resolveUserPreferences(user);
 
-    return {
-      id: user._id.toString(),
-      name: `${user.firstName} ${user.lastName}`.trim(),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      avatarUrl: user.avatarUrl || null,
-      isEmailVerified: user.isEmailVerified,
-      preferences,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return buildUserProfileResponse(user, preferences);
   }
 
   async updateProfile(userId: string, input: UpdateProfileInput): Promise<UserProfileResponse> {
@@ -144,12 +189,27 @@ export class UserService {
       throw new BadRequestError('Invalid user identifier format.', 'INVALID_IDENTIFIER');
     }
 
-    const updateSet: Record<string, string> = {};
+    const updateSet: Record<string, string | null> = {};
     if (input.firstName !== undefined) {
       updateSet.firstName = input.firstName.trim();
     }
     if (input.lastName !== undefined) {
       updateSet.lastName = input.lastName.trim();
+    }
+    if (input.jobTitle !== undefined) {
+      const cleaned = input.jobTitle === null ? '' : input.jobTitle.trim();
+      updateSet.jobTitle = cleaned.length > 0 ? cleaned : null;
+    }
+    if (input.bio !== undefined) {
+      const cleaned = input.bio === null ? '' : input.bio.trim();
+      updateSet.bio = cleaned.length > 0 ? cleaned : null;
+    }
+    if (input.timeZone !== undefined) {
+      const cleaned = input.timeZone === null ? '' : input.timeZone.trim();
+      updateSet.timeZone = cleaned.length > 0 ? cleaned : null;
+    }
+    if (input.avatarColor !== undefined) {
+      updateSet.avatarColor = input.avatarColor;
     }
 
     // Atomic field-level $set ensures profile updates can NEVER overwrite embedded preferences
@@ -162,20 +222,229 @@ export class UserService {
       throw new NotFoundError('User account not found.', 'USER_NOT_FOUND');
     }
 
+    securityAudit.log({
+      eventType: 'AUTH_PROFILE_UPDATED',
+      userId: user._id.toString(),
+      details: { updatedFields: Object.keys(updateSet) },
+    });
+
     const preferences = await this.resolveUserPreferences(user);
 
-    return {
-      id: user._id.toString(),
-      name: `${user.firstName} ${user.lastName}`.trim(),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      avatarUrl: user.avatarUrl || null,
-      isEmailVerified: user.isEmailVerified,
-      preferences,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return buildUserProfileResponse(user, preferences);
+  }
+
+  private async resolveCallerFamilyAndRotate(
+    userId: Types.ObjectId,
+    ctx: CredentialMutationContext
+  ): Promise<{ familyId?: string; rotatedRefreshToken?: string }> {
+    let familyId = ctx.callerFamilyId;
+    let rotatedRefreshToken: string | undefined;
+
+    if (ctx.rawRefreshToken) {
+      const hashed = hashToken(ctx.rawRefreshToken);
+      const activeSession = await AuthSession.findOneAndUpdate(
+        { userId, refreshTokenHash: hashed, isValid: true },
+        { isValid: false, rotatedAt: new Date() },
+        { new: false }
+      );
+      if (activeSession) {
+        familyId = activeSession.familyId;
+        const nextRaw = generateRefreshToken();
+        await AuthSession.create({
+          userId,
+          familyId,
+          refreshTokenHash: hashToken(nextRaw),
+          userAgent: ctx.userAgent || activeSession.userAgent || 'Unknown',
+          ipAddress: ctx.ip || activeSession.ipAddress || 'Unknown',
+          isValid: true,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
+        rotatedRefreshToken = nextRaw;
+      }
+    }
+
+    return { familyId, rotatedRefreshToken };
+  }
+
+  async updateEmail(
+    userId: string,
+    input: UpdateEmailInput,
+    ctx: CredentialMutationContext = {}
+  ): Promise<CredentialMutationResult> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestError('Invalid user identifier format.', 'INVALID_IDENTIFIER');
+    }
+
+    return this.enqueueUserMutation(userId, async () => {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new NotFoundError('User account not found.', 'USER_NOT_FOUND');
+      }
+
+      if (user.hasLocalPassword === false) {
+        throw new AppError(
+          'Please set a local password before changing your email so you retain account recovery access.',
+          403,
+          'LOCAL_PASSWORD_REQUIRED'
+        );
+      }
+
+      if (!input.currentPassword) {
+        throw new UnauthorizedError('Current password is required to change email.', 'INVALID_CREDENTIALS');
+      }
+
+      const validPassword = await verifyPassword(input.currentPassword, user.passwordHash);
+      if (!validPassword) {
+        throw new UnauthorizedError('Current password is incorrect.', 'INVALID_CREDENTIALS');
+      }
+
+      const normalizedEmail = input.email.toLowerCase().trim();
+      if (normalizedEmail === user.email.toLowerCase().trim()) {
+        throw new BadRequestError('New email matches your current email address.', 'SAME_EMAIL');
+      }
+
+      const existing = await User.findOne({
+        email: normalizedEmail,
+        _id: { $ne: user._id },
+      });
+      if (existing) {
+        throw new ConflictError('An account with this email address already exists.', 'EMAIL_ALREADY_EXISTS');
+      }
+
+      let updated: IUser | null = null;
+      try {
+        updated = await User.findByIdAndUpdate(
+          userId,
+          { $set: { email: normalizedEmail } },
+          { new: true, runValidators: true }
+        );
+      } catch (err: unknown) {
+        if (typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 11000) {
+          throw new ConflictError('An account with this email address already exists.', 'EMAIL_ALREADY_EXISTS');
+        }
+        throw err;
+      }
+
+      if (!updated) {
+        throw new NotFoundError('User account not found.', 'USER_NOT_FOUND');
+      }
+
+      const { familyId, rotatedRefreshToken } = await this.resolveCallerFamilyAndRotate(updated._id, ctx);
+
+      securityAudit.log({
+        eventType: 'AUTH_EMAIL_UPDATED',
+        userId: updated._id.toString(),
+        ip: ctx.ip,
+        userAgent: ctx.userAgent,
+        details: { familyId },
+      });
+
+      const preferences = await this.resolveUserPreferences(updated);
+      const accessToken = generateAccessToken({
+        sub: updated._id.toString(),
+        email: updated.email,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        role: updated.role || 'user',
+        ...(familyId ? { familyId } : {}),
+      });
+
+      return {
+        user: buildUserProfileResponse(updated, preferences),
+        accessToken,
+        rotatedRefreshToken,
+      };
+    });
+  }
+
+  async updatePassword(
+    userId: string,
+    input: UpdatePasswordInput,
+    ctx: CredentialMutationContext = {}
+  ): Promise<CredentialMutationResult> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestError('Invalid user identifier format.', 'INVALID_IDENTIFIER');
+    }
+
+    return this.enqueueUserMutation(userId, async () => {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new NotFoundError('User account not found.', 'USER_NOT_FOUND');
+      }
+
+      const hadLocalPassword = user.hasLocalPassword !== false;
+      if (hadLocalPassword) {
+        if (!input.currentPassword) {
+          throw new UnauthorizedError('Current password is required.', 'INVALID_CREDENTIALS');
+        }
+        const validCurrent = await verifyPassword(input.currentPassword, user.passwordHash);
+        if (!validCurrent) {
+          throw new UnauthorizedError('Current password is incorrect.', 'INVALID_CREDENTIALS');
+        }
+        if (input.newPassword === input.currentPassword) {
+          throw new BadRequestError(
+            'New password must differ from your current password.',
+            'SAME_PASSWORD'
+          );
+        }
+      }
+
+      const nextPasswordHash = await hashPassword(input.newPassword);
+      const updated = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            passwordHash: nextPasswordHash,
+            hasLocalPassword: true,
+          },
+        },
+        { new: true }
+      );
+      if (!updated) {
+        throw new NotFoundError('User account not found.', 'USER_NOT_FOUND');
+      }
+
+      const { familyId, rotatedRefreshToken } = await this.resolveCallerFamilyAndRotate(updated._id, ctx);
+
+      // Revoke sibling active sessions when caller session family is known
+      if (familyId) {
+        await AuthSession.updateMany(
+          {
+            userId: updated._id,
+            familyId: { $ne: familyId },
+            isValid: true,
+          },
+          { $set: { isValid: false, rotatedAt: new Date() } }
+        );
+      }
+
+      securityAudit.log({
+        eventType: 'AUTH_PASSWORD_UPDATED',
+        userId: updated._id.toString(),
+        ip: ctx.ip,
+        userAgent: ctx.userAgent,
+        details: {
+          mode: hadLocalPassword ? 'rotated' : 'initial_set',
+          siblingSessionsRevoked: Boolean(familyId),
+        },
+      });
+
+      const preferences = await this.resolveUserPreferences(updated);
+      const accessToken = generateAccessToken({
+        sub: updated._id.toString(),
+        email: updated.email,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        role: updated.role || 'user',
+        ...(familyId ? { familyId } : {}),
+      });
+
+      return {
+        user: buildUserProfileResponse(updated, preferences),
+        accessToken,
+        rotatedRefreshToken,
+      };
+    });
   }
 
   async getPreferences(userId: string): Promise<UserPreferencesResponse> {

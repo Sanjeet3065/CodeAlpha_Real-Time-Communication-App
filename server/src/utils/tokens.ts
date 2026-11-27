@@ -8,6 +8,7 @@ export interface AccessTokenPayload {
   firstName: string;
   lastName: string;
   role?: string;
+  familyId?: string;
 }
 
 export function generateAccessToken(payload: AccessTokenPayload): string {
