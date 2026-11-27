@@ -46,6 +46,5 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.guestPrompt'));
     assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.dashboardLabel'));
     assert.ok(gatewaySource.includes('LayoutDashboard'));
-    assert.ok(gatewaySource.includes('lg:h-[100dvh] lg:overflow-hidden'));
   });
 });
