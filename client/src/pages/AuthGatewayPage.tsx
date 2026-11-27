@@ -693,7 +693,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           type="text"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          placeholder="Aarav"
+                          placeholder="Enter first name"
                           required
                           disabled={isSubmitting}
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
@@ -704,7 +704,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           type="text"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          placeholder="Rao"
+                          placeholder="Enter last name"
                           required
                           disabled={isSubmitting}
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
