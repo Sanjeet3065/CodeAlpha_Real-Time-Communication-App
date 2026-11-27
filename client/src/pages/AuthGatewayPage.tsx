@@ -793,14 +793,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                     exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
                   >
-                    <div className="mb-3">
-                      <h2 className="font-display text-lg sm:text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
-                        Create your account
-                      </h2>
-                      <p className="mt-0.5 text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
-                        Start hosting video meetings and shared rooms.
-                      </p>
-                    </div>
+                    <h2 className="mb-3.5 font-display text-lg sm:text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
+                      Create your account
+                    </h2>
 
                     <GoogleContinueSection
                       disabled={isSubmitting}

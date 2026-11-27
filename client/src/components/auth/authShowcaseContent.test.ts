@@ -50,5 +50,6 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.ok(gatewaySource.includes('Continue with Google'));
     assert.ok(gatewaySource.includes('loginWithGoogle'));
     assert.ok(!gatewaySource.includes('placeholder="Aarav"') && !gatewaySource.includes('placeholder="Rao"'));
+    assert.ok(!gatewaySource.includes('Start hosting video meetings and shared rooms.'));
   });
 });
