@@ -117,6 +117,7 @@ describe('Dashboard Utilities & Data Contracts', () => {
 
     const accountMenu = fs.readFileSync(path.resolve(libDir, '../components/dashboard/AccountMenu.tsx'), 'utf8');
     const editProfileModal = fs.readFileSync(path.resolve(libDir, '../components/dashboard/EditProfileModal.tsx'), 'utf8');
+    const appRouter = fs.readFileSync(path.resolve(libDir, '../app/router/AppRouter.tsx'), 'utf8');
     assert.ok(accountMenu.includes('Edit Profile') && accountMenu.includes('EditProfileModal'), 'AccountMenu should include Edit Profile trigger');
     assert.ok(
       editProfileModal.includes('authApi.updateProfile') &&
@@ -124,5 +125,20 @@ describe('Dashboard Utilities & Data Contracts', () => {
         editProfileModal.includes('authApi.updatePassword'),
       'EditProfileModal should support DB-backed profile, email, and password updates'
     );
+    assert.ok(!dashboardPage.includes('RecentDownloadsWidget'), 'Dashboard Overview should stay focused on video meetings without Downloads card');
+    assert.ok(
+      dashboardPage.includes('UpNextBanner') &&
+        dashboardPage.includes('PreCallStudioWidget') &&
+        dashboardPage.includes('RecentActivityWidget'),
+      'DashboardPage should compose UpNextBanner, PreCallStudioWidget, and RecentActivityWidget'
+    );
+    assert.ok(
+      appRouter.includes('/join/:meetingCode') && appRouter.includes('/lobby/:meetingCode'),
+      'AppRouter should map both /join/:meetingCode and /lobby/:meetingCode to PreJoinLobbyPage'
+    );
+
+    const studioWidget = fs.readFileSync(path.resolve(libDir, '../components/dashboard/PreCallStudioWidget.tsx'), 'utf8');
+    assert.ok(studioWidget.includes('preferencesApi.updatePreferences'), 'PreCallStudioWidget should sync join defaults to backend preferences');
+    assert.ok(studioWidget.includes('stopStudioTest'), 'PreCallStudioWidget should explicitly stop camera/mic preview tracks on exit');
   });
 });

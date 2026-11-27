@@ -20,17 +20,24 @@ import type { MeetingSummary } from '@/types/meeting';
 interface InstantMeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTitle?: string;
 }
 
-export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen, onClose }) => {
+const CAPACITY_OPTIONS = [10, 25, 60] as const;
+
+export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({
+  isOpen,
+  onClose,
+  initialTitle = '',
+}) => {
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle);
   const [waitingRoomEnabled, setWaitingRoomEnabled] = useState(false);
-  const [maxParticipants, setMaxParticipants] = useState(60);
+  const [maxParticipants, setMaxParticipants] = useState<number>(60);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdMeeting, setCreatedMeeting] = useState<MeetingSummary | null>(null);
@@ -39,7 +46,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
   useEffect(() => {
     if (isOpen) {
       prevFocusRef.current = document.activeElement as HTMLElement | null;
-      setTitle('');
+      setTitle(initialTitle);
       setWaitingRoomEnabled(false);
       setMaxParticipants(60);
       setError(null);
@@ -56,7 +63,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
         prevFocusRef.current.focus();
       }
     }
-  }, [isOpen]);
+  }, [isOpen, initialTitle]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -104,7 +111,6 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
       setCopiedField(field);
       setTimeout(() => setCopiedField((prev) => (prev === field ? null : prev)), 2500);
     } catch {
-      // Fallback copy if clipboard API unavailable
       setCopiedField(null);
     }
   };
@@ -127,7 +133,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
       if (err instanceof ApiError) {
         setError(getMeetingErrorMessage(err.code, err.message));
       } else {
-        setError('Unable to create meeting right now. Please try again.');
+        setError('Unable to create room right now. Please try again.');
       }
     } finally {
       setIsCreating(false);
@@ -146,7 +152,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
       role="dialog"
       aria-modal="true"
       aria-labelledby="instant-meeting-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/70 animate-in fade-in duration-150"
     >
       <div
         ref={modalRef}
@@ -158,15 +164,18 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
             <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
               <Zap className="w-4 h-4" aria-hidden="true" />
             </div>
-            <h2 id="instant-meeting-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
-              {createdMeeting ? 'Meeting Room Ready' : 'Start Instant Meeting'}
+            <h2
+              id="instant-meeting-title"
+              className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]"
+            >
+              {createdMeeting ? 'Room Ready' : 'New Instant Meeting'}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close instant meeting modal"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+            className="min-w-[40px] min-h-[40px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 dark:hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
           >
             <X className="w-4 h-4" />
           </button>
@@ -181,7 +190,8 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                   htmlFor="instant-meeting-name"
                   className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
                 >
-                  Meeting Title <span className="font-normal text-[#7C848D] dark:text-[#A3AAB2]">(Optional)</span>
+                  Meeting Name{' '}
+                  <span className="font-normal text-[#7C848D] dark:text-[#8E96A0]">(Optional)</span>
                 </label>
                 <input
                   ref={titleInputRef}
@@ -190,66 +200,83 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                   maxLength={120}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Product Architecture Sync"
-                  className="w-full px-3.5 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-sm text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86]/70 focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
+                  placeholder="e.g. Weekly Design Review"
+                  className="w-full h-10 px-3.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl text-sm text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86] focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399] transition-all"
                 />
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-3">
-                <div className="flex items-start justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-3.5">
+                {/* Waiting Room Toggle */}
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <label
-                      htmlFor="instant-waiting-room"
-                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer flex items-center gap-1.5"
-                    >
+                    <span className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-                      <span>Enable Waiting Room</span>
-                    </label>
-                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2] mt-0.5 leading-relaxed">
-                      Require host or co-host approval before participants can enter the room.
+                      <span>Waiting Room</span>
+                    </span>
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#8E96A0] mt-0.5">
+                      Approve guests before entry
                     </p>
                   </div>
-                  <input
+
+                  <button
                     id="instant-waiting-room"
-                    type="checkbox"
-                    checked={waitingRoomEnabled}
-                    onChange={(e) => setWaitingRoomEnabled(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
-                  />
+                    type="button"
+                    role="switch"
+                    aria-checked={waitingRoomEnabled}
+                    aria-label="Waiting Room"
+                    onClick={() => setWaitingRoomEnabled((prev) => !prev)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 ${
+                      waitingRoomEnabled
+                        ? 'bg-[#2F6F68] dark:bg-[#5FA399] border-transparent'
+                        : 'bg-[#DDDAD0] dark:bg-[#2B3038] border-transparent'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-[#FAF9F6] dark:bg-[#141619] transition-transform ${
+                        waitingRoomEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
 
-                <div className="pt-2.5 border-t border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-between gap-3">
-                  <label
-                    htmlFor="instant-max-participants"
-                    className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5"
-                  >
+                {/* Room Capacity Segmented Pills */}
+                <div className="pt-3 border-t border-[#DDDAD0] dark:border-[#2B3038] flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-                    <span>Room Capacity</span>
-                  </label>
-                  <select
-                    id="instant-max-participants"
-                    value={maxParticipants}
-                    onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                    className="px-2.5 py-1.5 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-lg text-xs font-medium text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399]"
-                  >
-                    <option value={10}>Up to 10 participants</option>
-                    <option value={25}>Up to 25 participants</option>
-                    <option value={60}>Up to 60 participants (Default)</option>
-                  </select>
+                    <span>Capacity</span>
+                  </span>
+
+                  <div className="inline-flex rounded-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] p-0.5">
+                    {CAPACITY_OPTIONS.map((cap) => (
+                      <button
+                        key={cap}
+                        type="button"
+                        onClick={() => setMaxParticipants(cap)}
+                        aria-pressed={maxParticipants === cap}
+                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                          maxParticipants === cap
+                            ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619]'
+                            : 'text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE]'
+                        }`}
+                      >
+                        {cap}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {error && (
                 <div
                   role="alert"
-                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2 text-xs text-rose-700"
+                  className="p-3 rounded-xl bg-[#F6E6E6] dark:bg-[#342023] border border-[#D46A6A]/40 flex items-start gap-2 text-xs text-[#C24D4D] dark:text-[#D46A6A]"
                 >
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-1">
                 <Button type="button" variant="outline" size="sm" onClick={onClose}>
                   Cancel
                 </Button>
@@ -261,32 +288,22 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                   data-primary="true"
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
-                  {isCreating ? 'Creating Room...' : 'Create Meeting Room'}
+                  {isCreating ? 'Creating...' : 'Create Room'}
                 </Button>
               </div>
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#E2ECE9]/60 dark:bg-[#1F302E]/60 border border-[#2F6F68]/25 dark:border-[#5FA399]/25 space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2F6F68] dark:text-[#5FA399]">
-                  Room Created — You Are Host
-                </p>
+              <div className="p-4 rounded-xl bg-[#E2ECE9]/60 dark:bg-[#1F302E]/60 border border-[#2F6F68]/25 dark:border-[#5FA399]/25">
                 <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] break-words">
                   {createdMeeting.title}
                 </h3>
-                <p className="text-xs text-[#555D66] dark:text-[#A3AAB2]">
-                  {createdMeeting.settings.waitingRoomEnabled
-                    ? 'Waiting room admission enabled'
-                    : 'Direct admission enabled'}{' '}
-                  · Capacity: {createdMeeting.maxParticipants}
+                <p className="text-xs text-[#555D66] dark:text-[#A3AAB2] mt-1">
+                  {createdMeeting.settings.waitingRoomEnabled ? 'Waiting room on' : 'Open entry'} · Up to {createdMeeting.maxParticipants} participants
                 </p>
               </div>
 
-              {/* Meeting Code */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold text-[#7C848D] dark:text-[#A3AAB2] uppercase tracking-wider">
-                  Meeting Code
-                </span>
+              <div className="space-y-2.5">
                 <div className="flex items-center gap-2">
                   <code className="flex-1 px-3.5 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl font-mono text-sm font-semibold text-[#1F2428] dark:text-[#EAECEE] tracking-wider">
                     {createdMeeting.meetingCode}
@@ -299,25 +316,19 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                     aria-label="Copy meeting code"
                   >
                     {copiedField === 'code' ? (
-                      <span className="flex items-center gap-1 text-emerald-700">
+                      <span className="flex items-center gap-1 text-[#2F6F68] dark:text-[#5FA399]">
                         <Check className="w-3.5 h-3.5" />
                         Copied
                       </span>
                     ) : (
                       <span className="flex items-center gap-1">
                         <Copy className="w-3.5 h-3.5" />
-                        Copy
+                        Code
                       </span>
                     )}
                   </Button>
                 </div>
-              </div>
 
-              {/* Invitation Link */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-semibold text-[#7C848D] dark:text-[#A3AAB2] uppercase tracking-wider">
-                  Shareable Invitation Link
-                </span>
                 <div className="flex items-center gap-2">
                   <div className="min-w-0 flex-1 px-3 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl flex items-center gap-2">
                     <LinkIcon className="w-3.5 h-3.5 text-[#7C848D] dark:text-[#A3AAB2] flex-shrink-0" />
@@ -333,7 +344,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                     aria-label="Copy invitation link"
                   >
                     {copiedField === 'link' ? (
-                      <span className="flex items-center gap-1 text-emerald-700">
+                      <span className="flex items-center gap-1 text-[#2F6F68] dark:text-[#5FA399]">
                         <Check className="w-3.5 h-3.5" />
                         Copied
                       </span>
@@ -347,7 +358,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-1">
                 <Button type="button" variant="outline" size="sm" onClick={onClose}>
                   Close
                 </Button>
@@ -359,7 +370,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({ isOpen
                   data-primary="true"
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
-                  Enter Pre-Join Lobby
+                  Join Lobby
                 </Button>
               </div>
             </div>

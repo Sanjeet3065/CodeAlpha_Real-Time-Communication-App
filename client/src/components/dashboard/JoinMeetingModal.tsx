@@ -144,7 +144,7 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
               <Hash className="w-4 h-4" aria-hidden="true" />
             </div>
             <h2 id="join-modal-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
-              Join Meeting with Code or Link
+              Join Meeting
             </h2>
           </div>
           <button
@@ -241,25 +241,25 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
               {!metadata.joinable ? (
                 <div
                   role="alert"
-                  className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-800"
+                  className="p-4 rounded-xl bg-[#F6E6E6] dark:bg-[#342023] border border-[#D46A6A]/40 flex items-start gap-2.5 text-xs text-[#C24D4D] dark:text-[#D46A6A]"
                 >
-                  <Lock className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
                     {getMeetingErrorMessage(metadata.joinBlockReason || undefined)}
                   </p>
                 </div>
               ) : metadata.meeting.settings.waitingRoomEnabled && !metadata.isHost ? (
-                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
-                  <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                  <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    Waiting room is active. You will wait in the lobby until the host admits you.
+                    Waiting room is active. Host will admit you shortly.
                   </p>
                 </div>
               ) : (
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 text-xs text-emerald-900">
-                  <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/25 dark:border-[#5FA399]/30 flex items-start gap-2.5 text-xs text-[#2F6F68] dark:text-[#5FA399]">
+                  <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    Room verified and ready to join. Proceed to the pre-join lobby.
+                    Room verified and ready to join.
                   </p>
                 </div>
               )}

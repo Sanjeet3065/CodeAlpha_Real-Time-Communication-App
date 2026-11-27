@@ -61,6 +61,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMeeting, setSuccessMeeting] = useState<IScheduledMeeting | null>(null);
+  const [copiedJoinLink, setCopiedJoinLink] = useState(false);
 
   // Auto-detect local time zone & set default date to tomorrow
   useEffect(() => {
@@ -81,6 +82,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
       setErrorMessage(null);
       setSuccessMeeting(null);
+      setCopiedJoinLink(false);
     } else {
       document.body.style.overflow = '';
       if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
@@ -301,13 +303,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   variant="primary"
                   size="sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(
+                    void navigator.clipboard.writeText(
                       buildMeetingJoinUrl(successMeeting.meetingCode, successMeeting.joinUrl)
                     );
-                    alert('Join link copied to clipboard!');
+                    setCopiedJoinLink(true);
+                    setTimeout(() => setCopiedJoinLink(false), 2000);
                   }}
                 >
-                  Copy Join Link
+                  {copiedJoinLink ? 'Copied Join Link' : 'Copy Join Link'}
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={onClose}>
                   Done
@@ -317,8 +320,8 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {errorMessage && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+                <div className="p-3 rounded-xl bg-[#F6E6E6] dark:bg-[#342023] border border-[#D46A6A]/40 text-xs text-[#C24D4D] dark:text-[#D46A6A] flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
@@ -326,7 +329,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
               {/* Title Input */}
               <div>
                 <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
-                  Session Title *
+                  Meeting Title *
                 </label>
                 <input
                   type="text"
@@ -334,23 +337,23 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={120}
                   required
-                  placeholder="e.g. Architecture Deep Dive"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                  placeholder="e.g. Architecture Sync"
+                  className="w-full h-10 px-3 text-xs rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                 />
               </div>
 
               {/* Description Input */}
               <div>
                 <label className="block text-xs font-medium text-[#7C848D] dark:text-[#A3AAB2] mb-1">
-                  Description (Optional)
+                  Agenda (Optional)
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  placeholder="Add goals, agenda, or background details..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                  placeholder="Optional meeting notes..."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                 />
               </div>
 
@@ -369,7 +372,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                         setAmbiguousOptions(null);
                       }}
                       required
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                      className="w-full h-10 px-3 text-xs rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                     />
                   </div>
                 </div>
@@ -387,7 +390,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                         setAmbiguousOptions(null);
                       }}
                       required
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                      className="w-full h-10 px-3 text-xs rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                     />
                   </div>
                 </div>
@@ -496,7 +499,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                       }
                     }}
                     placeholder="Enter teammate email and press Add"
-                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                    className="flex-1 h-9 px-3 text-xs rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
                   />
                   <Button type="button" variant="outline" size="sm" onClick={handleAddInvitee}>
                     Add
@@ -565,10 +568,10 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
                     <span className="text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] block">
-                      Enable Waiting Room
+                      Waiting Room
                     </span>
                     <span className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
-                      Participants must be approved by the host before entering the room.
+                      Approve participants before entry
                     </span>
                   </div>
                   <input
