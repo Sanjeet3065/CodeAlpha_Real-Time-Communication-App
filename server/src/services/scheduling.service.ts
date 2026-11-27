@@ -1088,11 +1088,7 @@ export class SchedulingService {
       throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
     }
 
-    if (isMeetingHistoryExpired(meeting)) {
-      throw new NotFoundError('Meeting history has expired after the 2-day retention window.', 'HISTORY_EXPIRED');
-    }
-
-    // Verify object-level authorization: User must have been the host or an admitted participant
+    // Verify object-level authorization BEFORE checking expiration window so third-party callers receive 403
     const isHost = meeting.hostId && (meeting.hostId as any)._id?.equals(userObjId);
     let userRole: 'host' | 'co-host' | 'participant' = isHost ? 'host' : 'participant';
 
@@ -1109,6 +1105,10 @@ export class SchedulingService {
         );
       }
       userRole = participation.role;
+    }
+
+    if (isMeetingHistoryExpired(meeting)) {
+      throw new NotFoundError('Meeting history has expired after the 2-day retention window.', 'HISTORY_EXPIRED');
     }
 
     let durationSeconds: number | null = null;

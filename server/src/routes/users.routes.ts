@@ -17,6 +17,7 @@ import { requireAuth } from '../middlewares/auth.middleware.js';
 import { requireFileSharingEnabled } from '../middlewares/fileSharingGate.js';
 import { validateBody } from '../middlewares/validation.middleware.js';
 import { validateRequestOrigin } from '../middlewares/csrf.middleware.js';
+import { credentialUpdateLimiter } from '../middlewares/rateLimiter.js';
 import {
   updateProfileSchema,
   updateEmailSchema,
@@ -33,6 +34,7 @@ usersRouter.patch('/me', requireAuth, validateBody(updateProfileSchema), asyncHa
 usersRouter.patch(
   '/me/email',
   requireAuth,
+  credentialUpdateLimiter,
   validateRequestOrigin,
   validateBody(updateEmailSchema),
   asyncHandler(updateMyEmail)
@@ -40,6 +42,7 @@ usersRouter.patch(
 usersRouter.patch(
   '/me/password',
   requireAuth,
+  credentialUpdateLimiter,
   validateRequestOrigin,
   validateBody(updatePasswordSchema),
   asyncHandler(updateMyPassword)

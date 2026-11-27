@@ -302,12 +302,16 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   type="button"
                   variant="primary"
                   size="sm"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(
-                      buildMeetingJoinUrl(successMeeting.meetingCode, successMeeting.joinUrl)
-                    );
-                    setCopiedJoinLink(true);
-                    setTimeout(() => setCopiedJoinLink(false), 2000);
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(
+                        buildMeetingJoinUrl(successMeeting.meetingCode, successMeeting.joinUrl)
+                      );
+                      setCopiedJoinLink(true);
+                      setTimeout(() => setCopiedJoinLink(false), 2000);
+                    } catch {
+                      setCopiedJoinLink(false);
+                    }
                   }}
                 >
                   {copiedJoinLink ? 'Copied Join Link' : 'Copy Join Link'}

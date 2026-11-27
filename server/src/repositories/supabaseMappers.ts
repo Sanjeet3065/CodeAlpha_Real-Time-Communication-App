@@ -315,7 +315,7 @@ export const userAdapter: TableAdapter = {
 
     const { data: existingPref } = await sb
       .from('user_preferences')
-      .select('*')
+      .select('id')
       .eq('user_id', uuid)
       .maybeSingle();
 
@@ -338,22 +338,31 @@ export const userAdapter: TableAdapter = {
       preferencesVersion: doc.preferencesVersion ?? 0,
     });
 
-    const { data: prefRow, error: prefErr } = await sb
-      .from('user_preferences')
-      .upsert(
-        {
-          user_id: uuid,
-          theme: doc.preferences?.theme || existingPref?.theme || 'editorial-light',
-          notifications_enabled:
-            doc.preferences?.notificationSounds ?? existingPref?.notifications_enabled ?? true,
-          audio_input_device: existingPref?.audio_input_device ?? null,
-          video_input_device: JSON.stringify(profileMeta),
-          updated_at: nowIso,
-        },
-        { onConflict: 'user_id' }
-      )
-      .select()
-      .single();
+    const themeValue = doc.preferences?.theme || 'editorial-light';
+    const notifValue = doc.preferences?.notificationSounds ?? true;
+    const { data: prefRow, error: prefErr } = existingPref
+      ? await sb
+          .from('user_preferences')
+          .update({
+            theme: themeValue,
+            notifications_enabled: notifValue,
+            video_input_device: JSON.stringify(profileMeta),
+            updated_at: nowIso,
+          })
+          .eq('user_id', uuid)
+          .select()
+          .single()
+      : await sb
+          .from('user_preferences')
+          .insert({
+            user_id: uuid,
+            theme: themeValue,
+            notifications_enabled: notifValue,
+            video_input_device: JSON.stringify(profileMeta),
+            updated_at: nowIso,
+          })
+          .select()
+          .single();
     if (prefErr) throw prefErr;
 
     return mapUserRowToDoc(data, prefRow);
@@ -407,7 +416,7 @@ export const userPreferencesAdapter: TableAdapter = {
 
     const { data: existingPref } = await sb
       .from('user_preferences')
-      .select('*')
+      .select('id')
       .eq('user_id', userUuid)
       .maybeSingle();
 
@@ -420,20 +429,26 @@ export const userPreferencesAdapter: TableAdapter = {
       fieldMeta: doc.fieldMeta,
     });
 
-    const { data, error } = await sb
-      .from('user_preferences')
-      .upsert(
-        {
-          id: existingPref?.id || prefUuid,
-          user_id: userUuid,
-          audio_input_device: JSON.stringify(prefPayload),
-          video_input_device: existingPref?.video_input_device ?? null,
-          updated_at: nowIso,
-        },
-        { onConflict: 'user_id' }
-      )
-      .select()
-      .single();
+    const { data, error } = existingPref
+      ? await sb
+          .from('user_preferences')
+          .update({
+            audio_input_device: JSON.stringify(prefPayload),
+            updated_at: nowIso,
+          })
+          .eq('user_id', userUuid)
+          .select()
+          .single()
+      : await sb
+          .from('user_preferences')
+          .insert({
+            id: prefUuid,
+            user_id: userUuid,
+            audio_input_device: JSON.stringify(prefPayload),
+            updated_at: nowIso,
+          })
+          .select()
+          .single();
     if (error) throwIfPgUniqueError(error, { userId: 1 });
     return mapPrefRowToDoc(data);
   },

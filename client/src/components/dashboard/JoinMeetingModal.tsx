@@ -182,7 +182,7 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
                   aria-invalid={Boolean(error)}
                   className={`w-full px-4 py-2.5 bg-[#F3F2EE] dark:bg-[#141619] border rounded-xl font-mono text-sm text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86]/60 focus:outline-none focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] transition-all ${
                     error
-                      ? 'border-rose-500 ring-2 ring-rose-200'
+                      ? 'border-[#C24D4D] dark:border-[#D46A6A] ring-2 ring-[#C24D4D]/20 dark:ring-[#D46A6A]/20'
                       : 'border-[#DDDAD0] dark:border-[#2B3038] focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 focus:border-[#2F6F68] dark:focus:border-[#5FA399]'
                   }`}
                 />
@@ -191,7 +191,7 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
                   <p
                     id="join-code-error"
                     role="alert"
-                    className="mt-2 text-xs text-rose-600 font-medium flex items-start gap-1.5"
+                    className="mt-2 text-xs text-[#C24D4D] dark:text-[#D46A6A] font-medium flex items-start gap-1.5"
                   >
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <span>{error}</span>

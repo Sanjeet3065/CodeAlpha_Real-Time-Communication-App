@@ -243,7 +243,12 @@ export class UserService {
     if (ctx.rawRefreshToken) {
       const hashed = hashToken(ctx.rawRefreshToken);
       const activeSession = await AuthSession.findOneAndUpdate(
-        { userId, refreshTokenHash: hashed, isValid: true },
+        {
+          userId,
+          refreshTokenHash: hashed,
+          isValid: true,
+          expiresAt: { $gt: new Date() },
+        },
         { isValid: false, rotatedAt: new Date() },
         { new: false }
       );

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   Check,
@@ -51,6 +52,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const firstInputRef = useRef<HTMLInputElement>(null);
   const passwordSectionRef = useRef<HTMLInputElement>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
 
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>(initialTab);
 
@@ -95,38 +97,52 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) {
-      document.body.style.overflow = '';
-      if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-        prevFocusRef.current.focus();
+      if (wasOpenRef.current) {
+        wasOpenRef.current = false;
+        document.body.style.overflow = '';
+        if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
+          prevFocusRef.current.focus();
+        }
       }
       return;
     }
 
-    prevFocusRef.current = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
-    setActiveTab(initialTab);
-    setFirstName(user?.firstName || '');
-    setLastName(user?.lastName || '');
-    setJobTitle(user?.jobTitle || '');
-    setBio(user?.bio || '');
-    setTimeZone(user?.timeZone || detectedTz);
-    setAvatarColor(user?.avatarColor || 'sage');
-    setNewEmail(user?.email || '');
-    setEmailPassword('');
-    setCurrentPassword('');
-    setNewPassword('');
-    setShowNewPassword(false);
-    setProfileError(null);
-    setProfileSuccess(null);
-    setEmailError(null);
-    setEmailSuccess(null);
-    setPasswordError(null);
-    setPasswordSuccess(null);
+    // Initialize inputs/tabs ONLY on closed -> open transition so saving doesn't reset tabs or feedback
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
+      prevFocusRef.current = document.activeElement as HTMLElement | null;
+      document.body.style.overflow = 'hidden';
+      setActiveTab(initialTab);
+      setFirstName(user?.firstName || '');
+      setLastName(user?.lastName || '');
+      setJobTitle(user?.jobTitle || '');
+      setBio(user?.bio || '');
+      setTimeZone(user?.timeZone || detectedTz);
+      setAvatarColor(user?.avatarColor || 'sage');
+      setNewEmail(user?.email || '');
+      setEmailPassword('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setShowNewPassword(false);
+      setProfileError(null);
+      setProfileSuccess(null);
+      setEmailError(null);
+      setEmailSuccess(null);
+      setPasswordError(null);
+      setPasswordSuccess(null);
 
-    const timer = setTimeout(() => {
-      firstInputRef.current?.focus();
-    }, 40);
-    return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        firstInputRef.current?.focus();
+      }, 40);
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = '';
+      };
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, initialTab, user, detectedTz]);
 
   useEffect(() => {
@@ -259,7 +275,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
@@ -674,4 +690,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 };

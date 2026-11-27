@@ -217,4 +217,40 @@ describe('AuthApi In-Flight Refresh Deduplication & Failure Recovery Suite', () 
     assert.strictEqual(protectedRes.status, 200);
     assert.strictEqual(refreshFetchCount, 1);
   });
+
+  it('4. does NOT call /auth/refresh or clear accessToken on 401 INVALID_CREDENTIALS from password-verified endpoint', async () => {
+    authStorage.setAccessToken('active-user-jwt');
+    let refreshFetchCount = 0;
+
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/auth/refresh')) {
+        refreshFetchCount += 1;
+        throw new Error('Should not trigger /auth/refresh on INVALID_CREDENTIALS');
+      }
+      if (url.includes('/users/me/email')) {
+        return new Response(
+          JSON.stringify({
+            status: 401,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Current password is incorrect.',
+          }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    }) as typeof fetch;
+
+    await assert.rejects(
+      () => authApi.updateEmail({ email: 'new@connectly.io', currentPassword: 'WrongPassword!' }),
+      (err: unknown) =>
+        typeof err === 'object' &&
+        err !== null &&
+        (err as { status?: number; code?: string }).status === 401 &&
+        (err as { status?: number; code?: string }).code === 'INVALID_CREDENTIALS'
+    );
+
+    assert.strictEqual(refreshFetchCount, 0);
+    assert.strictEqual(authStorage.getAccessToken(), 'active-user-jwt');
+  });
 });

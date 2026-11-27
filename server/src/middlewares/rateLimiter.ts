@@ -30,6 +30,16 @@ export const loginLimiter = rateLimit({
   ),
 });
 
+export const credentialUpdateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 sensitive credential changes per 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: createRateLimitMessage(
+    'Too many credential update attempts. Please try again after 15 minutes.'
+  ),
+});
+
 export function resetLoginRateLimit(ip = '::ffff:127.0.0.1'): void {
   if (typeof (loginLimiter as any).resetKey === 'function') {
     (loginLimiter as any).resetKey(ip);

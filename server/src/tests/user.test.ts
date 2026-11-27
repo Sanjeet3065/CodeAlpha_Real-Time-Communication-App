@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { createApp } from '../app.js';
 import { User } from '../models/User.model.js';
 import { AuthSession } from '../models/Session.model.js';
-import { generateAccessToken } from '../utils/tokens.js';
+import { generateAccessToken, hashToken } from '../utils/tokens.js';
 import { hashPassword } from '../utils/password.js';
 import type { Server } from 'node:http';
 
@@ -429,5 +429,41 @@ describe('User Profile API & Security Suite', () => {
       }),
     });
     assert.strictEqual(emailAfter.status, 200);
+  });
+
+  it('13. Credential rotation never revives an already-expired AuthSession cookie', async () => {
+    const expiredRawCookie = 'expired_raw_refresh_cookie_token';
+    const expiredSession = await AuthSession.create({
+      userId: userAId,
+      familyId: 'expired-family-123',
+      refreshTokenHash: hashToken(expiredRawCookie),
+      userAgent: 'OldSession',
+      ipAddress: '127.0.0.1',
+      isValid: true,
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+
+    const res = await fetch(`${baseUrl}/api/v1/users/me/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokenA}`,
+        Cookie: `connectly_refresh=${expiredRawCookie}`,
+      },
+      body: JSON.stringify({
+        email: 'sarah.final@connectly.io',
+        currentPassword: 'BrandNewStrongPassword99!',
+      }),
+    });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get('set-cookie'), null, 'Expired session cookie must NOT be rotated or re-issued');
+
+    const persistedExpired = await AuthSession.findById(expiredSession._id);
+    assert.strictEqual(persistedExpired?.isValid, true);
+    const rotatedCount = await AuthSession.countDocuments({
+      userId: userAId,
+      familyId: 'expired-family-123',
+    });
+    assert.strictEqual(rotatedCount, 1);
   });
 });

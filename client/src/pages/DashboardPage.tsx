@@ -30,7 +30,9 @@ export const DashboardPage: React.FC = () => {
 
   const handleMeetAgain = (previousTitle: string) => {
     const clean = previousTitle.replace(/^Follow-up:\s*/i, '').trim();
-    handleOpenInstant(clean ? `Follow-up: ${clean}` : '');
+    const prefix = 'Follow-up: ';
+    const nextTitle = clean ? `${prefix}${clean}`.slice(0, 120) : '';
+    handleOpenInstant(nextTitle);
   };
 
   return (
@@ -51,6 +53,7 @@ export const DashboardPage: React.FC = () => {
           <UpcomingMeetingsSection
             onInstantMeeting={() => handleOpenInstant('')}
             onScheduleMeeting={() => setIsScheduleModalOpen(true)}
+            onScheduleChanged={() => setScheduleRefreshKey((prev) => prev + 1)}
             refreshKey={scheduleRefreshKey}
           />
         </div>

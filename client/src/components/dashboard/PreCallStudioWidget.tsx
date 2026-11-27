@@ -13,7 +13,18 @@ import { useAuth } from '@/context/AuthContext';
 import { preferencesApi } from '@/services/preferencesApi';
 import { classifyMediaDeviceError } from '@/utils/mediaDevices';
 
-const AUDIO_LEVEL_BARS = [0.22, 0.4, 0.62, 0.78, 0.92];
+const AUDIO_LEVEL_BARS = [0.16, 0.32, 0.5, 0.7, 0.88];
+
+function stopStreamTracks(stream: MediaStream | null): void {
+  if (!stream) return;
+  for (const track of stream.getTracks()) {
+    try {
+      track.stop();
+    } catch {
+      // ignore track cleanup error
+    }
+  }
+}
 
 export const PreCallStudioWidget: React.FC = () => {
   const { user, updateUserPreferences } = useAuth();
@@ -37,6 +48,30 @@ export const PreCallStudioWidget: React.FC = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+  const testSessionSeqRef = useRef(0);
+
+  // Sync authoritative preference values + seed knownFieldVersions on mount (prevents 409 conflict)
+  useEffect(() => {
+    mountedRef.current = true;
+    let active = true;
+
+    void (async () => {
+      const remote = await preferencesApi.getPreferences();
+      if (!active || !remote) return;
+      setAudioMuted(remote.defaultAudioMuted);
+      setVideoOff(remote.defaultVideoOff);
+      updateUserPreferences({
+        defaultAudioMuted: remote.defaultAudioMuted,
+        defaultVideoOff: remote.defaultVideoOff,
+      });
+    })();
+
+    return () => {
+      active = false;
+      mountedRef.current = false;
+    };
+  }, [user?.id, updateUserPreferences]);
 
   useEffect(() => {
     if (typeof user?.preferences?.defaultAudioMuted === 'boolean') {
@@ -48,6 +83,7 @@ export const PreCallStudioWidget: React.FC = () => {
   }, [user?.preferences?.defaultAudioMuted, user?.preferences?.defaultVideoOff]);
 
   const stopStudioTest = useCallback(() => {
+    testSessionSeqRef.current += 1;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -56,24 +92,18 @@ export const PreCallStudioWidget: React.FC = () => {
       void audioCtxRef.current.close().catch(() => {});
       audioCtxRef.current = null;
     }
-    if (streamRef.current) {
-      for (const track of streamRef.current.getTracks()) {
-        try {
-          track.stop();
-        } catch {
-          // ignore cleanup errors
-        }
-      }
-      streamRef.current = null;
-    }
+    stopStreamTracks(streamRef.current);
+    streamRef.current = null;
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setIsTesting(false);
-    setIsStartingTest(false);
-    setMicLevel(0);
-    setCameraLabel(null);
-    setMicLabel(null);
+    if (mountedRef.current) {
+      setIsTesting(false);
+      setIsStartingTest(false);
+      setMicLevel(0);
+      setCameraLabel(null);
+      setMicLabel(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -83,6 +113,7 @@ export const PreCallStudioWidget: React.FC = () => {
     return () => {
       window.removeEventListener('beforeunload', handlePageHide);
       window.removeEventListener('pagehide', handlePageHide);
+      mountedRef.current = false;
       stopStudioTest();
     };
   }, [stopStudioTest]);
@@ -96,8 +127,10 @@ export const PreCallStudioWidget: React.FC = () => {
   }, [isTesting, cameraLabel]);
 
   const handleToggleDefault = async (field: 'audio' | 'video') => {
-    const nextAudio = field === 'audio' ? !audioMuted : audioMuted;
-    const nextVideo = field === 'video' ? !videoOff : videoOff;
+    const prevAudio = audioMuted;
+    const prevVideo = videoOff;
+    const nextAudio = field === 'audio' ? !prevAudio : prevAudio;
+    const nextVideo = field === 'video' ? !prevVideo : prevVideo;
 
     setAudioMuted(nextAudio);
     setVideoOff(nextVideo);
@@ -107,22 +140,47 @@ export const PreCallStudioWidget: React.FC = () => {
     });
     setSyncLabel('saving');
 
-    const res = await preferencesApi.updatePreferences(
+    const payload =
       field === 'audio'
         ? { defaultAudioMuted: nextAudio }
-        : { defaultVideoOff: nextVideo }
-    );
+        : { defaultVideoOff: nextVideo };
 
-    if (res.success) {
+    let res = await preferencesApi.updatePreferences(payload);
+    if (!res.success && res.status === 409) {
+      // Refresh field versions once and retry automatically
+      await preferencesApi.getPreferences();
+      res = await preferencesApi.updatePreferences(payload);
+    }
+
+    if (!mountedRef.current) return;
+
+    if (res.success && res.data) {
+      setAudioMuted(res.data.defaultAudioMuted);
+      setVideoOff(res.data.defaultVideoOff);
+      updateUserPreferences({
+        defaultAudioMuted: res.data.defaultAudioMuted,
+        defaultVideoOff: res.data.defaultVideoOff,
+      });
       setSyncLabel('saved');
-      setTimeout(() => setSyncLabel((cur) => (cur === 'saved' ? 'idle' : cur)), 2000);
+      setTimeout(() => {
+        if (mountedRef.current) {
+          setSyncLabel((cur) => (cur === 'saved' ? 'idle' : cur));
+        }
+      }, 2000);
     } else {
+      // Revert optimistic state if server sync failed
+      setAudioMuted(prevAudio);
+      setVideoOff(prevVideo);
+      updateUserPreferences({
+        defaultAudioMuted: prevAudio,
+        defaultVideoOff: prevVideo,
+      });
       setSyncLabel('error');
     }
   };
 
   const handleStartStudioTest = async () => {
-    if (isTesting) {
+    if (isTesting || isStartingTest) {
       stopStudioTest();
       return;
     }
@@ -134,24 +192,34 @@ export const PreCallStudioWidget: React.FC = () => {
 
     setTestError(null);
     setIsStartingTest(true);
+    const seq = ++testSessionSeqRef.current;
 
     try {
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       } catch (bothErr) {
-        // Fallback cleanly to audio-only if webcam is unavailable
+        const classified = classifyMediaDeviceError(bothErr, 'camera');
+        if (classified.code === 'PERMISSION_DENIED') {
+          throw bothErr;
+        }
+        // Only fall back to single-device capture on missing/in-use/overconstrained hardware
         try {
           stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
         } catch {
-          throw bothErr;
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         }
+      }
+
+      if (!mountedRef.current || testSessionSeqRef.current !== seq) {
+        stopStreamTracks(stream);
+        return;
       }
 
       streamRef.current = stream;
       const vTrack = stream.getVideoTracks()[0];
       const aTrack = stream.getAudioTracks()[0];
-      setCameraLabel(vTrack?.label || null);
+      setCameraLabel(vTrack?.label || (vTrack ? 'Camera Active' : null));
       setMicLabel(aTrack?.label || (aTrack ? 'Default Microphone' : null));
 
       if (aTrack && typeof AudioContext !== 'undefined') {
@@ -161,17 +229,24 @@ export const PreCallStudioWidget: React.FC = () => {
         const analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
         source.connect(analyser);
-        const data = new Uint8Array(analyser.frequencyBinCount);
+        const timeDomain = new Uint8Array(analyser.fftSize);
+        let lastUiUpdateMs = 0;
 
-        const tick = () => {
-          if (!audioCtxRef.current) return;
-          analyser.getByteFrequencyData(data);
-          let sum = 0;
-          for (let i = 0; i < data.length; i += 1) {
-            sum += data[i];
+        const tick = (nowMs: number) => {
+          if (!mountedRef.current || testSessionSeqRef.current !== seq || !audioCtxRef.current) {
+            return;
           }
-          const avg = sum / Math.max(1, data.length);
-          setMicLevel(Math.min(1, avg / 64));
+          if (nowMs - lastUiUpdateMs >= 65) {
+            lastUiUpdateMs = nowMs;
+            analyser.getByteTimeDomainData(timeDomain);
+            let sumSquares = 0;
+            for (let i = 0; i < timeDomain.length; i += 1) {
+              const centered = (timeDomain[i] - 128) / 128;
+              sumSquares += centered * centered;
+            }
+            const rms = Math.sqrt(sumSquares / timeDomain.length);
+            setMicLevel(Math.min(1, rms * 4.5));
+          }
           rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
@@ -179,11 +254,16 @@ export const PreCallStudioWidget: React.FC = () => {
 
       setIsTesting(true);
     } catch (err) {
+      if (!mountedRef.current || testSessionSeqRef.current !== seq) {
+        return;
+      }
       const classified = classifyMediaDeviceError(err, 'camera');
       setTestError(classified.message);
       stopStudioTest();
     } finally {
-      setIsStartingTest(false);
+      if (mountedRef.current && testSessionSeqRef.current === seq) {
+        setIsStartingTest(false);
+      }
     }
   };
 

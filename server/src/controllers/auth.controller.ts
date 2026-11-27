@@ -301,6 +301,8 @@ async function issueAuthenticatedSession(
       hasLocalPassword: user.hasLocalPassword !== false,
       isEmailVerified: Boolean(user.isEmailVerified),
       preferences: resolvedPreferences,
+      createdAt: user.createdAt ?? new Date(),
+      updatedAt: user.updatedAt ?? new Date(),
     },
     accessToken,
   });

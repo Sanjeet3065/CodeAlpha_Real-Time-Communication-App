@@ -25,12 +25,14 @@ import type { IScheduledMeeting } from '@/types/scheduling';
 interface UpcomingMeetingsSectionProps {
   onInstantMeeting: () => void;
   onScheduleMeeting?: () => void;
+  onScheduleChanged?: () => void;
   refreshKey?: number;
 }
 
 export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = ({
   onInstantMeeting,
   onScheduleMeeting,
+  onScheduleChanged,
   refreshKey = 0,
 }) => {
   const navigate = useNavigate();
@@ -297,14 +299,20 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
         isOpen={Boolean(selectedMeetingForReschedule)}
         onClose={() => setSelectedMeetingForReschedule(null)}
         meeting={selectedMeetingForReschedule}
-        onRescheduled={() => fetchUpcoming()}
+        onRescheduled={() => {
+          fetchUpcoming();
+          onScheduleChanged?.();
+        }}
       />
 
       <CancelMeetingModal
         isOpen={Boolean(selectedMeetingForCancel)}
         onClose={() => setSelectedMeetingForCancel(null)}
         meeting={selectedMeetingForCancel}
-        onCancelled={() => fetchUpcoming()}
+        onCancelled={() => {
+          fetchUpcoming();
+          onScheduleChanged?.();
+        }}
       />
     </Card>
   );

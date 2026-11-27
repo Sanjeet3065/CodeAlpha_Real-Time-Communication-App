@@ -367,6 +367,18 @@ describe('Meeting History 2-Day (48h) Auto-Retention Suite', () => {
       (err: any) => err?.statusCode === 404 && err?.code === 'HISTORY_EXPIRED'
     );
 
+    const thirdPartyUser = await User.create({
+      email: 'stranger.retention@connectly.io',
+      passwordHash: await hashPassword('StrangerPass2026!'),
+      firstName: 'Stranger',
+      lastName: 'User',
+      isEmailVerified: true,
+    });
+    await assert.rejects(
+      () => schedulingService.getMeetingHistoryDetails(thirdPartyUser._id.toString(), expiredDoc._id.toString()),
+      (err: any) => err?.statusCode === 403 && err?.code === 'FORBIDDEN'
+    );
+
     const recentDetails = await schedulingService.getMeetingHistoryDetails(
       hostUser._id.toString(),
       recentDoc._id.toString()

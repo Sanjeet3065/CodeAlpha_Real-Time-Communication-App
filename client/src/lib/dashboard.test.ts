@@ -139,6 +139,8 @@ describe('Dashboard Utilities & Data Contracts', () => {
 
     const studioWidget = fs.readFileSync(path.resolve(libDir, '../components/dashboard/PreCallStudioWidget.tsx'), 'utf8');
     assert.ok(studioWidget.includes('preferencesApi.updatePreferences'), 'PreCallStudioWidget should sync join defaults to backend preferences');
-    assert.ok(studioWidget.includes('stopStudioTest'), 'PreCallStudioWidget should explicitly stop camera/mic preview tracks on exit');
+    assert.ok(studioWidget.includes('preferencesApi.getPreferences'), 'PreCallStudioWidget should hydrate fieldVersions via getPreferences on mount');
+    assert.ok(studioWidget.includes('stopStudioTest') && studioWidget.includes('testSessionSeqRef'), 'PreCallStudioWidget should cancel/stop tracks safely including mid-prompt unmount');
+    assert.ok(editProfileModal.includes('createPortal') && editProfileModal.includes('wasOpenRef'), 'EditProfileModal should portal to document.body and preserve open tab/feedback state across user updates');
   });
 });

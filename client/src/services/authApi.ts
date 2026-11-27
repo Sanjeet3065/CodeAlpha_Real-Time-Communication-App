@@ -98,15 +98,21 @@ export async function fetchWithAuth(
 
   let res = await fetch(url, mergedOptions);
 
-  // If 401 and we have a potential session to refresh
+  // If 401 and we have a potential session to refresh (never on password verification failures)
   if (res.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      headers.set('Authorization', `Bearer ${newToken}`);
-      res = await fetch(url, {
-        ...mergedOptions,
-        headers,
-      });
+    const errPayload = await res
+      .clone()
+      .json()
+      .catch(() => null);
+    if (errPayload?.code !== 'INVALID_CREDENTIALS') {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        headers.set('Authorization', `Bearer ${newToken}`);
+        res = await fetch(url, {
+          ...mergedOptions,
+          headers,
+        });
+      }
     }
   }
 
