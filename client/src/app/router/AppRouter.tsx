@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
-import { LandingPage } from '@/pages/LandingPage';
+import { AuthGatewayPage } from '@/pages/AuthGatewayPage';
 import { RootScaffoldPage } from '@/pages/RootScaffoldPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -19,9 +19,16 @@ const MeetingRoomPage = lazy(() => import('@/pages/MeetingRoomPage'));
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      {/* Public Landing Page in AppLayout */}
+      {/* Direct Auth Entry Gateway (Redirects to /dashboard if already signed in) */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<LandingPage />} />
+        <Route
+          path="/"
+          element={
+            <PublicOnlyRoute>
+              <AuthGatewayPage initialMode="signin" />
+            </PublicOnlyRoute>
+          }
+        />
         <Route path="/scaffold" element={<RootScaffoldPage />} />
       </Route>
 
