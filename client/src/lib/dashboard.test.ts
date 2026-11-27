@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { validateMeetingCode } from './meetingCode.ts';
 
 // Pure helper functions matching dashboard logic
@@ -95,5 +97,22 @@ describe('Dashboard Utilities & Data Contracts', () => {
     assert.ok(agendaItem.title.length > 0);
     assert.strictEqual(agendaItem.isWaitingRoomEnabled, true);
     assert.strictEqual(agendaItem.participantCount, 14);
+  });
+
+  it('should enforce consolidated dashboard structure, shared BrandMark, and balanced 2-column stretch layout', () => {
+    const libDir = import.meta.dirname;
+    const dashboardPage = fs.readFileSync(path.resolve(libDir, '../pages/DashboardPage.tsx'), 'utf8');
+    const sidebar = fs.readFileSync(path.resolve(libDir, '../components/dashboard/AppSidebar.tsx'), 'utf8');
+    const authGateway = fs.readFileSync(path.resolve(libDir, '../pages/AuthGatewayPage.tsx'), 'utf8');
+    const quickBar = fs.readFileSync(path.resolve(libDir, '../components/dashboard/QuickActionBar.tsx'), 'utf8');
+    const welcomeHeader = fs.readFileSync(path.resolve(libDir, '../components/dashboard/WelcomeHeader.tsx'), 'utf8');
+    const activityWidget = fs.readFileSync(path.resolve(libDir, '../components/dashboard/RecentActivityWidget.tsx'), 'utf8');
+
+    assert.ok(!dashboardPage.includes('QuickCodeWidget'), 'DashboardPage should not duplicate QuickCodeWidget');
+    assert.ok(dashboardPage.includes('items-stretch'), 'Dashboard columns should stretch cleanly to align bottom edges');
+    assert.ok(sidebar.includes('BrandMark') && authGateway.includes('BrandMark'), 'Sidebar and Auth gateway should share BrandMark');
+    assert.ok(quickBar.includes('validateMeetingCode') && quickBar.includes('Join Room'), 'QuickActionBar should support direct room code entry and Join Room trigger');
+    assert.ok(!welcomeHeader.includes('Active Session'), 'WelcomeHeader should omit redundant Active Session chrome');
+    assert.ok(activityWidget.includes('schedulingApi.listMeetingHistory'), 'RecentActivityWidget should fetch live meeting history');
   });
 });

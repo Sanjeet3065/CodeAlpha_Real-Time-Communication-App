@@ -119,17 +119,17 @@ export const AccountMenu: React.FC = () => {
 
             {/* Email Verification Status Badge (Grounded in Genuine Backend State) */}
             {user?.isEmailVerified === true ? (
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-[11px] font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Verified Email</span>
               </div>
             ) : user?.isEmailVerified === false ? (
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-semibold">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 text-[11px] font-semibold">
                 <ShieldAlert className="w-3.5 h-3.5" />
                 <span>Email Unverified</span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#EAE8E1] dark:bg-[#24282E] text-[#7C848D] dark:text-[#A3AAB2] text-[11px] font-medium">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EAE8E1] dark:bg-[#24282E] text-[#555D66] dark:text-[#A3AAB2] text-[11px] font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" />
                 <span>Session Active</span>
               </div>
@@ -137,7 +137,7 @@ export const AccountMenu: React.FC = () => {
           </div>
 
           {/* Action Links */}
-          <div className="py-2" role="none">
+          <div className="py-1.5" role="none">
             <button
               type="button"
               role="menuitem"
@@ -148,7 +148,7 @@ export const AccountMenu: React.FC = () => {
               className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-[#F3F2EE] dark:hover:bg-[#24282E] transition-colors"
             >
               <Settings className="w-4 h-4 text-[#7C848D] dark:text-[#A3AAB2]" />
-              <span>Account Settings & Preferences</span>
+              <span>Account Settings</span>
             </button>
           </div>
 
@@ -159,17 +159,14 @@ export const AccountMenu: React.FC = () => {
               role="menuitem"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#C24D4D] dark:text-[#D46A6A] hover:bg-[#F6E6E6] dark:hover:bg-[#342023] rounded-lg transition-colors disabled:opacity-50"
             >
-              <div className="flex items-center gap-2">
-                {isLoggingOut ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
-                ) : (
-                  <LogOut className="w-4 h-4" />
-                )}
-                <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
-              </div>
-              <span className="text-[10px] text-rose-400 font-normal">End Session</span>
+              {isLoggingOut ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
             </button>
           </div>
         </div>

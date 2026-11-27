@@ -39,7 +39,7 @@ interface SearchItem {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenMobileMenu,
   title = 'Dashboard',
-  subtitle = 'Welcome to your real-time collaboration workspace',
+  subtitle = '',
 }) => {
   const navigate = useNavigate();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -233,7 +233,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 bg-[#FAF9F6] dark:bg-[#1C1F24] border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
+      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left Side: Mobile Menu Button & Page Title */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
@@ -249,9 +249,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] leading-tight truncate">
               {title}
             </h1>
-            <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate">
-              {subtitle}
-            </p>
+            {subtitle && (
+              <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate">
+                {subtitle}
+              </p>
+            )}
           </div>
         </div>
 

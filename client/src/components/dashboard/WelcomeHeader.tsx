@@ -1,11 +1,10 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Calendar, ShieldCheck } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 export const WelcomeHeader: React.FC = () => {
   const { user } = useAuth();
 
-  // Dynamic time-of-day greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -13,7 +12,6 @@ export const WelcomeHeader: React.FC = () => {
     return 'Good evening';
   };
 
-  // Safe display name fallback
   const getDisplayName = () => {
     if (!user) return 'Collaborator';
     if (user.firstName && user.lastName) {
@@ -23,7 +21,6 @@ export const WelcomeHeader: React.FC = () => {
     return user.email.split('@')[0] || 'Collaborator';
   };
 
-  // Formatted date string
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
@@ -32,24 +29,15 @@ export const WelcomeHeader: React.FC = () => {
   }).format(new Date());
 
   return (
-    <div className="mb-6 sm:mb-8">
-      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 mb-2">
-        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] uppercase tracking-wider">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] flex-shrink-0" aria-hidden="true" />
-          <span>Active Session</span>
-        </div>
-        <div className="flex items-center gap-1 text-[11px] sm:text-xs text-[#7C848D] dark:text-[#A3AAB2]">
-          <Calendar className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-          <span>{formattedDate}</span>
-        </div>
-      </div>
-
-      <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] break-words">
+    <div className="mb-5 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
+      <h2 className="font-display text-xl sm:text-2xl lg:text-[1.75rem] font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] break-words">
         {getGreeting()}, {getDisplayName()}
       </h2>
-      <p className="mt-1 text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] max-w-2xl leading-relaxed">
-        Welcome to your secure collaboration workspace. Launch an instant room, join a session with a code, or manage your files below.
-      </p>
+
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] text-xs font-medium text-[#555D66] dark:text-[#A3AAB2]">
+        <Calendar className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] flex-shrink-0" aria-hidden="true" />
+        <span>{formattedDate}</span>
+      </div>
     </div>
   );
 };

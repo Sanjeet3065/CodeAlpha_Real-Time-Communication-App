@@ -14,6 +14,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -363,24 +364,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
             className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-lg px-1 py-0.5"
             aria-label="CONNECTLY home"
           >
-            <span className="w-9 h-9 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center shadow-cly-sm">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M16.5 7.75C15.1 6.65 13.45 6.1 11.75 6.1C7.95 6.1 5.25 8.8 5.25 12C5.25 15.2 7.95 17.9 11.75 17.9C13.45 17.9 15.1 17.35 16.5 16.25"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                />
-                <circle cx="17.5" cy="12" r="2" fill="currentColor" />
-              </svg>
-            </span>
+            <BrandMark />
             <div className="flex items-baseline gap-2.5">
               <span className="font-display font-extrabold text-xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                 CONNECTLY

@@ -3,7 +3,6 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { WelcomeHeader } from '@/components/dashboard/WelcomeHeader';
 import { QuickActionBar } from '@/components/dashboard/QuickActionBar';
 import { UpcomingMeetingsSection } from '@/components/dashboard/UpcomingMeetingsSection';
-import { QuickCodeWidget } from '@/components/dashboard/QuickCodeWidget';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { RecentDownloadsWidget } from '@/components/dashboard/RecentDownloadsWidget';
 import { JoinMeetingModal } from '@/components/dashboard/JoinMeetingModal';
@@ -15,6 +14,7 @@ export const DashboardPage: React.FC = () => {
   const [isInstantModalOpen, setIsInstantModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [prefilledCode, setPrefilledCode] = useState('');
+  const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
 
   const handleOpenJoinModal = (code = '') => {
     setPrefilledCode(code);
@@ -22,39 +22,27 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Dashboard"
-      subtitle="Overview of your collaboration schedule and active workspaces"
-    >
-      {/* 1. Welcome Header Section */}
+    <DashboardLayout title="Dashboard">
       <WelcomeHeader />
 
-      {/* 2. Top Quick Action Bar */}
       <QuickActionBar
         onInstantMeeting={() => setIsInstantModalOpen(true)}
-        onJoinMeeting={() => handleOpenJoinModal('')}
+        onJoinMeeting={(code) => handleOpenJoinModal(code || '')}
         onScheduleMeeting={() => setIsScheduleModalOpen(true)}
       />
 
-      {/* 3. Main Dashboard 2-Column Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (60% on desktop: 7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
+      {/* Balanced 2-Column Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        <div className="lg:col-span-7 flex flex-col">
           <UpcomingMeetingsSection
             onInstantMeeting={() => setIsInstantModalOpen(true)}
             onScheduleMeeting={() => setIsScheduleModalOpen(true)}
+            refreshKey={scheduleRefreshKey}
           />
         </div>
 
-        {/* Right Column (40% on desktop: 5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Quick Code Entry Box */}
-          <QuickCodeWidget onJoinCode={(code) => handleOpenJoinModal(code)} />
-
-          {/* Recent Activity Feed Widget */}
-          <RecentActivityWidget />
-
-          {/* Recent Downloads & Shared Files Quick-Access Widget */}
+        <div className="lg:col-span-5 flex flex-col gap-5 sm:gap-6">
+          <RecentActivityWidget refreshKey={scheduleRefreshKey} />
           <RecentDownloadsWidget />
         </div>
       </div>
@@ -74,6 +62,7 @@ export const DashboardPage: React.FC = () => {
       <ScheduleNoticeModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
+        onMeetingScheduled={() => setScheduleRefreshKey((prev) => prev + 1)}
       />
     </DashboardLayout>
   );
