@@ -36,6 +36,16 @@ export interface LoginData {
   password: string;
 }
 
+export interface GoogleAuthData {
+  code: string;
+  redirectUri?: string;
+}
+
+export interface GoogleAuthConfigResponse {
+  enabled: boolean;
+  clientId: string | null;
+}
+
 export interface ApiProblemDetails {
   status: number;
   code: string;

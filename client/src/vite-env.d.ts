@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_VIRTUAL_BACKGROUND: string;
   readonly VITE_ENABLE_WHITEBOARD: string;
   readonly VITE_ENABLE_FILE_SHARING: string;
+  readonly VITE_GOOGLE_CLIENT_ID?: string;
 }
 
 interface ImportMeta {

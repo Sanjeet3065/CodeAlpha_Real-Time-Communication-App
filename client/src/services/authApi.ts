@@ -3,6 +3,8 @@ import type {
   AuthResponse,
   RegisterData,
   LoginData,
+  GoogleAuthData,
+  GoogleAuthConfigResponse,
   ApiProblemDetails,
 } from '@/types/auth';
 
@@ -129,6 +131,39 @@ export const authApi = {
 
   async login(data: LoginData): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...csrfHeaders,
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw await parseErrorResponse(res);
+    }
+
+    const authRes: AuthResponse = await res.json();
+    authStorage.setAccessToken(authRes.accessToken);
+    return authRes;
+  },
+
+  async getGoogleConfig(): Promise<GoogleAuthConfigResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/google/config`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw await parseErrorResponse(res);
+    }
+
+    return res.json();
+  },
+
+  async googleLogin(data: GoogleAuthData): Promise<AuthResponse> {
+    const res = await fetch(`${API_BASE_URL}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

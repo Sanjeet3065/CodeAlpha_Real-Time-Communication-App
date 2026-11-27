@@ -19,7 +19,13 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { PhaseNoticeModal } from '@/components/landing/PhaseNoticeModal';
-import { ApiError } from '@/services/authApi';
+import { ApiError, authApi } from '@/services/authApi';
+import {
+  GoogleAuthCancelledError,
+  preloadGoogleIdentityScript,
+  requestGoogleAuthCode,
+  resolveGoogleClientId,
+} from '@/lib/googleOAuth';
 import { sanitizeNavigationPath } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import studioWorkspaceImage from '@/assets/studio-workspace.jpg';
@@ -37,8 +43,64 @@ export interface AuthGatewayPageProps {
   initialMode?: AuthMode;
 }
 
+const GoogleContinueSection: React.FC<{
+  disabled: boolean;
+  isLoading: boolean;
+  onClick: () => void;
+}> = ({ disabled, isLoading, onClick }) => (
+  <div className="mb-3.5 space-y-3">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || isLoading}
+      className={cn(
+        'w-full h-10 px-4 rounded-lg border border-[#DDDAD0] dark:border-[#2B3038]',
+        'bg-[#FFFFFF] dark:bg-[#141619] hover:bg-[#F3F2EE] dark:hover:bg-[#191D22]',
+        'text-sm font-medium text-[#1F2428] dark:text-[#EAECEE] shadow-cly-sm',
+        'flex items-center justify-center gap-2.5 transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
+        (disabled || isLoading) && 'opacity-60 cursor-not-allowed'
+      )}
+    >
+      {isLoading ? (
+        <span
+          className="w-4 h-4 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin"
+          aria-hidden="true"
+        />
+      ) : (
+        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+            fill="#4285F4"
+          />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853"
+          />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            fill="#FBBC05"
+          />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335"
+          />
+        </svg>
+      )}
+      <span>{isLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
+    </button>
+
+    <div className="relative flex items-center justify-center">
+      <span className="w-full border-t border-[#DDDAD0] dark:border-[#2B3038]" />
+      <span className="relative px-2.5 bg-[#FAF9F6] dark:bg-[#1C1F24] text-[10px] font-medium uppercase tracking-wider text-[#7C848D] dark:text-[#8E96A0]">
+        or continue with email
+      </span>
+    </div>
+  </div>
+);
+
 export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 'signin' }) => {
-  const { user, isAuthenticated, isLoading, login, register } = useAuth();
+  const { user, isAuthenticated, isLoading, login, loginWithGoogle, register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
@@ -46,6 +108,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [googleClientId, setGoogleClientId] = useState<string | null>(
+    import.meta.env?.VITE_GOOGLE_CLIENT_ID?.trim() || null
+  );
 
   // Sign In state
   const [loginEmail, setLoginEmail] = useState('');
@@ -64,6 +129,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
   // Feedback & modal state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [noticeModal, setNoticeModal] = useState<{
@@ -77,6 +143,22 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
     setErrorMessage(null);
     setInfoMessage(null);
   }, [initialMode]);
+
+  useEffect(() => {
+    let active = true;
+    resolveGoogleClientId(import.meta.env?.VITE_GOOGLE_CLIENT_ID, () =>
+      authApi.getGoogleConfig()
+    ).then((resolvedId) => {
+      if (!active || !resolvedId) {
+        return;
+      }
+      setGoogleClientId(resolvedId);
+      void preloadGoogleIdentityScript().catch(() => {});
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -103,12 +185,54 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
   };
 
   const handleModeSwitch = (nextMode: AuthMode) => {
-    if (nextMode === mode || isSubmitting) {
+    if (nextMode === mode || isSubmitting || isGoogleSubmitting) {
       return;
     }
     setMode(nextMode);
     setErrorMessage(null);
     setInfoMessage(null);
+  };
+
+  const handleGoogleAuth = async () => {
+    if (isSubmitting || isGoogleSubmitting) {
+      return;
+    }
+    setErrorMessage(null);
+    setInfoMessage(null);
+
+    try {
+      setIsGoogleSubmitting(true);
+      const clientId =
+        googleClientId ||
+        (await resolveGoogleClientId(import.meta.env?.VITE_GOOGLE_CLIENT_ID, () =>
+          authApi.getGoogleConfig()
+        ));
+
+      if (!clientId) {
+        setInfoMessage(
+          'Google Sign-In requires GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET in your server environment.'
+        );
+        return;
+      }
+
+      setGoogleClientId(clientId);
+      const code = await requestGoogleAuthCode(clientId);
+      await loginWithGoogle({ code, redirectUri: 'postmessage' });
+      navigate(getDestination(), { replace: true });
+    } catch (err) {
+      if (err instanceof GoogleAuthCancelledError) {
+        return;
+      }
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message || 'Google authentication failed. Please try again.');
+      } else if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage('Unable to complete Google authentication right now.');
+      }
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
   };
 
   const handleSignInFirstClick = () => {
@@ -540,7 +664,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                     exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
                   >
-                    <div className="mb-5">
+                    <div className="mb-4">
                       <h2 className="font-display text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                         Welcome back
                       </h2>
@@ -549,7 +673,13 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       </p>
                     </div>
 
-                    <form onSubmit={handleSignInSubmit} className="space-y-4" noValidate>
+                    <GoogleContinueSection
+                      disabled={isSubmitting}
+                      isLoading={isGoogleSubmitting}
+                      onClick={handleGoogleAuth}
+                    />
+
+                    <form onSubmit={handleSignInSubmit} className="space-y-3.5" noValidate>
                       <Input
                         ref={loginEmailInputRef}
                         label="Email address"
@@ -670,6 +800,12 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         Start hosting video meetings and shared rooms.
                       </p>
                     </div>
+
+                    <GoogleContinueSection
+                      disabled={isSubmitting}
+                      isLoading={isGoogleSubmitting}
+                      onClick={handleGoogleAuth}
+                    />
 
                     <form onSubmit={handleSignUpSubmit} className="space-y-2.5" noValidate>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

@@ -6,7 +6,7 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { User, LoginData, RegisterData } from '@/types/auth';
+import type { User, LoginData, RegisterData, GoogleAuthData } from '@/types/auth';
 import { authApi } from '@/services/authApi';
 
 export interface AuthContextType {
@@ -14,6 +14,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginData) => Promise<void>;
+  loginWithGoogle: (data: GoogleAuthData) => Promise<void>;
   register: (data: RegisterData) => Promise<{ success: boolean; user: User }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -49,6 +50,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (data: LoginData): Promise<void> => {
     const response = await authApi.login(data);
+    setUser(response.user);
+  };
+
+  const loginWithGoogle = async (data: GoogleAuthData): Promise<void> => {
+    const response = await authApi.googleLogin(data);
     setUser(response.user);
   };
 
@@ -112,6 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: Boolean(user),
         isLoading,
         login,
+        loginWithGoogle,
         register,
         logout,
         refreshUser,

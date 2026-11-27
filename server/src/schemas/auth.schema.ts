@@ -45,5 +45,11 @@ export const loginSchema = z.object({
     .max(128, 'Password cannot exceed 128 characters'),
 });
 
+export const googleAuthSchema = z.object({
+  code: z.string().trim().min(1, 'Authorization code is required').max(4096),
+  redirectUri: z.string().trim().min(1).max(512).optional().default('postmessage'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;

@@ -76,6 +76,8 @@ export const envSchema = z
       .optional(),
     ORIGIN_AUTH_MODE: z.enum(['proxy', 'direct']).default('proxy'),
     COOKIE_SAME_SITE: z.enum(['auto', 'lax', 'none']).default('auto'),
+    GOOGLE_CLIENT_ID: z.string().trim().optional().default(''),
+    GOOGLE_CLIENT_SECRET: z.string().trim().optional().default(''),
   })
   .refine(
     (data) => {

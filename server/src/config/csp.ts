@@ -158,7 +158,7 @@ export function getCspDirectives(envConfig: CspConfigInput) {
     // In pre-built static client single-page applications without server-side templating,
     // request-bound nonce injection is not possible. 'unsafe-eval' is strictly forbidden.
     styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", 'data:', 'blob:', ...storageImageSources],
+    imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', ...storageImageSources],
     fontSrc: ["'self'", 'data:'],
     connectSrc: buildConnectSrcAllowlist(envConfig),
     mediaSrc: ["'self'", 'blob:', 'mediastream:'],
