@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   AlertCircle,
@@ -7,6 +7,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  LayoutDashboard,
   Lock,
   Mail,
   ShieldCheck,
@@ -25,6 +26,7 @@ import studioWorkspaceImage from '@/assets/studio-workspace.jpg';
 import {
   AUTH_ANIMATED_HIGHLIGHTS,
   AUTH_SHOWCASE_COPY,
+  AUTH_TOPBAR_COPY,
   STUDIO_WAVEFORM_BARS,
   evaluatePasswordCriteria,
 } from '@/components/auth/authShowcaseContent';
@@ -36,10 +38,11 @@ export interface AuthGatewayPageProps {
 }
 
 export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 'signin' }) => {
-  const { login, register } = useAuth();
+  const { user, isAuthenticated, isLoading, login, register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
+  const loginEmailInputRef = useRef<HTMLInputElement>(null);
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -106,6 +109,15 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
     setMode(nextMode);
     setErrorMessage(null);
     setInfoMessage(null);
+  };
+
+  const handleSignInFirstClick = () => {
+    setMode('signin');
+    setErrorMessage(null);
+    setInfoMessage('Sign in first with your email and password to open your dashboard.');
+    window.setTimeout(() => {
+      loginEmailInputRef.current?.focus();
+    }, 50);
   };
 
   const openNotice = (topic: 'Privacy Policy' | 'Terms of Service' | 'Security Architecture') => {
@@ -225,50 +237,95 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
   const activeHighlight = AUTH_ANIMATED_HIGHLIGHTS[highlightIndex];
 
   return (
-    <div className="min-h-screen bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] selection:bg-[#E2ECE9] selection:text-[#2F6F68] dark:selection:bg-[#1F302E] dark:selection:text-[#5FA399]">
-      <div className="min-h-screen max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12">
-        {/* LEFT COLUMN: Editorial Brand, Animated Video Studio Image & Live Cadence Strip */}
+    <div className="min-h-screen flex flex-col bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] selection:bg-[#E2ECE9] selection:text-[#2F6F68] dark:selection:bg-[#1F302E] dark:selection:text-[#5FA399]">
+      {/* Unified Top Bar: Brand Left + Theme & Auth Status Right */}
+      <header className="w-full border-b border-[#DDDAD0]/75 dark:border-[#2B3038]/80 bg-[#FAF9F6]/90 dark:bg-[#1C1F24]/90">
+        <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">
+          {/* Brand Logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] rounded-lg px-1 py-0.5"
+            aria-label="CONNECTLY home"
+          >
+            <span className="w-9 h-9 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center shadow-cly-sm">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M16.5 7.75C15.1 6.65 13.45 6.1 11.75 6.1C7.95 6.1 5.25 8.8 5.25 12C5.25 15.2 7.95 17.9 11.75 17.9C13.45 17.9 15.1 17.35 16.5 16.25"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                />
+                <circle cx="17.5" cy="12" r="2" fill="currentColor" />
+              </svg>
+            </span>
+            <div className="flex items-baseline gap-2.5">
+              <span className="font-display font-extrabold text-xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
+                CONNECTLY
+              </span>
+              <span className="hidden sm:inline text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
+                {AUTH_SHOWCASE_COPY.brandTag}
+              </span>
+            </div>
+          </Link>
+
+          {/* Top-Right Corner: Light/Dark Theme + User Name & Dashboard OR Sign in first */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <ThemeToggle variant="compact" />
+
+            {!isLoading &&
+              (isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1F2428] dark:text-[#EAECEE] hover:text-[#2F6F68] dark:hover:text-[#5FA399] px-2 py-1 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
+                  >
+                    <UserIcon
+                      className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]"
+                      aria-hidden="true"
+                    />
+                    <span>{user?.firstName || 'User'}</span>
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    onClick={() => navigate('/dashboard')}
+                    rightIcon={<LayoutDashboard className="w-4 h-4" aria-hidden="true" />}
+                  >
+                    {AUTH_TOPBAR_COPY.dashboardLabel}
+                  </Button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSignInFirstClick}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[#EAE8E1] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-xs sm:text-sm font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:border-[#2F6F68]/45 dark:hover:border-[#5FA399]/45 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
+                >
+                  <UserIcon
+                    className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]"
+                    aria-hidden="true"
+                  />
+                  <span>{AUTH_TOPBAR_COPY.guestPrompt}</span>
+                </button>
+              ))}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Split Workspace */}
+      <div className="flex-1 w-full max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12">
+        {/* LEFT COLUMN: Editorial Video Studio Visual + Subtle Animation + Text */}
         <section
           aria-label="Connectly Workspace Preview"
           className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-between gap-6 border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
         >
-          {/* Brand Header */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <span className="w-9 h-9 rounded-xl bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center shadow-cly-sm">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M16.5 7.75C15.1 6.65 13.45 6.1 11.75 6.1C7.95 6.1 5.25 8.8 5.25 12C5.25 15.2 7.95 17.9 11.75 17.9C13.45 17.9 15.1 17.35 16.5 16.25"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="17.5" cy="12" r="2" fill="currentColor" />
-                </svg>
-              </span>
-              <div className="flex items-baseline gap-2.5">
-                <span className="font-display font-extrabold text-xl tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
-                  CONNECTLY
-                </span>
-                <span className="hidden sm:inline text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
-                  {AUTH_SHOWCASE_COPY.brandTag}
-                </span>
-              </div>
-            </div>
-
-            <div className="lg:hidden">
-              <ThemeToggle variant="compact" />
-            </div>
-          </div>
-
-          {/* Center Showcase + Studio Artwork + Subtle Live Animation */}
           <div className="my-auto space-y-5">
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
@@ -378,7 +435,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
             </motion.div>
           </div>
 
-          {/* Minimal Left Footnote */}
           <div className="hidden lg:flex items-center gap-4 text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
             <span>Up to 60 peers</span>
             <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
@@ -392,28 +448,28 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
           </div>
         </section>
 
-        {/* RIGHT COLUMN: Direct Sign In / Sign Up Workspace */}
+        {/* RIGHT COLUMN: Sign In / Create Account Workspace */}
         <main
           id="main-content"
           className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-between gap-6 outline-none"
         >
-          {/* Desktop Top Utility Row */}
-          <div className="hidden lg:flex w-full max-w-md mx-auto items-center justify-between">
+          <div className="hidden lg:flex w-full max-w-md mx-auto items-center justify-end">
             <button
               type="button"
               onClick={() => openNotice('Security Architecture')}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-[#646D77] dark:text-[#8E96A0] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors rounded-md px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
+              <ShieldCheck
+                className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]"
+                aria-hidden="true"
+              />
               <span>Encrypted Session Architecture</span>
             </button>
-            <ThemeToggle variant="compact" />
           </div>
 
-          {/* Auth Card */}
           <div className="my-auto w-full max-w-md mx-auto">
             <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-md p-6 sm:p-7">
-              {/* Segmented Sign In / Sign Up Switcher */}
+              {/* Segmented Sign In / Create Account Switcher */}
               <div
                 role="tablist"
                 aria-label="Authentication mode"
@@ -464,7 +520,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                 </button>
               </div>
 
-              {/* Feedback Alerts */}
               {errorMessage && (
                 <div
                   role="alert"
@@ -472,7 +527,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                   className="mb-5 p-3 rounded-lg bg-[#F6E6E6] dark:bg-[#342023] border border-[#C24D4D]/30 dark:border-[#D46A6A]/30 flex items-start gap-2.5 text-[#C24D4D] dark:text-[#D46A6A]"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="text-xs sm:text-sm font-medium leading-relaxed">{errorMessage}</div>
+                  <div className="text-xs sm:text-sm font-medium leading-relaxed">
+                    {errorMessage}
+                  </div>
                 </div>
               )}
 
@@ -482,7 +539,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                   className="mb-5 p-3 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/30 dark:border-[#5FA399]/30 flex items-start gap-2.5 text-[#2F6F68] dark:text-[#5FA399]"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="text-xs sm:text-sm font-medium leading-relaxed">{infoMessage}</div>
+                  <div className="text-xs sm:text-sm font-medium leading-relaxed">
+                    {infoMessage}
+                  </div>
                 </div>
               )}
 
@@ -506,6 +565,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
                     <form onSubmit={handleSignInSubmit} className="space-y-4" noValidate>
                       <Input
+                        ref={loginEmailInputRef}
                         label="Email address"
                         id="login-email"
                         type="email"
@@ -691,7 +751,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         }
                       />
 
-                      {/* Compact 2-Column Password Checklist */}
                       <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-[11px]">
                         <ul
                           className="grid grid-cols-2 gap-x-3 gap-y-1"
@@ -815,7 +874,6 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
             </div>
           </div>
 
-          {/* Minimal Security Footnote */}
           <div className="w-full max-w-md mx-auto flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#747C86]">
             <span>&copy; {new Date().getFullYear()} CONNECTLY</span>
             <span className="flex items-center gap-1.5">

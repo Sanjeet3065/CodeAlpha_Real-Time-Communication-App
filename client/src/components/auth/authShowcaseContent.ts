@@ -16,6 +16,11 @@ export const AUTH_SHOWCASE_COPY = {
   subtitle: 'Adaptive HD meetings, shared vector canvas, and private room controls.',
 } as const;
 
+export const AUTH_TOPBAR_COPY = {
+  guestPrompt: 'Sign in first',
+  dashboardLabel: 'Dashboard',
+} as const;
+
 export const AUTH_ANIMATED_HIGHLIGHTS: readonly AuthHighlight[] = [
   { label: '60-Peer Adaptive SFU', detail: '1080p spatial video' },
   { label: 'Live Vector Whiteboard', detail: 'Multi-cursor canvas' },

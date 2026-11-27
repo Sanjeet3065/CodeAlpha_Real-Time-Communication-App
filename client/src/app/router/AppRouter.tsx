@@ -19,16 +19,9 @@ const MeetingRoomPage = lazy(() => import('@/pages/MeetingRoomPage'));
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      {/* Direct Auth Entry Gateway (Redirects to /dashboard if already signed in) */}
+      {/* Direct Auth Entry Gateway (shows user Name + Dashboard in header when signed in) */}
       <Route element={<AppLayout />}>
-        <Route
-          path="/"
-          element={
-            <PublicOnlyRoute>
-              <AuthGatewayPage initialMode="signin" />
-            </PublicOnlyRoute>
-          }
-        />
+        <Route path="/" element={<AuthGatewayPage initialMode="signin" />} />
         <Route path="/scaffold" element={<RootScaffoldPage />} />
       </Route>
 

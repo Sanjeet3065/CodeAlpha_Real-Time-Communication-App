@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   AUTH_SHOWCASE_COPY,
+  AUTH_TOPBAR_COPY,
   AUTH_ANIMATED_HIGHLIGHTS,
   STUDIO_WAVEFORM_BARS,
   evaluatePasswordCriteria,
@@ -17,6 +18,8 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.ok(AUTH_SHOWCASE_COPY.subtitle.split(/\s+/).length <= 16);
     assert.strictEqual(AUTH_ANIMATED_HIGHLIGHTS.length, 3);
     assert.ok(STUDIO_WAVEFORM_BARS.length >= 7);
+    assert.strictEqual(AUTH_TOPBAR_COPY.guestPrompt, 'Sign in first');
+    assert.strictEqual(AUTH_TOPBAR_COPY.dashboardLabel, 'Dashboard');
   });
 
   it('2. Evaluates all 5 signup password strength criteria deterministically', () => {
@@ -27,7 +30,7 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.strictEqual(allPasswordCriteriaMet('alllowercase1!'), false);
   });
 
-  it('3. Routes / directly to the Split Auth Gateway without a marketing landing page', () => {
+  it('3. Routes / directly to AuthGatewayPage and renders dynamic top-right Auth + Theme controls', () => {
     const authDir = import.meta.dirname;
     const routerPath = path.resolve(authDir, '../../app/router/AppRouter.tsx');
     const gatewayPath = path.resolve(authDir, '../../pages/AuthGatewayPage.tsx');
@@ -36,7 +39,12 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
 
     assert.ok(!routerSource.includes('LandingPage'));
     assert.ok(routerSource.includes('AuthGatewayPage'));
+    assert.ok(routerSource.includes('path="/" element={<AuthGatewayPage'));
     assert.ok(gatewaySource.includes('studio-workspace.jpg'));
     assert.ok(gatewaySource.includes('PhaseNoticeModal'));
+    assert.ok(gatewaySource.includes('ThemeToggle'));
+    assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.guestPrompt'));
+    assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.dashboardLabel'));
+    assert.ok(gatewaySource.includes('LayoutDashboard'));
   });
 });
