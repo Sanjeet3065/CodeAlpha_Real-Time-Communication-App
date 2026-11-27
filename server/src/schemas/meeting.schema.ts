@@ -368,3 +368,22 @@ export const meetingHistoryQuerySchema = z.object({
 
 export type MeetingHistoryQuery = z.infer<typeof meetingHistoryQuerySchema>;
 
+export const deleteMeetingHistoryBatchSchema = z.strictObject(
+  {
+    meetingIds: z
+      .array(
+        z
+          .string({ error: 'Meeting ID must be a string' })
+          .trim()
+          .regex(/^[0-9a-fA-F]{24}$/, 'Invalid meeting ID format'),
+        { error: 'meetingIds must be an array of meeting IDs' }
+      )
+      .min(1, 'Select at least one history record to remove')
+      .max(50, 'Cannot remove more than 50 history records at once'),
+  },
+  { error: 'Forbidden property in delete meeting history payload.' }
+);
+
+export type DeleteMeetingHistoryBatchInput = z.infer<typeof deleteMeetingHistoryBatchSchema>;
+
+

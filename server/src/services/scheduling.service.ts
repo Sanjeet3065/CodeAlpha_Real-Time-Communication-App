@@ -28,7 +28,10 @@ import type {
 } from '../schemas/meeting.schema.js';
 import { reminderWorker } from './reminderWorker.service.js';
 import { notificationService } from './notification.service.js';
-import { isMeetingHistoryExpired } from './meetingHistoryRetentionWorker.service.js';
+import {
+  isMeetingHistoryExpired,
+  purgeMeetingsAndCascade,
+} from './meetingHistoryRetentionWorker.service.js';
 import { meetingRealtime } from '../realtime/meetingSocket.js';
 
 const MAX_CODE_GENERATION_RETRIES = 6;
@@ -892,7 +895,9 @@ export class SchedulingService {
     );
 
     // 2. Build Query Filters
-    const filter: Record<string, any> = {};
+    const filter: Record<string, any> = {
+      historyHiddenBy: { $ne: userObjId },
+    };
 
     // Role filtering: host vs participant
     if (query.role === 'host') {
@@ -1107,6 +1112,10 @@ export class SchedulingService {
       userRole = participation.role;
     }
 
+    if ((meeting.historyHiddenBy || []).some((id) => id.toString() === userId)) {
+      throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
+    }
+
     if (isMeetingHistoryExpired(meeting)) {
       throw new NotFoundError('Meeting history has expired after the 2-day retention window.', 'HISTORY_EXPIRED');
     }
@@ -1181,6 +1190,118 @@ export class SchedulingService {
       meeting: historyItem,
       participants,
       timeline,
+    };
+  }
+
+  /**
+   * Removes historical meetings from the caller's personal account history, and
+   * permanently purges any meeting once zero non-hidden viewers remain.
+   */
+  async deleteMeetingHistoryEntries(
+    userId: string,
+    meetingIds: string[]
+  ): Promise<{ deletedIds: string[]; deletedCount: number; purgedIds: string[] }> {
+    const uniqueIds = Array.from(new Set(meetingIds.map((id) => id.trim()).filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      throw new BadRequestError('At least one meeting ID is required.', 'VALIDATION_ERROR');
+    }
+
+    for (const id of uniqueIds) {
+      if (!Types.ObjectId.isValid(id)) {
+        throw new BadRequestError('Invalid meeting ID.', 'INVALID_IDENTIFIER');
+      }
+    }
+
+    const userObjId = new Types.ObjectId(userId);
+    const objIds = uniqueIds.map((id) => new Types.ObjectId(id));
+    const meetings = await Meeting.find({ _id: { $in: objIds } });
+    const meetingById = new Map(meetings.map((m) => [m._id.toString(), m]));
+
+    if (meetingById.size !== uniqueIds.length) {
+      throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
+    }
+
+    const participantRows = await MeetingParticipant.find({
+      meetingId: { $in: objIds },
+      $or: [{ admissionStatus: 'ADMITTED' }, { joinedAt: { $ne: null } }],
+    }).select('meetingId userId');
+
+    const attendeesByMeeting = new Map<string, Set<string>>();
+    for (const row of participantRows) {
+      if (!row.userId) continue;
+      const mId = row.meetingId.toString();
+      let set = attendeesByMeeting.get(mId);
+      if (!set) {
+        set = new Set<string>();
+        attendeesByMeeting.set(mId, set);
+      }
+      set.add(row.userId.toString());
+    }
+
+    // Authorize and validate state for every requested ID atomically before mutating
+    const purgeIds: Types.ObjectId[] = [];
+    for (const id of uniqueIds) {
+      const meeting = meetingById.get(id)!;
+      const isHost = meeting.hostId.toString() === userId;
+      const isAttendee = attendeesByMeeting.get(id)?.has(userId) ?? false;
+
+      if (!isHost && !isAttendee) {
+        throw new ForbiddenError(
+          'You do not have authorization to remove this meeting history.',
+          'FORBIDDEN'
+        );
+      }
+
+      if (!['ENDED', 'CANCELLED', 'EXPIRED'].includes(meeting.status)) {
+        throw new BadRequestError(
+          'Only ended, cancelled, or expired meetings can be removed from history.',
+          'INVALID_STATE'
+        );
+      }
+
+      if ((meeting.historyHiddenBy || []).some((hiddenId) => hiddenId.toString() === userId)) {
+        throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
+      }
+
+      const viewerIds = new Set<string>([meeting.hostId.toString()]);
+      for (const attendeeId of attendeesByMeeting.get(id) || []) {
+        viewerIds.add(attendeeId);
+      }
+      const hiddenAfter = new Set<string>(
+        (meeting.historyHiddenBy || []).map((hiddenId) => hiddenId.toString())
+      );
+      hiddenAfter.add(userId);
+
+      const hasRemainingViewers = Array.from(viewerIds).some((viewerId) => !hiddenAfter.has(viewerId));
+      if (!hasRemainingViewers) {
+        purgeIds.push(meeting._id as Types.ObjectId);
+      }
+    }
+
+    await Meeting.updateMany(
+      { _id: { $in: objIds } },
+      { $addToSet: { historyHiddenBy: userObjId } }
+    );
+
+    if (purgeIds.length > 0) {
+      await purgeMeetingsAndCascade(purgeIds);
+    }
+
+    return {
+      deletedIds: uniqueIds,
+      deletedCount: uniqueIds.length,
+      purgedIds: purgeIds.map((id) => id.toString()),
+    };
+  }
+
+  async deleteMeetingHistoryEntry(
+    userId: string,
+    meetingId: string
+  ): Promise<{ deletedId: string; purged: boolean }> {
+    const result = await this.deleteMeetingHistoryEntries(userId, [meetingId]);
+    return {
+      deletedId: result.deletedIds[0],
+      purged: result.purgedIds.includes(result.deletedIds[0]),
     };
   }
 

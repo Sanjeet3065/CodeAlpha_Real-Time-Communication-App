@@ -473,6 +473,7 @@ export function installSupabaseBridge(): void {
         scheduleVersion: 1,
         version: 1,
         auditLog: [],
+        historyHiddenBy: [],
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       }),
       normalizeInput: (doc) => {

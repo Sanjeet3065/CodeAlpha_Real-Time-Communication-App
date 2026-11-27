@@ -385,4 +385,233 @@ describe('Meeting History 2-Day (48h) Auto-Retention Suite', () => {
     );
     assert.strictEqual(recentDetails.meeting.id, recentDoc._id.toString());
   });
+
+  it('4. per-account history deletion isolates attended users and purges DB once all viewers remove it', async () => {
+    const attendeeUser = await User.create({
+      email: 'attendee.retention@connectly.io',
+      passwordHash: await hashPassword('AttendeePass2026!'),
+      firstName: 'Attendee',
+      lastName: 'Member',
+      isEmailVerified: true,
+    });
+
+    const recentMs = Date.now() - 3 * 60 * 60 * 1000;
+    const sharedMeeting = await Meeting.create({
+      meetingCode: 'cly-shr-del',
+      title: 'Shared Team Sync',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'ENDED',
+      activatedAt: new Date(recentMs - 600_000),
+      endedAt: new Date(recentMs),
+      expiresAt: new Date(recentMs + 86_400_000),
+      createdAt: new Date(recentMs - 1_200_000),
+    });
+
+    await MeetingParticipant.create({
+      meetingId: sharedMeeting._id,
+      userId: attendeeUser._id,
+      displayName: 'Attendee Member',
+      email: attendeeUser.email,
+      role: 'participant',
+      admissionStatus: 'ADMITTED',
+      joinedAt: new Date(recentMs - 500_000),
+      leftAt: new Date(recentMs - 60_000),
+    });
+
+    await SharedFile.create({
+      meetingId: sharedMeeting._id,
+      uploaderId: hostUser._id,
+      uploaderName: 'Retention Host',
+      uploaderRole: 'host',
+      originalFilename: 'shared.pdf',
+      sanitizedFilename: 'shared.pdf',
+      storageKey: 'meetings/shared/shared.pdf',
+      storageProvider: 'memory',
+      mimeType: 'application/pdf',
+      extension: 'pdf',
+      sizeBytes: 128,
+      status: 'AVAILABLE',
+    });
+
+    // Attendee removes from their own account history
+    const attendeeRes = await schedulingService.deleteMeetingHistoryEntry(
+      attendeeUser._id.toString(),
+      sharedMeeting._id.toString()
+    );
+    assert.strictEqual(attendeeRes.deletedId, sharedMeeting._id.toString());
+    assert.strictEqual(attendeeRes.purged, false);
+
+    // Hidden for attendee, untouched for host
+    const attendeeHistory = await schedulingService.listMeetingHistory(attendeeUser._id.toString(), {
+      page: 1,
+      limit: 10,
+      role: 'all',
+      status: 'all',
+      sort: 'desc',
+    });
+    assert.strictEqual(attendeeHistory.pagination.total, 0);
+
+    await assert.rejects(
+      () =>
+        schedulingService.getMeetingHistoryDetails(
+          attendeeUser._id.toString(),
+          sharedMeeting._id.toString()
+        ),
+      (err: any) => err?.statusCode === 404 && err?.code === 'MEETING_NOT_FOUND'
+    );
+
+    const hostHistory = await schedulingService.listMeetingHistory(hostUser._id.toString(), {
+      page: 1,
+      limit: 10,
+      role: 'all',
+      status: 'all',
+      sort: 'desc',
+    });
+    assert.strictEqual(hostHistory.pagination.total, 1);
+    const hostDetails = await schedulingService.getMeetingHistoryDetails(
+      hostUser._id.toString(),
+      sharedMeeting._id.toString()
+    );
+    assert.strictEqual(hostDetails.meeting.id, sharedMeeting._id.toString());
+
+    // Host also deletes -> zero viewers remain -> permanent purge
+    const hostRes = await schedulingService.deleteMeetingHistoryEntry(
+      hostUser._id.toString(),
+      sharedMeeting._id.toString()
+    );
+    assert.strictEqual(hostRes.purged, true);
+    assert.strictEqual(await Meeting.findById(sharedMeeting._id), null);
+    assert.strictEqual(await SharedFile.countDocuments({ meetingId: sharedMeeting._id }), 0);
+  });
+
+  it('5. solo purge, active/scheduled rejection, 403 IDOR, and atomic batch deletion', async () => {
+    const outsider = await User.create({
+      email: 'outsider.history@connectly.io',
+      passwordHash: await hashPassword('OutsiderPass2026!'),
+      firstName: 'Outsider',
+      lastName: 'User',
+      isEmailVerified: true,
+    });
+    const otherHost = await User.create({
+      email: 'otherhost.history@connectly.io',
+      passwordHash: await hashPassword('OtherHostPass2026!'),
+      firstName: 'Other',
+      lastName: 'Host',
+      isEmailVerified: true,
+    });
+
+    const recentMs = Date.now() - 2 * 60 * 60 * 1000;
+    const soloEnded = await Meeting.create({
+      meetingCode: 'cly-sol-end',
+      title: 'Solo Instant Call',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'ENDED',
+      activatedAt: new Date(recentMs - 300_000),
+      endedAt: new Date(recentMs),
+      expiresAt: new Date(recentMs + 86_400_000),
+      createdAt: new Date(recentMs - 600_000),
+    });
+
+    const soloRes = await schedulingService.deleteMeetingHistoryEntry(
+      hostUser._id.toString(),
+      soloEnded._id.toString()
+    );
+    assert.strictEqual(soloRes.purged, true);
+    assert.strictEqual(await Meeting.findById(soloEnded._id), null);
+
+    const activeRoom = await Meeting.create({
+      meetingCode: 'cly-act-no1',
+      title: 'Live Active Room',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'ACTIVE',
+      activatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+    const futureRoom = await Meeting.create({
+      meetingCode: 'cly-sch-no1',
+      title: 'Future Scheduled Room',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'SCHEDULED',
+      scheduledStartAt: new Date(Date.now() + 3_600_000),
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+
+    await assert.rejects(
+      () =>
+        schedulingService.deleteMeetingHistoryEntry(
+          hostUser._id.toString(),
+          activeRoom._id.toString()
+        ),
+      (err: any) => err?.statusCode === 400 && err?.code === 'INVALID_STATE'
+    );
+    await assert.rejects(
+      () =>
+        schedulingService.deleteMeetingHistoryEntry(
+          hostUser._id.toString(),
+          futureRoom._id.toString()
+        ),
+      (err: any) => err?.statusCode === 400 && err?.code === 'INVALID_STATE'
+    );
+
+    const batchEnded = await Meeting.create({
+      meetingCode: 'cly-bat-001',
+      title: 'Batch Item 1',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'ENDED',
+      endedAt: new Date(recentMs),
+      expiresAt: new Date(recentMs + 86_400_000),
+    });
+    const batchCancelled = await Meeting.create({
+      meetingCode: 'cly-bat-002',
+      title: 'Batch Item 2',
+      hostId: hostUser._id,
+      originalHostId: hostUser._id,
+      status: 'CANCELLED',
+      cancelledAt: new Date(recentMs),
+      expiresAt: new Date(recentMs + 86_400_000),
+    });
+    const strangerMeeting = await Meeting.create({
+      meetingCode: 'cly-str-999',
+      title: 'Stranger Meeting',
+      hostId: otherHost._id,
+      originalHostId: otherHost._id,
+      status: 'ENDED',
+      endedAt: new Date(recentMs),
+      expiresAt: new Date(recentMs + 86_400_000),
+    });
+
+    await assert.rejects(
+      () =>
+        schedulingService.deleteMeetingHistoryEntry(
+          outsider._id.toString(),
+          batchEnded._id.toString()
+        ),
+      (err: any) => err?.statusCode === 403 && err?.code === 'FORBIDDEN'
+    );
+
+    // Atomic batch check: one unauthorized ID rejects entire batch without deleting valid sibling
+    await assert.rejects(
+      () =>
+        schedulingService.deleteMeetingHistoryEntries(hostUser._id.toString(), [
+          batchEnded._id.toString(),
+          strangerMeeting._id.toString(),
+        ]),
+      (err: any) => err?.statusCode === 403 && err?.code === 'FORBIDDEN'
+    );
+    assert.ok(await Meeting.findById(batchEnded._id));
+
+    const batchResult = await schedulingService.deleteMeetingHistoryEntries(
+      hostUser._id.toString(),
+      [batchEnded._id.toString(), batchCancelled._id.toString()]
+    );
+    assert.strictEqual(batchResult.deletedCount, 2);
+    assert.strictEqual(batchResult.purgedIds.length, 2);
+    assert.strictEqual(await Meeting.findById(batchEnded._id), null);
+    assert.strictEqual(await Meeting.findById(batchCancelled._id), null);
+  });
 });

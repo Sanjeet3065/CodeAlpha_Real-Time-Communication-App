@@ -569,6 +569,9 @@ function mapMeetingRowToDoc(row: any): PlainDoc {
         targetUserId: entry.targetUserId ? toObjId(entry.targetUserId) : null,
       }))
     : [];
+  const historyHiddenBy = Array.isArray(extra.historyHiddenBy)
+    ? extra.historyHiddenBy.map((id: any) => toObjId(id))
+    : [];
 
   return {
     _id: toObjId(fromPgUuid(row.id)),
@@ -602,6 +605,7 @@ function mapMeetingRowToDoc(row: any): PlainDoc {
     endedAt: extra.endedAt ?? null,
     expiresAt: extra.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
     auditLog,
+    historyHiddenBy,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
@@ -633,6 +637,7 @@ function buildMeetingPgRow(doc: PlainDoc) {
       endedAt: doc.endedAt ?? null,
       expiresAt: doc.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
       auditLog: doc.auditLog ?? [],
+      historyHiddenBy: doc.historyHiddenBy ?? [],
     },
   });
 

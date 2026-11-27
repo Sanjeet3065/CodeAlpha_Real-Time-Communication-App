@@ -62,6 +62,8 @@ import {
   listUpcomingMeetingsHandler,
   listMeetingHistoryHandler,
   getMeetingHistoryDetailsHandler,
+  deleteMeetingHistoryEntryHandler,
+  deleteMeetingHistoryBatchHandler,
   getMeetingInvitationHandler,
 } from '../controllers/scheduling.controller.js';
 import {
@@ -78,6 +80,7 @@ import {
   cancelMeetingSchema,
   listScheduledMeetingsQuerySchema,
   meetingHistoryQuerySchema,
+  deleteMeetingHistoryBatchSchema,
 } from '../schemas/meeting.schema.js';
 import { sendChatMessageSchema, sendReactionSchema } from '../schemas/chat.schema.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -153,6 +156,21 @@ meetingsRouter.get(
 meetingsRouter.get(
   '/history/:meetingId',
   asyncHandler(getMeetingHistoryDetailsHandler)
+);
+
+meetingsRouter.delete(
+  '/history',
+  validateRequestOrigin,
+  meetingActionLimiter,
+  validateBody(deleteMeetingHistoryBatchSchema),
+  asyncHandler(deleteMeetingHistoryBatchHandler)
+);
+
+meetingsRouter.delete(
+  '/history/:meetingId',
+  validateRequestOrigin,
+  meetingActionLimiter,
+  asyncHandler(deleteMeetingHistoryEntryHandler)
 );
 
 meetingsRouter.get(

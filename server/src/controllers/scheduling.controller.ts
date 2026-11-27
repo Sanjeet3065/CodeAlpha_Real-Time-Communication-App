@@ -7,6 +7,7 @@ import type {
   CancelMeetingInput,
   ListScheduledMeetingsQuery,
   MeetingHistoryQuery,
+  DeleteMeetingHistoryBatchInput,
 } from '../schemas/meeting.schema.js';
 
 function sendSchedulingSuccess<T>(
@@ -99,6 +100,24 @@ export async function getMeetingHistoryDetailsHandler(req: Request, res: Respons
   const result = await schedulingService.getMeetingHistoryDetails(userId, meetingId);
 
   sendSchedulingSuccess(req, res, 200, result);
+}
+
+export async function deleteMeetingHistoryEntryHandler(req: Request, res: Response): Promise<void> {
+  const userId = req.user!.sub;
+  const { meetingId } = req.params;
+
+  const result = await schedulingService.deleteMeetingHistoryEntry(userId, meetingId);
+
+  sendSchedulingSuccess(req, res, 200, result, 'Meeting removed from your history.');
+}
+
+export async function deleteMeetingHistoryBatchHandler(req: Request, res: Response): Promise<void> {
+  const userId = req.user!.sub;
+  const input = req.body as DeleteMeetingHistoryBatchInput;
+
+  const result = await schedulingService.deleteMeetingHistoryEntries(userId, input.meetingIds);
+
+  sendSchedulingSuccess(req, res, 200, result, 'Selected meetings removed from your history.');
 }
 
 export async function getMeetingInvitationHandler(req: Request, res: Response): Promise<void> {

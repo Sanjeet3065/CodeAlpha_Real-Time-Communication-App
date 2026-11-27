@@ -93,6 +93,97 @@ export function isMeetingHistoryExpired(
   return resolveMeetingRetentionTimestamp(meeting).getTime() <= cutoffMs;
 }
 
+function resolveHistoryStorageProvider(customStorage?: IStorageProvider): IStorageProvider | null {
+  if (customStorage) {
+    return customStorage;
+  }
+  if (!env.ENABLE_FILE_SHARING || env.STORAGE_PROVIDER === 'disabled') {
+    return null;
+  }
+  try {
+    return getStorageProvider();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Permanently removes specified meetings along with cascading child collections and file storage objects.
+ */
+export async function purgeMeetingsAndCascade(
+  meetingIds: Types.ObjectId[],
+  customStorage?: IStorageProvider
+): Promise<{
+  purgedMeetingsCount: number;
+  purgedFilesCount: number;
+  deletedStorageObjectsCount: number;
+}> {
+  if (meetingIds.length === 0) {
+    return {
+      purgedMeetingsCount: 0,
+      purgedFilesCount: 0,
+      deletedStorageObjectsCount: 0,
+    };
+  }
+
+  let deletedStorageObjectsCount = 0;
+
+  // 1. Best-effort delete associated shared file objects from storage before cascading DB rows
+  const sharedFiles = await SharedFile.find({ meetingId: { $in: meetingIds } }).select(
+    '_id storageKey versionId'
+  );
+  const purgedFilesCount = sharedFiles.length;
+
+  const storageProvider = sharedFiles.length > 0 ? resolveHistoryStorageProvider(customStorage) : null;
+  if (storageProvider) {
+    for (const file of sharedFiles) {
+      if (!file.storageKey) continue;
+      try {
+        const deleted = await storageProvider.deleteObject(
+          file.storageKey,
+          file.versionId || undefined
+        );
+        if (deleted) {
+          deletedStorageObjectsCount += 1;
+        }
+      } catch (err) {
+        logger.warn('[HistoryRetentionWorker] Best-effort storage blob cleanup failed', {
+          error: err instanceof Error ? err.message : String(err),
+          metadata: { fileId: file._id.toString() },
+        });
+      }
+    }
+  }
+
+  // 2. Clean dependent collections explicitly for MongoDB parity (Supabase also has ON DELETE CASCADE)
+  const whiteboards = await Whiteboard.find({ meetingId: { $in: meetingIds } }).select('_id');
+  const whiteboardIds = whiteboards.map((w) => w._id);
+
+  await Promise.all([
+    WhiteboardOperation.deleteMany(
+      whiteboardIds.length > 0
+        ? { $or: [{ meetingId: { $in: meetingIds } }, { whiteboardId: { $in: whiteboardIds } }] }
+        : { meetingId: { $in: meetingIds } }
+    ),
+    Whiteboard.deleteMany({ meetingId: { $in: meetingIds } }),
+    ChatMessage.deleteMany({ meetingId: { $in: meetingIds } }),
+    SharedFile.deleteMany({ meetingId: { $in: meetingIds } }),
+    MeetingParticipant.deleteMany({ meetingId: { $in: meetingIds } }),
+    ScheduledReminder.deleteMany({ meetingId: { $in: meetingIds } }),
+    MeetingRealtimeEvent.deleteMany({ meetingId: { $in: meetingIds } }),
+    Notification.deleteMany({ meetingId: { $in: meetingIds } }),
+  ]);
+
+  // 3. Delete meeting documents (cascades child PG rows when Supabase is active)
+  const deleteResult = await Meeting.deleteMany({ _id: { $in: meetingIds } });
+
+  return {
+    purgedMeetingsCount: deleteResult.deletedCount ?? meetingIds.length,
+    purgedFilesCount,
+    deletedStorageObjectsCount,
+  };
+}
+
 export class MeetingHistoryRetentionWorker {
   private isRunning = false;
   private isSweeping = false;
@@ -101,20 +192,6 @@ export class MeetingHistoryRetentionWorker {
 
   constructor(customStorage?: IStorageProvider) {
     this.customStorage = customStorage;
-  }
-
-  private resolveStorageProvider(): IStorageProvider | null {
-    if (this.customStorage) {
-      return this.customStorage;
-    }
-    if (!env.ENABLE_FILE_SHARING || env.STORAGE_PROVIDER === 'disabled') {
-      return null;
-    }
-    try {
-      return getStorageProvider();
-    } catch {
-      return null;
-    }
   }
 
   public isActive(): boolean {
@@ -158,55 +235,10 @@ export class MeetingHistoryRetentionWorker {
         return report;
       }
 
-      // 1. Best-effort delete associated shared file objects from storage before cascading DB rows
-      const sharedFiles = await SharedFile.find({ meetingId: { $in: expiredIds } }).select(
-        '_id storageKey versionId'
-      );
-      report.purgedFilesCount = sharedFiles.length;
-
-      const storageProvider = sharedFiles.length > 0 ? this.resolveStorageProvider() : null;
-      if (storageProvider) {
-        for (const file of sharedFiles) {
-          if (!file.storageKey) continue;
-          try {
-            const deleted = await storageProvider.deleteObject(
-              file.storageKey,
-              file.versionId || undefined
-            );
-            if (deleted) {
-              report.deletedStorageObjectsCount += 1;
-            }
-          } catch (err) {
-            logger.warn('[HistoryRetentionWorker] Best-effort storage blob cleanup failed', {
-              error: err instanceof Error ? err.message : String(err),
-              metadata: { fileId: file._id.toString() },
-            });
-          }
-        }
-      }
-
-      // 2. Clean dependent collections explicitly for MongoDB parity (Supabase also has ON DELETE CASCADE)
-      const whiteboards = await Whiteboard.find({ meetingId: { $in: expiredIds } }).select('_id');
-      const whiteboardIds = whiteboards.map((w) => w._id);
-
-      await Promise.all([
-        WhiteboardOperation.deleteMany(
-          whiteboardIds.length > 0
-            ? { $or: [{ meetingId: { $in: expiredIds } }, { whiteboardId: { $in: whiteboardIds } }] }
-            : { meetingId: { $in: expiredIds } }
-        ),
-        Whiteboard.deleteMany({ meetingId: { $in: expiredIds } }),
-        ChatMessage.deleteMany({ meetingId: { $in: expiredIds } }),
-        SharedFile.deleteMany({ meetingId: { $in: expiredIds } }),
-        MeetingParticipant.deleteMany({ meetingId: { $in: expiredIds } }),
-        ScheduledReminder.deleteMany({ meetingId: { $in: expiredIds } }),
-        MeetingRealtimeEvent.deleteMany({ meetingId: { $in: expiredIds } }),
-        Notification.deleteMany({ meetingId: { $in: expiredIds } }),
-      ]);
-
-      // 3. Delete expired meeting documents (cascades child PG rows when Supabase is active)
-      const deleteResult = await Meeting.deleteMany({ _id: { $in: expiredIds } });
-      report.purgedMeetingsCount = deleteResult.deletedCount ?? expiredIds.length;
+      const purgeSummary = await purgeMeetingsAndCascade(expiredIds, this.customStorage);
+      report.purgedMeetingsCount = purgeSummary.purgedMeetingsCount;
+      report.purgedFilesCount = purgeSummary.purgedFilesCount;
+      report.deletedStorageObjectsCount = purgeSummary.deletedStorageObjectsCount;
 
       if (report.purgedMeetingsCount > 0) {
         logger.info('[HistoryRetentionWorker] Purged expired >48h meeting history records', {

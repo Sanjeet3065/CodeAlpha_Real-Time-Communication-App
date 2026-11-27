@@ -70,6 +70,7 @@ export interface IMeeting extends Document {
   endedAt?: Date | null;
   expiresAt: Date;
   auditLog: IMeetingAuditEntry[];
+  historyHiddenBy: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -272,6 +273,10 @@ const MeetingSchema = new Schema<IMeeting>(
     },
     auditLog: {
       type: [MeetingAuditEntrySchema],
+      default: () => [],
+    },
+    historyHiddenBy: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
       default: () => [],
     },
   },
