@@ -1,371 +1,272 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { ArrowRight, Mic, MicOff, PenTool, PhoneOff, ShieldCheck, Video } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import {
-  Video,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MessageSquare,
-  Users,
-  PhoneOff,
-  PenTool,
-  ShieldCheck,
-  Sparkles,
-  Radio,
-  Copy,
-  Check,
-} from 'lucide-react';
+import { HERO_CONTENT, HERO_TRUST_PILLS } from './landingContent';
 
 export interface HeroSectionProps {
-  onStartInstantMeeting: () => void;
-  onJoinCode: (code: string) => void;
+  isAuthenticated: boolean;
+  onPrimaryAction: () => void;
+  onExploreStudio: () => void;
 }
 
+const AUDIO_BAR_HEIGHTS = [6, 12, 9, 15, 7];
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onStartInstantMeeting,
-  onJoinCode,
+  isAuthenticated,
+  onPrimaryAction,
+  onExploreStudio,
 }) => {
-  const [meetingCode, setMeetingCode] = useState('');
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
-
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-
-    if (val.length === 3 && !val.includes('-')) {
-      val = `${val}-`;
-    } else if (val.length === 7 && val.split('-').length === 2) {
-      val = `${val}-`;
-    }
-
-    if (val.length > 11) {
-      val = val.slice(0, 11);
-    }
-
-    setMeetingCode(val);
-    if (codeError) setCodeError(null);
-  };
-
-  const handleJoinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = meetingCode.trim();
-
-    if (!clean) {
-      setCodeError('Please enter a meeting code');
-      return;
-    }
-
-    const codeRegex = /^(cly-)?[a-z0-9]{3}-[a-z0-9]{3}$/i;
-    if (!codeRegex.test(clean)) {
-      setCodeError('Format should be cly-xxx-xxx (e.g. cly-789-qwa)');
-      return;
-    }
-
-    setCodeError(null);
-    onJoinCode(clean);
-  };
-
-  const handleCopySampleCode = () => {
-    setCopiedCode(true);
-    setMeetingCode('cly-789-qwa');
-    setTimeout(() => setCopiedCode(false), 2000);
-  };
+  const primaryLabel = isAuthenticated ? HERO_CONTENT.authPrimaryCta : HERO_CONTENT.guestPrimaryCta;
 
   return (
-    <section className="relative pt-10 pb-16 md:pt-16 md:pb-24 overflow-hidden">
+    <section className="pt-10 pb-14 sm:pt-12 sm:pb-16 lg:pt-14 lg:pb-20 border-b border-[#DDDAD0]/70 dark:border-[#2B3038]/80">
       <Container size="xl">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-16">
-          {/* Status Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/25 dark:border-[#5FA399]/25 text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] mb-6">
-            <Radio className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-            <span>Selective Forwarding SFU · Real-Time Studio</span>
-          </div>
-
-          {/* Editorial Display Heading */}
-          <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[#1F2428] dark:text-[#EAECEE] tracking-tight leading-[1.1] mb-6 text-balance">
-            Video collaboration engineered for{' '}
-            <span className="text-[#2F6F68] dark:text-[#5FA399] underline decoration-[#2F6F68]/30 dark:decoration-[#5FA399]/35 underline-offset-8">
-              clarity
-            </span>{' '}
-            and data sovereignty.
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg md:text-xl text-[#555D66] dark:text-[#A3AAB2] max-w-2xl font-normal leading-relaxed mb-8 sm:mb-10 text-balance">
-            Built for distraction-free video meetings on LiveKit SFU architecture—fluid adaptive streams, shared vector whiteboarding, and private session artifacts.
-          </p>
-
-          {/* Dual Call-to-Action Area */}
-          <div className="w-full max-w-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5 mb-8">
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              onClick={onStartInstantMeeting}
-              className="w-full sm:w-auto text-base px-7"
-              leftIcon={<Video className="w-5 h-5" aria-hidden="true" />}
-            >
-              Start Instant Meeting
-            </Button>
-
-            {/* Join with Code Input Box */}
-            <form
-              onSubmit={handleJoinSubmit}
-              className="flex-1 flex items-center bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-lg p-1 shadow-cly-sm focus-within:border-[#2F6F68] dark:focus-within:border-[#5FA399] focus-within:ring-2 focus-within:ring-[#2F6F68]/20 dark:focus-within:ring-[#5FA399]/20 transition-all"
-            >
-              <input
-                type="text"
-                value={meetingCode}
-                onChange={handleCodeChange}
-                placeholder="Enter code (cly-xxx-xxx)"
-                aria-label="Meeting code"
-                aria-invalid={Boolean(codeError)}
-                aria-describedby={codeError ? 'code-error-msg' : undefined}
-                className="flex-1 min-w-0 px-3 py-2 text-sm text-[#1F2428] dark:text-[#EAECEE] placeholder-[#7C848D] dark:placeholder-[#747C86] bg-transparent outline-none font-mono"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          {/* Editorial Copy & Workspace CTAs */}
+          <div className="lg:col-span-5 space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm">
+              <ShieldCheck
+                className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]"
+                aria-hidden="true"
               />
-              <Button
-                type="submit"
-                variant="secondary"
-                size="md"
-                className="shrink-0"
-              >
-                Join
-              </Button>
-            </form>
-          </div>
+              <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-[#2F6F68] dark:text-[#5FA399]">
+                {HERO_CONTENT.eyebrow}
+              </span>
+            </div>
 
-          {codeError && (
-            <p id="code-error-msg" className="text-xs text-[#C24D4D] dark:text-[#D46A6A] -mt-5 mb-6 font-medium">
-              {codeError}
+            <h1 className="font-display text-4xl sm:text-[2.75rem] lg:text-[3.3rem] font-semibold tracking-[-0.03em] leading-[1.06] text-[#1F2428] dark:text-[#EAECEE]">
+              {HERO_CONTENT.headlineTop}
+              <span className="block text-[#2F6F68] dark:text-[#5FA399]">
+                {HERO_CONTENT.headlineAccent}
+              </span>
+            </h1>
+
+            <p className="text-[15px] sm:text-base text-[#555D66] dark:text-[#A3AAB2] leading-[1.6] max-w-[42ch]">
+              {HERO_CONTENT.subtitle}
             </p>
-          )}
 
-          {/* Trust Value Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-[#555D66] dark:text-[#A3AAB2]">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-              <span>DTLS-SRTP Encrypted Streams</span>
-            </span>
-            <span className="hidden sm:inline text-[#DDDAD0] dark:text-[#2B3038]">•</span>
-            <span className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-              <span>Up to 60 Participants per Room</span>
-            </span>
-            <span className="hidden sm:inline text-[#DDDAD0] dark:text-[#2B3038]">•</span>
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-              <span>Browser-Native · Zero Installs</span>
-            </span>
-          </div>
-        </div>
+            <div className="pt-1 flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={onPrimaryAction}
+                rightIcon={<ArrowRight className="w-4 h-4" aria-hidden="true" />}
+              >
+                {primaryLabel}
+              </Button>
+              <Button variant="outline" size="lg" onClick={onExploreStudio}>
+                {HERO_CONTENT.secondaryCta}
+              </Button>
+            </div>
 
-        {/* Matte Studio Product Interface Preview */}
-        <div className="relative mx-auto max-w-5xl rounded-2xl p-2 sm:p-3 bg-[#1C1F24] dark:bg-[#1C1F24] shadow-cly-theater border border-[#DDDAD0] dark:border-[#2B3038]">
-          <div className="w-full rounded-xl bg-[#111316] text-[#EAECEE] overflow-hidden border border-white/10 flex flex-col">
-            {/* Top Theater Header */}
-            <div className="h-12 bg-[#181B20] border-b border-white/10 px-4 sm:px-6 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#5FA399] shrink-0" />
-                <span className="font-semibold text-[#EAECEE] truncate max-w-[180px] sm:max-w-xs md:max-w-md">
-                  Architecture &amp; Product Systems Sync
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCopySampleCode}
-                  className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#24282E] text-[#A3AAB2] hover:text-[#EAECEE] font-mono text-[11px] border border-white/10 transition-colors"
-                  title="Click to test sample code"
-                >
-                  <span>cly-789-qwa</span>
-                  {copiedCode ? (
-                    <Check className="w-3 h-3 text-[#5FA399]" aria-hidden="true" />
-                  ) : (
-                    <Copy className="w-3 h-3" aria-hidden="true" />
+            <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
+              {HERO_TRUST_PILLS.map((spec, index) => (
+                <React.Fragment key={spec}>
+                  {index > 0 && (
+                    <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
+                      /
+                    </span>
                   )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="font-mono text-[#A3AAB2] bg-[#141619] px-2 py-0.5 rounded text-[11px] border border-white/10">
-                  00:24:18
-                </span>
-                <Badge variant="success" className="hidden sm:inline-flex py-0 px-2 text-[10px] bg-[#1F302E] border-[#5FA399]/30 text-[#5FA399]">
-                  Adaptive SFU Active
-                </Badge>
-              </div>
+                  <span>{spec}</span>
+                </React.Fragment>
+              ))}
             </div>
+          </div>
 
-            {/* Video Grid Stage */}
-            <div className="p-3 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-[#111316] min-h-[340px] sm:min-h-[420px]">
-              {/* Tile 1: Active Speaker */}
-              <div className="relative rounded-xl bg-[#181B20] border-2 border-[#5FA399] overflow-hidden flex flex-col justify-between p-3.5 min-h-[160px] sm:min-h-[190px]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="px-2 py-0.5 rounded bg-[#141619] text-[#5FA399] font-semibold text-[11px] flex items-center gap-1.5 border border-[#5FA399]/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#5FA399]" />
-                    Active Speaker
+          {/* Elevated Matte Carbon Studio Preview */}
+          <div className="lg:col-span-7">
+            <div
+              className="rounded-2xl bg-[#1C1F24] border border-[#2B3038] p-3.5 sm:p-4 shadow-cly-theater"
+              aria-hidden="true"
+            >
+              {/* Top Studio Session Chrome */}
+              <div className="px-2 pb-3 flex items-center justify-between gap-3 text-[11px]">
+                <div className="flex items-center gap-2.5 text-[#A3AAB2]">
+                  <span className="inline-flex items-center gap-1.5 font-mono text-[#EAECEE]">
+                    <span className="w-2 h-2 rounded-full bg-[#5FA399]" />
+                    design-review
                   </span>
-                  <div className="flex items-center gap-1">
-                    <span className="w-1.5 h-3 bg-[#5FA399] rounded-full" />
-                    <span className="w-1.5 h-4 bg-[#5FA399] rounded-full" />
-                    <span className="w-1.5 h-2 bg-[#5FA399] rounded-full" />
-                  </div>
+                  <span className="text-[#2B3038]">|</span>
+                  <span>3 active</span>
                 </div>
-
-                <div className="self-center my-auto flex flex-col items-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#2F6F68] flex items-center justify-center text-[#FAF9F6] font-display font-bold text-lg sm:text-xl border border-white/15">
-                    SC
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs mt-2">
-                  <span className="font-medium text-[#EAECEE]">Sarah Chen (Host)</span>
-                  <span className="p-1 rounded bg-[#1F302E] text-[#5FA399]">
-                    <Mic className="w-3.5 h-3.5" aria-hidden="true" />
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[#A3AAB2]">24:18</span>
+                  <span className="px-2 py-0.5 rounded bg-[#1F302E] border border-[#5FA399]/30 text-[10px] font-semibold tracking-wide text-[#5FA399]">
+                    SFU · 1080p
                   </span>
                 </div>
               </div>
 
-              {/* Tile 2: Participant (Muted) */}
-              <div className="relative rounded-xl bg-[#181B20] border border-white/10 overflow-hidden flex flex-col justify-between p-3.5 min-h-[160px] sm:min-h-[190px]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="px-2 py-0.5 rounded bg-[#141619] text-[#A3AAB2] text-[11px]">
-                    Participant
-                  </span>
-                </div>
-
-                <div className="self-center my-auto flex flex-col items-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#24282E] flex items-center justify-center text-[#EAECEE] font-display font-bold text-lg sm:text-xl border border-white/10">
-                    MV
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs mt-2">
-                  <span className="font-medium text-[#A3AAB2]">Marcus Vance</span>
-                  <span className="p-1 rounded bg-[#342023] text-[#D46A6A]">
-                    <MicOff className="w-3.5 h-3.5" aria-hidden="true" />
-                  </span>
-                </div>
-              </div>
-
-              {/* Tile 3: Screen Share Preview */}
-              <div className="relative rounded-xl bg-[#181B20] border border-white/10 overflow-hidden flex flex-col justify-between p-3.5 min-h-[160px] sm:min-h-[190px]">
-                <div className="flex items-center justify-between text-xs z-10">
-                  <span className="px-2 py-0.5 rounded bg-[#2F6F68] text-[#FAF9F6] text-[11px] font-medium flex items-center gap-1">
-                    <MonitorUp className="w-3 h-3" aria-hidden="true" />
-                    Elena&apos;s Screen
-                  </span>
-                  <span className="font-mono text-[10px] text-[#A3AAB2] bg-[#141619] px-1.5 py-0.5 rounded border border-white/10">
-                    HD Share
-                  </span>
-                </div>
-
-                <div className="my-auto w-full max-w-xs mx-auto space-y-2 py-2">
-                  <div className="h-2 w-3/4 bg-[#5FA399]/35 rounded" />
-                  <div className="h-1.5 w-full bg-white/10 rounded" />
-                  <div className="grid grid-cols-3 gap-2 pt-1.5">
-                    <div className="h-10 bg-[#24282E] rounded border border-white/10 flex items-center justify-center text-[10px] text-[#5FA399] font-mono">
-                      SFU Core
-                    </div>
-                    <div className="h-10 bg-[#24282E] rounded border border-white/10 flex items-center justify-center text-[10px] text-[#5FA399] font-mono">
-                      Simulcast
-                    </div>
-                    <div className="h-10 bg-[#24282E] rounded border border-white/10 flex items-center justify-center text-[10px] text-[#5FA399] font-mono">
-                      DTLS Key
+              {/* Dual-Mode Studio Stage */}
+              <div className="rounded-xl bg-[#141619] border border-[#2B3038]/90 p-3 grid grid-cols-12 gap-2.5">
+                {/* Active Speaker Stage */}
+                <div className="col-span-12 sm:col-span-7 min-h-[210px] sm:min-h-[244px] rounded-lg bg-[#191D22] border border-[#5FA399]/55 p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded bg-[#1F302E] border border-[#5FA399]/30 text-[10px] font-semibold text-[#5FA399]">
+                      Speaking
+                    </span>
+                    <div className="flex items-end gap-0.5 h-4">
+                      {AUDIO_BAR_HEIGHTS.map((height, idx) => (
+                        <span
+                          key={idx}
+                          className="w-[3px] rounded-full bg-[#5FA399]"
+                          style={{ height: `${height}px` }}
+                        />
+                      ))}
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between text-xs mt-2 z-10">
-                  <span className="font-medium text-[#A3AAB2]">Architecture Topology</span>
-                  <span className="p-1 rounded bg-[#141619] text-[#5FA399]">
-                    <Mic className="w-3.5 h-3.5" aria-hidden="true" />
-                  </span>
-                </div>
-              </div>
+                  <div className="my-auto flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full border border-[#5FA399]/20 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-[#24282E] border border-[#323842] flex items-center justify-center font-display text-sm font-semibold tracking-wide text-[#EAECEE]">
+                        AR
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Tile 4: Participant */}
-              <div className="relative rounded-xl bg-[#181B20] border border-white/10 overflow-hidden flex flex-col justify-between p-3.5 min-h-[160px] sm:min-h-[190px]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="px-2 py-0.5 rounded bg-[#141619] text-[#A3AAB2] text-[11px]">
-                    Participant
-                  </span>
-                </div>
-
-                <div className="self-center my-auto flex flex-col items-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#24282E] flex items-center justify-center text-[#EAECEE] font-display font-bold text-lg sm:text-xl border border-white/10">
-                    DT
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-[#EAECEE]">Aarav Rao</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#24282E] text-[#A3AAB2]">
+                        Host
+                      </span>
+                    </div>
+                    <Mic className="w-3.5 h-3.5 text-[#5FA399]" />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs mt-2">
-                  <span className="font-medium text-[#A3AAB2]">Devon Taylor</span>
-                  <span className="p-1 rounded bg-[#141619] text-[#5FA399]">
-                    <Mic className="w-3.5 h-3.5" aria-hidden="true" />
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Floating Pill Dock Bar */}
-            <div className="p-3 bg-[#181B20] border-t border-white/10 flex items-center justify-center">
-              <div className="inline-flex items-center gap-1.5 sm:gap-2.5 px-3 sm:px-4 py-2 rounded-full bg-[#1C1F24] border border-white/10 shadow-cly-theater">
-                <button
-                  type="button"
-                  aria-label="Microphone preview"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#2F6F68] text-[#FAF9F6] flex items-center justify-center hover:bg-[#255A54] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
-                >
-                  <Mic className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Camera preview"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#2F6F68] text-[#FAF9F6] flex items-center justify-center hover:bg-[#255A54] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
-                >
-                  <Video className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Screen share preview"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#24282E] text-[#A3AAB2] flex items-center justify-center hover:bg-[#2B3038] hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
-                >
-                  <MonitorUp className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Collaborative whiteboard preview"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#24282E] text-[#A3AAB2] flex items-center justify-center hover:bg-[#2B3038] hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
-                >
-                  <PenTool className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                </button>
-                <div className="relative">
-                  <button
-                    type="button"
-                    aria-label="Chat drawer preview (2 unread)"
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#24282E] text-[#A3AAB2] flex items-center justify-center hover:bg-[#2B3038] hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
+                {/* Right Stacked Canvas + Participant */}
+                <div className="col-span-12 sm:col-span-5 flex flex-col gap-2.5">
+                  <div
+                    className="flex-1 min-h-[146px] rounded-lg bg-[#FAF9F6] dark:bg-[#1F242A] border border-[#DDDAD0]/30 dark:border-[#2B3038] p-2.5 flex flex-col justify-between relative overflow-hidden"
+                    style={{
+                      backgroundImage:
+                        'radial-gradient(rgba(95, 163, 153, 0.24) 1px, transparent 1px)',
+                      backgroundSize: '14px 14px',
+                    }}
                   >
-                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                  </button>
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#5FA399] text-[#141619] text-[10px] font-bold flex items-center justify-center border border-[#1C1F24]">
-                    2
-                  </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold tracking-wide text-[#1F2428] dark:text-[#EAECEE]">
+                        Shared Canvas
+                      </span>
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]">
+                        Synced
+                      </span>
+                    </div>
+
+                    <svg
+                      viewBox="0 0 210 86"
+                      className="w-full h-[76px]"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect
+                        x="12"
+                        y="18"
+                        width="58"
+                        height="34"
+                        rx="6"
+                        className="fill-[#FFFFFF] dark:fill-[#141619] stroke-[#2F6F68] dark:stroke-[#5FA399]"
+                        strokeWidth="1.5"
+                      />
+                      <line
+                        x1="22"
+                        y1="30"
+                        x2="54"
+                        y2="30"
+                        className="stroke-[#1F2428]/60 dark:stroke-[#EAECEE]/60"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="22"
+                        y1="39"
+                        x2="44"
+                        y2="39"
+                        className="stroke-[#555D66]/45 dark:stroke-[#A3AAB2]/45"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+
+                      <path
+                        d="M70 35 C 98 35, 102 52, 132 52"
+                        className="stroke-[#2F6F68] dark:stroke-[#5FA399]"
+                        strokeWidth="1.75"
+                        strokeDasharray="3 3"
+                      />
+                      <circle
+                        cx="70"
+                        cy="35"
+                        r="3"
+                        className="fill-[#2F6F68] dark:fill-[#5FA399]"
+                      />
+
+                      <rect
+                        x="132"
+                        y="32"
+                        width="62"
+                        height="38"
+                        rx="6"
+                        className="fill-[#FFFFFF] dark:fill-[#141619] stroke-[#DDDAD0] dark:stroke-[#323842]"
+                        strokeWidth="1.5"
+                      />
+                      <line
+                        x1="142"
+                        y1="45"
+                        x2="178"
+                        y2="45"
+                        className="stroke-[#1F2428]/55 dark:stroke-[#EAECEE]/55"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="142"
+                        y1="55"
+                        x2="168"
+                        y2="55"
+                        className="stroke-[#555D66]/45 dark:stroke-[#A3AAB2]/45"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+
+                    <div className="flex justify-end">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] text-[10px] font-semibold">
+                        Maya · Drawing
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-[84px] rounded-lg bg-[#191D22] border border-[#2B3038] px-3 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-[#24282E] border border-[#323842] flex items-center justify-center font-display text-xs font-semibold text-[#EAECEE]">
+                        RK
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-[#EAECEE]">Riya Kapoor</div>
+                        <div className="text-[11px] text-[#8E96A0]">Annotating layer</div>
+                      </div>
+                    </div>
+                    <MicOff className="w-3.5 h-3.5 text-[#8E96A0]" />
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  aria-label="Participants list preview"
-                  className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#24282E] text-[#A3AAB2] items-center justify-center hover:bg-[#2B3038] hover:text-[#EAECEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5FA399]"
-                >
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-                </button>
-                <div className="w-px h-6 bg-white/10 mx-0.5" />
-                <button
-                  type="button"
-                  aria-label="Leave meeting preview"
-                  className="px-3 sm:px-4 h-9 sm:h-10 rounded-full bg-[#C24D4D] text-[#FAF9F6] font-medium text-xs sm:text-sm flex items-center gap-1.5 hover:bg-[#A63D3D] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D46A6A]"
-                >
-                  <PhoneOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
-                  <span className="hidden xs:inline">Leave</span>
-                </button>
+              </div>
+
+              {/* Minimal Dock Strip */}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-[#24282E] border border-[#2B3038] flex items-center justify-center text-[#EAECEE]">
+                  <Mic className="w-3.5 h-3.5" />
+                </span>
+                <span className="w-8 h-8 rounded-full bg-[#24282E] border border-[#2B3038] flex items-center justify-center text-[#EAECEE]">
+                  <Video className="w-3.5 h-3.5" />
+                </span>
+                <span className="w-8 h-8 rounded-full bg-[#1F302E] border border-[#5FA399]/50 flex items-center justify-center text-[#5FA399]">
+                  <PenTool className="w-3.5 h-3.5" />
+                </span>
+                <span className="w-8 h-8 rounded-full bg-[#D46A6A]/15 border border-[#D46A6A]/35 flex items-center justify-center text-[#D46A6A]">
+                  <PhoneOff className="w-3.5 h-3.5" />
+                </span>
               </div>
             </div>
           </div>

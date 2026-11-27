@@ -68,10 +68,8 @@ export const NavBar: React.FC<NavBarProps> = ({ onOpenAuthNotice }) => {
   }, [isMobileMenuOpen]);
 
   const navLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'Architecture', href: '#architecture' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Security', href: '#security' },
+    { label: 'Studio', href: '#studio' },
+    { label: 'Security', href: '#trust' },
   ];
 
   const handleLinkClick = () => {

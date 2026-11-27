@@ -1,58 +1,63 @@
 import React from 'react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
-import { Video, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CARBON_SPOTLIGHT_CONTENT, CARBON_SPOTLIGHT_SPECS } from './landingContent';
 
 export interface ConversionBannerProps {
-  onStartMeeting: () => void;
-  onExploreTech: () => void;
+  isAuthenticated: boolean;
+  onPrimaryAction: () => void;
+  onOpenSecurityNotice: (topic: string) => void;
 }
 
 export const ConversionBanner: React.FC<ConversionBannerProps> = ({
-  onStartMeeting,
-  onExploreTech,
+  isAuthenticated,
+  onPrimaryAction,
+  onOpenSecurityNotice,
 }) => {
+  const primaryLabel = isAuthenticated
+    ? CARBON_SPOTLIGHT_CONTENT.authPrimaryCta
+    : CARBON_SPOTLIGHT_CONTENT.guestPrimaryCta;
+
   return (
-    <section className="py-16 md:py-24 bg-[#FAF9F6] dark:bg-[#1C1F24] border-t border-[#DDDAD0] dark:border-[#2B3038]">
+    <section id="trust" className="pt-2 pb-12 sm:pb-16">
       <Container size="xl">
-        <div className="relative rounded-3xl bg-[#1C1F24] dark:bg-[#141619] text-[#EAECEE] p-8 sm:p-12 md:p-16 overflow-hidden border border-[#2B3038] shadow-cly-lg">
-          <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#24282E] text-[#5FA399] text-xs font-semibold mb-6 border border-[#2B3038]">
-              <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Open Standards · Selective Forwarding · Matte Workspace</span>
+        <div className="rounded-2xl bg-[#1C1F24] border border-[#2B3038] p-7 sm:p-10 lg:p-12 shadow-cly-theater flex flex-col lg:flex-row lg:items-center justify-between gap-7">
+          <div className="space-y-3 max-w-xl">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5FA399]">
+              {CARBON_SPOTLIGHT_CONTENT.eyebrow}
             </div>
-
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl md:text-5xl text-[#EAECEE] tracking-tight mb-6 leading-[1.15]">
-              Ready for collaboration that respects your craft and privacy?
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-[2rem] font-semibold tracking-tight text-[#EAECEE] leading-[1.15]">
+              {CARBON_SPOTLIGHT_CONTENT.headline}
             </h2>
-
-            <p className="text-base sm:text-lg text-[#A3AAB2] max-w-2xl font-normal leading-relaxed mb-8 sm:mb-10">
-              Start purposeful video conferences, sketch on shared vector boards, and transfer meeting files directly in the browser.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                onClick={onStartMeeting}
-                className="text-base px-8 justify-center"
-                leftIcon={<Video className="w-5 h-5" aria-hidden="true" />}
-              >
-                Start Instant Meeting
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={onExploreTech}
-                className="text-base text-[#EAECEE] border-white/15 hover:bg-white/10 hover:text-[#EAECEE] active:bg-white/15 justify-center"
-                rightIcon={<ArrowRight className="w-4 h-4" aria-hidden="true" />}
-              >
-                Explore Architecture
-              </Button>
+            <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-[#A3AAB2]">
+              {CARBON_SPOTLIGHT_SPECS.map((spec) => (
+                <span key={spec} className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#5FA399]" aria-hidden="true" />
+                  <span>{spec}</span>
+                </span>
+              ))}
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={onPrimaryAction}
+              className="!bg-[#5FA399] !text-[#141619] hover:!bg-[#6EB2A8] active:!bg-[#4E8F85]"
+              rightIcon={<ArrowRight className="w-4 h-4" aria-hidden="true" />}
+            >
+              {primaryLabel}
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => onOpenSecurityNotice(CARBON_SPOTLIGHT_CONTENT.secondaryModalTopic)}
+              className="!border-[#2B3038] !text-[#EAECEE] hover:!bg-[#24282E]"
+            >
+              {CARBON_SPOTLIGHT_CONTENT.secondaryLabel}
+            </Button>
           </div>
         </div>
       </Container>
