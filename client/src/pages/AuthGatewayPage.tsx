@@ -324,22 +324,22 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
         {/* LEFT COLUMN: Editorial Video Studio Visual + Subtle Animation + Text */}
         <section
           aria-label="Connectly Workspace Preview"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-between gap-6 border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
+          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
         >
-          <div className="my-auto space-y-5">
+          <div className="w-full max-w-xl mx-auto space-y-4">
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-2.5"
+              className="space-y-2"
             >
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.65rem] font-semibold tracking-[-0.03em] leading-[1.08] text-[#1F2428] dark:text-[#EAECEE]">
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.45rem] font-semibold tracking-[-0.03em] leading-[1.08] text-[#1F2428] dark:text-[#EAECEE]">
                 {AUTH_SHOWCASE_COPY.headlineTop}{' '}
                 <span className="text-[#2F6F68] dark:text-[#5FA399]">
                   {AUTH_SHOWCASE_COPY.headlineAccent}
                 </span>
               </h1>
-              <p className="text-sm sm:text-[15px] text-[#555D66] dark:text-[#A3AAB2] leading-[1.55] max-w-[44ch]">
+              <p className="text-sm text-[#555D66] dark:text-[#A3AAB2] leading-[1.55] max-w-[46ch]">
                 {AUTH_SHOWCASE_COPY.subtitle}
               </p>
             </motion.div>
@@ -354,7 +354,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                 <img
                   src={studioWorkspaceImage}
                   alt="Connectly minimalist stone and carbon video conferencing studio monitor and desktop microphone"
-                  className="w-full aspect-[4/3] object-cover block"
+                  className="w-full aspect-[16/10] object-cover block"
                 />
               </div>
 
@@ -433,47 +433,33 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                 </div>
               </div>
             </motion.div>
-          </div>
 
-          <div className="hidden lg:flex items-center gap-4 text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
-            <span>Up to 60 peers</span>
-            <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
-              /
-            </span>
-            <span>Interactive whiteboard</span>
-            <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
-              /
-            </span>
-            <span>Private file vault</span>
+            <div className="hidden lg:flex items-center gap-4 pt-1 text-xs font-medium text-[#646D77] dark:text-[#8E96A0]">
+              <span>Up to 60 peers</span>
+              <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
+                /
+              </span>
+              <span>Interactive whiteboard</span>
+              <span className="text-[#DDDAD0] dark:text-[#2B3038]" aria-hidden="true">
+                /
+              </span>
+              <span>Private file vault</span>
+            </div>
           </div>
         </section>
 
         {/* RIGHT COLUMN: Sign In / Create Account Workspace */}
         <main
           id="main-content"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-between gap-6 outline-none"
+          className="lg:col-span-6 px-5 sm:px-8 lg:px-12 py-6 lg:py-8 flex flex-col justify-center outline-none"
         >
-          <div className="hidden lg:flex w-full max-w-md mx-auto items-center justify-end">
-            <button
-              type="button"
-              onClick={() => openNotice('Security Architecture')}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#646D77] dark:text-[#8E96A0] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors rounded-md px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
-            >
-              <ShieldCheck
-                className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]"
-                aria-hidden="true"
-              />
-              <span>Encrypted Session Architecture</span>
-            </button>
-          </div>
-
-          <div className="my-auto w-full max-w-md mx-auto">
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-md p-6 sm:p-7">
+          <div className="w-full max-w-md mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-md p-5 sm:p-6">
               {/* Segmented Sign In / Create Account Switcher */}
               <div
                 role="tablist"
                 aria-label="Authentication mode"
-                className="grid grid-cols-2 gap-1 p-1 mb-6 rounded-xl bg-[#EAE8E1] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038]"
+                className="grid grid-cols-2 gap-1 p-1 mb-5 rounded-xl bg-[#EAE8E1] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038]"
               >
                 <button
                   type="button"
@@ -676,17 +662,17 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                     exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.16 }}
                   >
-                    <div className="mb-4">
-                      <h2 className="font-display text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
+                    <div className="mb-3">
+                      <h2 className="font-display text-lg sm:text-xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
                         Create your account
                       </h2>
-                      <p className="mt-0.5 text-sm text-[#646D77] dark:text-[#A3AAB2]">
+                      <p className="mt-0.5 text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
                         Start hosting video meetings and shared rooms.
                       </p>
                     </div>
 
-                    <form onSubmit={handleSignUpSubmit} className="space-y-3.5" noValidate>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <form onSubmit={handleSignUpSubmit} className="space-y-2.5" noValidate>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <Input
                           label="First name"
                           id="register-firstname"
@@ -696,6 +682,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter first name"
                           required
                           disabled={isSubmitting}
+                          className="h-9"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                         <Input
@@ -707,6 +694,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                           placeholder="Enter last name"
                           required
                           disabled={isSubmitting}
+                          className="h-9"
                           leftIcon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
                         />
                       </div>
@@ -721,6 +709,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="email"
                         disabled={isSubmitting}
+                        className="h-9"
                         leftIcon={<Mail className="w-4 h-4" aria-hidden="true" />}
                       />
 
@@ -734,6 +723,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="new-password"
                         disabled={isSubmitting}
+                        className="h-9"
                         leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
                         rightIcon={
                           <button
@@ -751,9 +741,9 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         }
                       />
 
-                      <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-[11px]">
+                      <div className="px-3 py-2 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-[11px]">
                         <ul
-                          className="grid grid-cols-2 gap-x-3 gap-y-1"
+                          className="grid grid-cols-2 gap-x-3 gap-y-0.5"
                           aria-label="Password requirements"
                         >
                           {criteria.map((c) => (
@@ -792,6 +782,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         required
                         autoComplete="new-password"
                         disabled={isSubmitting}
+                        className="h-9"
                         leftIcon={<Lock className="w-4 h-4" aria-hidden="true" />}
                         rightIcon={
                           confirmPassword ? (
@@ -821,7 +812,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                         />
                         <label
                           htmlFor="terms-conditions"
-                          className="ml-2.5 block text-xs leading-relaxed text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
+                          className="ml-2.5 block text-xs leading-snug text-[#555D66] dark:text-[#A3AAB2] select-none cursor-pointer"
                         >
                           I agree to the{' '}
                           <button
@@ -846,8 +837,8 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       <Button
                         type="submit"
                         variant="primary"
-                        size="lg"
-                        className="w-full"
+                        size="md"
+                        className="w-full h-10"
                         isLoading={isSubmitting}
                         disabled={isSubmitting}
                         rightIcon={<ArrowRight className="w-4 h-4" aria-hidden="true" />}
@@ -856,7 +847,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                       </Button>
                     </form>
 
-                    <div className="mt-5 pt-4 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
+                    <div className="mt-4 pt-3.5 border-t border-[#DDDAD0] dark:border-[#2B3038] text-center">
                       <p className="text-xs sm:text-sm text-[#646D77] dark:text-[#A3AAB2]">
                         Already have an account?{' '}
                         <button
@@ -872,14 +863,21 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
                 )}
               </AnimatePresence>
             </div>
-          </div>
 
-          <div className="w-full max-w-md mx-auto flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#747C86]">
-            <span>&copy; {new Date().getFullYear()} CONNECTLY</span>
-            <span className="flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
-              <span>Argon2id + Dual-JWT</span>
-            </span>
+            <div className="mt-3.5 px-1 flex items-center justify-between text-[11px] text-[#7C848D] dark:text-[#747C86]">
+              <span>&copy; {new Date().getFullYear()} CONNECTLY</span>
+              <button
+                type="button"
+                onClick={() => openNotice('Security Architecture')}
+                className="inline-flex items-center gap-1.5 hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors rounded px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
+              >
+                <ShieldCheck
+                  className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399]"
+                  aria-hidden="true"
+                />
+                <span>Encrypted Session Architecture</span>
+              </button>
+            </div>
           </div>
         </main>
       </div>
