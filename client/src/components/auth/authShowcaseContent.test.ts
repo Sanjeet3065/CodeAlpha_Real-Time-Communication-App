@@ -43,6 +43,7 @@ describe('Split Auth Gateway — Content, Animation Spec & Routing Contract', ()
     assert.ok(gatewaySource.includes('studio-workspace.jpg'));
     assert.ok(gatewaySource.includes('PhaseNoticeModal'));
     assert.ok(gatewaySource.includes('ThemeToggle'));
+    assert.ok(gatewaySource.includes('sticky top-0'));
     assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.guestPrompt'));
     assert.ok(gatewaySource.includes('AUTH_TOPBAR_COPY.dashboardLabel'));
     assert.ok(gatewaySource.includes('LayoutDashboard'));

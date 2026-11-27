@@ -364,7 +364,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
   return (
     <div className="min-h-screen flex flex-col bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] selection:bg-[#E2ECE9] selection:text-[#2F6F68] dark:selection:bg-[#1F302E] dark:selection:text-[#5FA399]">
       {/* Unified Top Bar: Brand Left + Theme & Auth Status Right */}
-      <header className="w-full border-b border-[#DDDAD0]/75 dark:border-[#2B3038]/80 bg-[#FAF9F6]/90 dark:bg-[#1C1F24]/90">
+      <header className="sticky top-0 z-30 w-full border-b border-[#DDDAD0]/80 dark:border-[#2B3038]/85 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md">
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <Link
