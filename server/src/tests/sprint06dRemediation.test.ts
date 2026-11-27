@@ -191,14 +191,31 @@ describe('Phase 18 Sprint 06D — Reliability Remediation & Staging Hardening Su
   describe('Workstream A — Worker Lease Renewal Heartbeat', () => {
     it('1. Periodically renews lease during long-running operation exceeding base lease duration', async () => {
       let renewalsCount = 0;
+      const leaseDurationMs = 400;
+      const minElapsedMs = 450;
+      let opStartedAt = 0;
+      let opTimerDone = false;
+      let resolveHold: (() => void) | null = null;
+      const tryReleaseOp = () => {
+        if (resolveHold && opTimerDone && renewalsCount >= 3) {
+          const done = resolveHold;
+          resolveHold = null;
+          done();
+        }
+      };
+
       const workerWithFastHeartbeat = new LiveKitEvictionWorker({
         pollIntervalMs: 0,
         livekit: mockLiveKit,
-        leaseDurationMs: 200,      // short 200ms lease
-        heartbeatIntervalMs: 50,    // 50ms heartbeat
+        leaseDurationMs,          // 400ms base lease
+        heartbeatIntervalMs: 50,  // 50ms heartbeat interval
+        leaseSafetyMarginMs: 100, // safe margin above rs0 roundtrip jitter
         hooks: {
           afterLeaseRenew: (_jobId, renewed) => {
-            if (renewed) renewalsCount++;
+            if (renewed) {
+              renewalsCount++;
+              tryReleaseOp();
+            }
           },
         },
       });
@@ -241,10 +258,32 @@ describe('Phase 18 Sprint 06D — Reliability Remediation & Staging Hardening Su
 
       sfuPresenceMap.set(identity, true);
 
-      // Simulate a slow SFU call lasting 300ms (longer than the 200ms lease!)
+      // Hold the pre-SFU operation longer than base leaseDurationMs until >= 3 renewals complete
       const outcome = await workerWithFastHeartbeat.processJobById(jobId, {
         beforeLiveKitCall: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+          opStartedAt = Date.now();
+          let minTimer: ReturnType<typeof setTimeout> | undefined;
+          let maxTimer: ReturnType<typeof setTimeout> | undefined;
+          try {
+            await new Promise<void>((resolve, reject) => {
+              resolveHold = resolve;
+              minTimer = setTimeout(() => {
+                opTimerDone = true;
+                tryReleaseOp();
+              }, minElapsedMs);
+              maxTimer = setTimeout(() => {
+                resolveHold = null;
+                reject(
+                  new Error(
+                    `Timed out waiting for >=3 lease renewals (got ${renewalsCount} in ${Date.now() - opStartedAt}ms)`
+                  )
+                );
+              }, 4_000);
+            });
+          } finally {
+            if (minTimer) clearTimeout(minTimer);
+            if (maxTimer) clearTimeout(maxTimer);
+          }
         },
       });
 
