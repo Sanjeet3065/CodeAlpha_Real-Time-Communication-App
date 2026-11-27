@@ -22,7 +22,7 @@ export const ConversionBanner: React.FC<ConversionBannerProps> = ({
   return (
     <section id="trust" className="pt-2 pb-12 sm:pb-16">
       <Container size="xl">
-        <div className="rounded-2xl bg-[#1C1F24] border border-[#2B3038] p-7 sm:p-10 lg:p-12 shadow-cly-theater flex flex-col lg:flex-row lg:items-center justify-between gap-7">
+        <div className="rounded-2xl bg-[#1C1F24] border border-[#2B3038] p-7 sm:p-10 lg:px-11 lg:py-10 shadow-cly-theater flex flex-col lg:flex-row lg:items-center justify-between gap-7">
           <div className="space-y-3 max-w-xl">
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5FA399]">
               {CARBON_SPOTLIGHT_CONTENT.eyebrow}
@@ -30,7 +30,7 @@ export const ConversionBanner: React.FC<ConversionBannerProps> = ({
             <h2 className="font-display text-2xl sm:text-3xl lg:text-[2rem] font-semibold tracking-tight text-[#EAECEE] leading-[1.15]">
               {CARBON_SPOTLIGHT_CONTENT.headline}
             </h2>
-            <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-[#A3AAB2]">
+            <div className="pt-1 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-[#A3AAB2]">
               {CARBON_SPOTLIGHT_SPECS.map((spec) => (
                 <span key={spec} className="inline-flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#5FA399]" aria-hidden="true" />
@@ -40,7 +40,7 @@ export const ConversionBanner: React.FC<ConversionBannerProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0 lg:border-l lg:border-[#2B3038] lg:pl-8">
             <Button
               variant="primary"
               size="lg"

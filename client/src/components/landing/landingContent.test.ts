@@ -85,6 +85,9 @@ describe('Homepage Content Contract — Compact 3-Slide Visual Editorial', () =>
     assert.ok(!heroSource.includes('Start Instant Meeting'));
     assert.ok(!heroSource.includes('Enter code'));
     assert.ok(!heroSource.includes('handleJoinSubmit'));
+    assert.ok(heroSource.includes('hero-studio.jpg'));
+    assert.ok(!heroSource.includes('design-review'));
+    assert.ok(!heroSource.includes('Riya Kapoor'));
     assert.ok(gridSource.includes('id="studio"'));
     assert.ok(bannerSource.includes('id="trust"'));
     assert.ok(navSource.includes('#studio') && navSource.includes('#trust'));
