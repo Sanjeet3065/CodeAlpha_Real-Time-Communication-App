@@ -1213,6 +1213,7 @@ export class SchedulingService {
     }
 
     const userObjId = new Types.ObjectId(userId);
+    const normalizedUserId = userObjId.toString();
     const objIds = uniqueIds.map((id) => new Types.ObjectId(id));
     const meetings = await Meeting.find({ _id: { $in: objIds } });
     const meetingById = new Map(meetings.map((m) => [m._id.toString(), m]));
@@ -1242,8 +1243,8 @@ export class SchedulingService {
     const purgeIds: Types.ObjectId[] = [];
     for (const id of uniqueIds) {
       const meeting = meetingById.get(id)!;
-      const isHost = meeting.hostId.toString() === userId;
-      const isAttendee = attendeesByMeeting.get(id)?.has(userId) ?? false;
+      const isHost = meeting.hostId.toString() === normalizedUserId;
+      const isAttendee = attendeesByMeeting.get(id)?.has(normalizedUserId) ?? false;
 
       if (!isHost && !isAttendee) {
         throw new ForbiddenError(
@@ -1259,7 +1260,9 @@ export class SchedulingService {
         );
       }
 
-      if ((meeting.historyHiddenBy || []).some((hiddenId) => hiddenId.toString() === userId)) {
+      if (
+        (meeting.historyHiddenBy || []).some((hiddenId) => hiddenId.toString() === normalizedUserId)
+      ) {
         throw new NotFoundError('Meeting history record not found.', 'MEETING_NOT_FOUND');
       }
 
@@ -1270,7 +1273,7 @@ export class SchedulingService {
       const hiddenAfter = new Set<string>(
         (meeting.historyHiddenBy || []).map((hiddenId) => hiddenId.toString())
       );
-      hiddenAfter.add(userId);
+      hiddenAfter.add(normalizedUserId);
 
       const hasRemainingViewers = Array.from(viewerIds).some((viewerId) => !hiddenAfter.has(viewerId));
       if (!hasRemainingViewers) {

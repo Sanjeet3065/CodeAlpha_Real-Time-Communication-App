@@ -232,7 +232,7 @@ function toMeetingSearchItem(meeting: HeaderMeetingCandidate): HeaderSearchItem 
     kind: 'meeting',
     meetingCode: meeting.meetingCode,
     meetingKind: meeting.kind,
-    route: meeting.kind === 'upcoming' ? `/lobby/${meeting.meetingCode}` : '/meetings',
+    route: meeting.kind === 'upcoming' ? `/lobby/${meeting.meetingCode}` : '/meetings/history',
     keywords: [
       meeting.title || '',
       meeting.meetingCode,

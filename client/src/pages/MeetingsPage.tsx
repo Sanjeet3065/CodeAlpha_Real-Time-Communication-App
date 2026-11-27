@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +20,9 @@ import {
   ChevronRight,
   X,
   History,
+  Trash2,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { schedulingApi } from '@/services/schedulingApi';
 import { ScheduleMeetingModal } from '@/components/dashboard/ScheduleMeetingModal';
@@ -33,7 +37,35 @@ import type {
 
 export const MeetingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'scheduled' | 'history'>('scheduled');
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const resolveTabFromUrl = useCallback((): 'scheduled' | 'history' => {
+    if (
+      location.pathname === '/meetings/history' ||
+      searchParams.get('tab')?.toLowerCase() === 'history'
+    ) {
+      return 'history';
+    }
+    return 'scheduled';
+  }, [location.pathname, searchParams]);
+
+  const [activeTab, setActiveTab] = useState<'scheduled' | 'history'>(() => resolveTabFromUrl());
+
+  useEffect(() => {
+    setActiveTab(resolveTabFromUrl());
+  }, [resolveTabFromUrl]);
+
+  const switchTab = (nextTab: 'scheduled' | 'history') => {
+    setActiveTab(nextTab);
+    setSelectedHistoryIds([]);
+    setDeleteConfirmTargets(null);
+    setHistoryFeedback(null);
+    const targetPath = nextTab === 'history' ? '/meetings/history' : '/meetings';
+    if (location.pathname !== targetPath || searchParams.has('tab')) {
+      navigate(targetPath, { replace: false });
+    }
+  };
 
   // Upcoming meetings state
   const [upcomingMeetings, setUpcomingMeetings] = useState<IScheduledMeeting[]>([]);
@@ -49,6 +81,11 @@ export const MeetingsPage: React.FC = () => {
   const [historyTotal, setHistoryTotal] = useState(0);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyFeedback, setHistoryFeedback] = useState<string | null>(null);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [deleteConfirmTargets, setDeleteConfirmTargets] = useState<IMeetingHistoryItem[] | null>(null);
+  const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+  const [deleteHistoryError, setDeleteHistoryError] = useState<string | null>(null);
 
   // History filter state
   const [historyStatusFilter, setHistoryStatusFilter] = useState<'all' | 'ENDED' | 'CANCELLED'>('all');
@@ -98,6 +135,9 @@ export const MeetingsPage: React.FC = () => {
       setHistoryPage(res.pagination.page);
       setHistoryTotalPages(res.pagination.totalPages);
       setHistoryTotal(res.pagination.total);
+      setSelectedHistoryIds((prev) =>
+        prev.filter((id) => res.meetings.some((m) => m.id === id))
+      );
     } catch (err: unknown) {
       setHistoryError(err instanceof Error ? err.message : 'Failed to load meeting history.');
     } finally {
@@ -115,12 +155,95 @@ export const MeetingsPage: React.FC = () => {
 
   const handleOpenHistoryDetails = async (meetingId: string) => {
     try {
+      setHistoryError(null);
       const details = await schedulingApi.getMeetingHistoryDetails(meetingId);
       setSelectedHistoryDetails(details);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Unable to load meeting history details.');
+      setHistoryError(
+        err instanceof Error ? err.message : 'Unable to load meeting history details.'
+      );
     }
   };
+
+  const toggleHistorySelection = (meetingId: string) => {
+    setSelectedHistoryIds((prev) =>
+      prev.includes(meetingId) ? prev.filter((id) => id !== meetingId) : [...prev, meetingId]
+    );
+  };
+
+  const allVisibleSelected =
+    historyMeetings.length > 0 &&
+    historyMeetings.every((item) => selectedHistoryIds.includes(item.id));
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedHistoryIds([]);
+    } else {
+      setSelectedHistoryIds(historyMeetings.map((item) => item.id));
+    }
+  };
+
+  const requestSingleDelete = (item: IMeetingHistoryItem) => {
+    setDeleteHistoryError(null);
+    setDeleteConfirmTargets([item]);
+  };
+
+  const requestBulkDelete = () => {
+    const selectedItems = historyMeetings.filter((m) => selectedHistoryIds.includes(m.id));
+    if (selectedItems.length === 0) return;
+    setDeleteHistoryError(null);
+    setDeleteConfirmTargets(selectedItems);
+  };
+
+  const handleConfirmDeleteHistory = async () => {
+    if (!deleteConfirmTargets || deleteConfirmTargets.length === 0) return;
+    try {
+      setIsDeletingHistory(true);
+      setDeleteHistoryError(null);
+      const targetIds = deleteConfirmTargets.map((item) => item.id);
+
+      if (targetIds.length === 1) {
+        await schedulingApi.deleteMeetingHistoryEntry(targetIds[0]);
+      } else {
+        await schedulingApi.deleteMeetingHistoryEntries(targetIds);
+      }
+
+      const deletedSet = new Set(targetIds);
+      const remainingCountOnPage = historyMeetings.filter((m) => !deletedSet.has(m.id)).length;
+      const nextPage = remainingCountOnPage === 0 && historyPage > 1 ? historyPage - 1 : historyPage;
+
+      setSelectedHistoryIds((prev) => prev.filter((id) => !deletedSet.has(id)));
+      setDeleteConfirmTargets(null);
+      setHistoryFeedback(
+        targetIds.length === 1
+          ? `"${deleteConfirmTargets[0].title}" removed from your meeting history.`
+          : `${targetIds.length} records removed from your meeting history.`
+      );
+      window.dispatchEvent(new CustomEvent('connectly:history-updated'));
+      await fetchHistory(nextPage);
+    } catch (err: unknown) {
+      setDeleteHistoryError(
+        err instanceof Error ? err.message : 'Unable to remove selected meeting history.'
+      );
+    } finally {
+      setIsDeletingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!deleteConfirmTargets) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isDeletingHistory) {
+        setDeleteConfirmTargets(null);
+      }
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [deleteConfirmTargets, isDeletingHistory]);
 
   return (
     <DashboardLayout
@@ -152,7 +275,7 @@ export const MeetingsPage: React.FC = () => {
           <div className="flex items-center p-1 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl">
             <button
               type="button"
-              onClick={() => setActiveTab('scheduled')}
+              onClick={() => switchTab('scheduled')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'scheduled'
                   ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
@@ -163,7 +286,7 @@ export const MeetingsPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('history')}
+              onClick={() => switchTab('history')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'history'
                   ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
@@ -372,6 +495,26 @@ export const MeetingsPage: React.FC = () => {
       {/* ========================================================================= */}
       {activeTab === 'history' && (
         <div className="space-y-4">
+          {historyFeedback && (
+            <div
+              role="status"
+              className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/25 dark:border-[#5FA399]/30 text-xs font-medium text-[#255A54] dark:text-[#7BC4B9] animate-in fade-in duration-150"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Check className="w-4 h-4 shrink-0 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
+                <span className="truncate">{historyFeedback}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryFeedback(null)}
+                aria-label="Dismiss notification"
+                className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* History Filters Toolbar */}
           <Card className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
@@ -383,7 +526,7 @@ export const MeetingsPage: React.FC = () => {
                   value={historySearchTerm}
                   onChange={(e) => setHistorySearchTerm(e.target.value)}
                   placeholder="Search title or cly-xxx-xxx..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE] placeholder:text-[#7C848D]/70 dark:placeholder:text-[#747C86]"
                 />
               </div>
 
@@ -394,7 +537,7 @@ export const MeetingsPage: React.FC = () => {
                   onChange={(e) =>
                     setHistoryStatusFilter(e.target.value as 'all' | 'ENDED' | 'CANCELLED')
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="all">All Statuses (Ended & Cancelled)</option>
                   <option value="ENDED">Completed Only</option>
@@ -409,7 +552,7 @@ export const MeetingsPage: React.FC = () => {
                   onChange={(e) =>
                     setHistoryRoleFilter(e.target.value as 'all' | 'host' | 'participant')
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="all">All Roles (Hosted & Attended)</option>
                   <option value="host">Hosted by Me</option>
@@ -422,7 +565,7 @@ export const MeetingsPage: React.FC = () => {
                 <select
                   value={historySortOrder}
                   onChange={(e) => setHistorySortOrder(e.target.value as 'desc' | 'asc')}
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
                 >
                   <option value="desc">Newest First</option>
                   <option value="asc">Oldest First</option>
@@ -438,10 +581,10 @@ export const MeetingsPage: React.FC = () => {
               <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Loading meeting history records...</p>
             </Card>
           ) : historyError ? (
-            <Card className="p-8 text-center bg-rose-50 border-rose-200">
-              <AlertCircle className="w-8 h-8 text-rose-600 mx-auto mb-2" />
-              <p className="text-sm font-bold text-rose-950 mb-1">Failed to Load History</p>
-              <p className="text-xs text-rose-700 mb-4">{historyError}</p>
+            <Card className="p-8 text-center bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50">
+              <AlertCircle className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto mb-2" />
+              <p className="text-sm font-bold text-rose-950 dark:text-rose-200 mb-1">Failed to Load History</p>
+              <p className="text-xs text-rose-700 dark:text-rose-300 mb-4">{historyError}</p>
               <Button type="button" variant="outline" size="sm" onClick={() => fetchHistory(1)}>
                 Retry
               </Button>
@@ -476,70 +619,162 @@ export const MeetingsPage: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-[#7C848D] dark:text-[#A3AAB2] px-1">
-                <span>Showing {historyMeetings.length} of {historyTotal} records</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#7C848D] dark:text-[#A3AAB2] px-1">
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={allVisibleSelected}
+                    aria-label="Select all visible meetings"
+                    onClick={toggleSelectAllVisible}
+                    className={`w-[18px] h-[18px] rounded-md border flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] ${
+                      allVisibleSelected
+                        ? 'bg-[#2F6F68] dark:bg-[#5FA399] border-[#2F6F68] dark:border-[#5FA399] text-white dark:text-[#141619]'
+                        : 'bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#CCC8BC] dark:border-[#3A404A] hover:border-[#2F6F68] dark:hover:border-[#5FA399]'
+                    }`}
+                  >
+                    {allVisibleSelected && <Check className="w-3 h-3 stroke-[2.75]" aria-hidden="true" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleSelectAllVisible}
+                    className="font-medium text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] transition-colors"
+                  >
+                    {allVisibleSelected ? 'Deselect all' : 'Select all'}
+                  </button>
+                  <span aria-hidden="true" className="text-[#DDDAD0] dark:text-[#2B3038]">|</span>
+                  <span>Showing {historyMeetings.length} of {historyTotal} records</span>
+                </div>
+                <span className="text-[11px] text-[#7C848D] dark:text-[#8E96A0]">
+                  Removals apply only to your account
+                </span>
               </div>
 
-              {historyMeetings.map((item) => (
-                <Card key={item.id} className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl hover:border-[#2F6F68]/30 dark:hover:border-[#5FA399]/30 transition-all">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-[#2F6F68] dark:text-[#5FA399]">
-                          {item.meetingCode}
-                        </span>
-                        <Badge
-                          variant={
-                            item.status === 'ENDED'
-                              ? 'success'
-                              : item.status === 'CANCELLED'
-                              ? 'neutral'
-                              : 'info'
-                          }
-                        >
-                          {item.status}
-                        </Badge>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-[#1F2428] dark:text-[#EAECEE] font-semibold capitalize">
-                          Role: {item.userRole}
-                        </span>
-                      </div>
-
-                      <h4 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">
-                        {item.title}
-                      </h4>
-
-                      <div className="flex items-center gap-4 text-xs text-[#7C848D] dark:text-[#A3AAB2] flex-wrap">
-                        <span>
-                          {new Date(item.createdAt).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </span>
-                        <span>Host: {item.hostName}</span>
-                        <span>Duration: <strong className="text-[#1F2428] dark:text-[#EAECEE]">{item.formattedDuration}</strong></span>
-                        {item.cancelledAt && (
-                          <span className="text-rose-600 font-medium">
-                            Cancelled {item.cancellationReason ? `(${item.cancellationReason})` : ''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenHistoryDetails(item.id)}
-                        leftIcon={<Eye className="w-3.5 h-3.5" />}
-                      >
-                        View Details
-                      </Button>
-                    </div>
+              {selectedHistoryIds.length > 0 && (
+                <div
+                  role="region"
+                  aria-label="Selected history actions"
+                  className="px-4 py-2.5 rounded-xl bg-[#FAF9F6] dark:bg-[#1C1F24] border border-rose-200 dark:border-rose-900/50 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-150"
+                >
+                  <div className="flex items-center gap-2.5 text-xs">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] font-semibold">
+                      {selectedHistoryIds.length} selected
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHistoryIds([])}
+                      className="text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] font-medium transition-colors"
+                    >
+                      Clear
+                    </button>
                   </div>
-                </Card>
-              ))}
+                  <button
+                    type="button"
+                    onClick={requestBulkDelete}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Delete Selected</span>
+                  </button>
+                </div>
+              )}
+
+              {historyMeetings.map((item) => {
+                const isSelected = selectedHistoryIds.includes(item.id);
+                return (
+                  <Card
+                    key={item.id}
+                    className={`p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] shadow-xs rounded-2xl transition-all ${
+                      isSelected
+                        ? 'border-[#2F6F68] dark:border-[#5FA399] ring-1 ring-[#2F6F68]/20 dark:ring-[#5FA399]/25'
+                        : 'border-[#DDDAD0] dark:border-[#2B3038] hover:border-[#2F6F68]/30 dark:hover:border-[#5FA399]/30'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={isSelected}
+                          aria-label={`Select ${item.title}`}
+                          onClick={() => toggleHistorySelection(item.id)}
+                          className={`mt-1 w-[18px] h-[18px] rounded-md border flex items-center justify-center shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399] ${
+                            isSelected
+                              ? 'bg-[#2F6F68] dark:bg-[#5FA399] border-[#2F6F68] dark:border-[#5FA399] text-white dark:text-[#141619]'
+                              : 'bg-[#F3F2EE] dark:bg-[#141619] border-[#CCC8BC] dark:border-[#3A404A] hover:border-[#2F6F68] dark:hover:border-[#5FA399]'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 stroke-[2.75]" aria-hidden="true" />}
+                        </button>
+
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-bold text-[#2F6F68] dark:text-[#5FA399]">
+                              {item.meetingCode}
+                            </span>
+                            <Badge
+                              variant={
+                                item.status === 'ENDED'
+                                  ? 'success'
+                                  : item.status === 'CANCELLED'
+                                  ? 'neutral'
+                                  : 'info'
+                              }
+                            >
+                              {item.status}
+                            </Badge>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] text-[#1F2428] dark:text-[#EAECEE] font-semibold capitalize">
+                              Role: {item.userRole}
+                            </span>
+                          </div>
+
+                          <h4 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] truncate">
+                            {item.title}
+                          </h4>
+
+                          <div className="flex items-center gap-4 text-xs text-[#7C848D] dark:text-[#A3AAB2] flex-wrap">
+                            <span>
+                              {new Date(item.createdAt).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                            <span>Host: {item.hostName}</span>
+                            <span>Duration: <strong className="text-[#1F2428] dark:text-[#EAECEE]">{item.formattedDuration}</strong></span>
+                            {item.cancelledAt && (
+                              <span className="text-rose-600 dark:text-rose-400 font-medium">
+                                Cancelled {item.cancellationReason ? `(${item.cancellationReason})` : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2 pl-7 sm:pl-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenHistoryDetails(item.id)}
+                          leftIcon={<Eye className="w-3.5 h-3.5" />}
+                        >
+                          View Details
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => requestSingleDelete(item)}
+                          aria-label={`Delete ${item.title} from history`}
+                          title="Remove from your history"
+                          className="p-2 rounded-lg border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#7C848D] dark:text-[#A3AAB2] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-800/70 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
 
               {/* History Pagination */}
               {historyTotalPages > 1 && (
@@ -698,6 +933,128 @@ export const MeetingsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal for Removing Meeting History */}
+      {deleteConfirmTargets &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-history-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isDeletingHistory) {
+                setDeleteConfirmTargets(null);
+              }
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
+          >
+            <div className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <h2
+                    id="remove-history-title"
+                    className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]"
+                  >
+                    Remove from History
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  disabled={isDeletingHistory}
+                  onClick={() => setDeleteConfirmTargets(null)}
+                  aria-label="Close remove confirmation dialog"
+                  className="p-1.5 rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {deleteHistoryError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-700 dark:text-rose-300"
+                  >
+                    {deleteHistoryError}
+                  </div>
+                )}
+
+                <p className="text-xs sm:text-sm text-[#1F2428] dark:text-[#EAECEE] leading-relaxed">
+                  {deleteConfirmTargets.length === 1 ? (
+                    <>
+                      Remove <strong>&ldquo;{deleteConfirmTargets[0].title}&rdquo;</strong> from your account history?
+                    </>
+                  ) : (
+                    <>
+                      Remove <strong>{deleteConfirmTargets.length} selected meetings</strong> from your account history?
+                    </>
+                  )}
+                </p>
+
+                <div className="p-3 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] space-y-1.5">
+                  {deleteConfirmTargets.slice(0, 3).map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="font-medium text-[#1F2428] dark:text-[#EAECEE] truncate">
+                        {item.title}
+                      </span>
+                      <span className="font-mono text-[11px] text-[#2F6F68] dark:text-[#5FA399] shrink-0">
+                        {item.meetingCode}
+                      </span>
+                    </div>
+                  ))}
+                  {deleteConfirmTargets.length > 3 && (
+                    <p className="text-[11px] text-[#7C848D] dark:text-[#8E96A0] pt-0.5">
+                      +{deleteConfirmTargets.length - 3} more selected
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-[#7C848D] dark:text-[#8E96A0] leading-relaxed">
+                  This only removes records from your account. Other participants keep their copy unless they delete it too.
+                </p>
+              </div>
+
+              <div className="px-6 py-4 border-t border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619] flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isDeletingHistory}
+                  onClick={() => setDeleteConfirmTargets(null)}
+                >
+                  Cancel
+                </Button>
+                <button
+                  type="button"
+                  disabled={isDeletingHistory}
+                  onClick={handleConfirmDeleteHistory}
+                  className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                >
+                  {isDeletingHistory ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                      <span>Removing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Remove</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Global Modals */}
       <ScheduleMeetingModal

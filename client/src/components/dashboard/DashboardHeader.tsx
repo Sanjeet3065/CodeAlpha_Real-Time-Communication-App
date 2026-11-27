@@ -114,12 +114,21 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     };
   }, []);
 
-  // Reset cached meeting suggestions whenever the authenticated user changes
+  // Reset cached meeting suggestions whenever the authenticated user changes or history changes
   useEffect(() => {
     lastFetchedAtRef.current = 0;
     setUpcomingMeetings([]);
     setRecentMeetings([]);
   }, [currentUserId]);
+
+  useEffect(() => {
+    const handleHistoryUpdated = () => {
+      lastFetchedAtRef.current = 0;
+      setRecentMeetings([]);
+    };
+    window.addEventListener('connectly:history-updated', handleHistoryUpdated);
+    return () => window.removeEventListener('connectly:history-updated', handleHistoryUpdated);
+  }, []);
 
   const loadSearchMeetings = useCallback(async () => {
     const now = Date.now();

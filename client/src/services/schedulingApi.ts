@@ -147,6 +147,26 @@ export const schedulingApi = {
     return data.meeting;
   },
 
+  async deleteMeetingHistoryEntry(
+    meetingId: string
+  ): Promise<{ deletedId: string; purged: boolean }> {
+    const res = await fetchWithAuth(
+      `${API_BASE_URL}/meetings/history/${encodeURIComponent(meetingId)}`,
+      { method: 'DELETE' }
+    );
+    return parseResponse<{ deletedId: string; purged: boolean }>(res);
+  },
+
+  async deleteMeetingHistoryEntries(
+    meetingIds: string[]
+  ): Promise<{ deletedIds: string[]; deletedCount: number; purgedIds: string[] }> {
+    const res = await fetchWithAuth(`${API_BASE_URL}/meetings/history`, {
+      method: 'DELETE',
+      body: JSON.stringify({ meetingIds }),
+    });
+    return parseResponse<{ deletedIds: string[]; deletedCount: number; purgedIds: string[] }>(res);
+  },
+
   async getMeetingInvitation(meetingCode: string): Promise<IMeetingInvitation> {
     const res = await fetchWithAuth(
       `${API_BASE_URL}/meetings/${encodeURIComponent(meetingCode)}/invitation`,

@@ -115,6 +115,10 @@ describe('Header Command Search Utilities', () => {
     });
     const defaultMeetings = defaultOpen.filter((item) => item.kind === 'meeting');
     assert.strictEqual(defaultMeetings.length, 3);
+    assert.strictEqual(
+      defaultMeetings.find((item) => item.meetingCode === 'cly-ccc-333')?.route,
+      '/meetings/history'
+    );
     assert.ok(defaultOpen.some((item) => item.actionId === 'instant-meeting'));
     assert.ok(defaultOpen.some((item) => item.route === '/meetings'));
   });

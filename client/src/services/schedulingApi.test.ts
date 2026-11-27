@@ -476,4 +476,52 @@ describe('Phase 16 Client SchedulingApi Suite', () => {
       }
     );
   });
+
+  it('14. deleteMeetingHistoryEntry() sends DELETE /meetings/history/:meetingId', async () => {
+    let capturedUrl = '';
+    let capturedMethod = '';
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedUrl = String(input);
+      capturedMethod = init?.method || 'GET';
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: { deletedId: 'hist-1', purged: false },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }) as typeof fetch;
+
+    const res = await schedulingApi.deleteMeetingHistoryEntry('hist-1');
+    assert.ok(capturedUrl.endsWith('/meetings/history/hist-1'));
+    assert.equal(capturedMethod, 'DELETE');
+    assert.equal(res.deletedId, 'hist-1');
+    assert.equal(res.purged, false);
+  });
+
+  it('15. deleteMeetingHistoryEntries() sends DELETE /meetings/history with meetingIds JSON body', async () => {
+    let capturedUrl = '';
+    let capturedMethod = '';
+    let capturedBody: Record<string, unknown> | null = null;
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      capturedUrl = String(input);
+      capturedMethod = init?.method || 'GET';
+      capturedBody = init?.body ? JSON.parse(String(init.body)) : null;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: { deletedIds: ['h1', 'h2'], deletedCount: 2, purgedIds: ['h1'] },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }) as typeof fetch;
+
+    const res = await schedulingApi.deleteMeetingHistoryEntries(['h1', 'h2']);
+    assert.ok(capturedUrl.endsWith('/meetings/history'));
+    assert.equal(capturedMethod, 'DELETE');
+    assert.deepEqual(capturedBody, { meetingIds: ['h1', 'h2'] });
+    assert.equal(res.deletedCount, 2);
+  });
 });

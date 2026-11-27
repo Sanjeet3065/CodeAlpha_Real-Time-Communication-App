@@ -16,21 +16,30 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
   refreshKey = 0,
   onMeetAgain,
 }) => {
-  const [activities, setActivities] = useState<IActivityEvent[]>(initialActivities || []);
+  const [activities, setActivities] = useState<IActivityEvent[]>(
+    initialActivities ? initialActivities.slice(0, 2) : []
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [localRefreshTick, setLocalRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const handleHistoryUpdated = () => setLocalRefreshTick((t) => t + 1);
+    window.addEventListener('connectly:history-updated', handleHistoryUpdated);
+    return () => window.removeEventListener('connectly:history-updated', handleHistoryUpdated);
+  }, []);
 
   useEffect(() => {
     if (initialActivities) {
-      setActivities(initialActivities);
+      setActivities(initialActivities.slice(0, 2));
       return;
     }
 
     let mounted = true;
     void (async () => {
       try {
-        const res = await schedulingApi.listMeetingHistory({ page: 1, limit: 4, sort: 'desc' });
+        const res = await schedulingApi.listMeetingHistory({ page: 1, limit: 2, sort: 'desc' });
         if (!mounted) return;
-        const mapped: IActivityEvent[] = res.meetings.map((item) => ({
+        const mapped: IActivityEvent[] = res.meetings.slice(0, 2).map((item) => ({
           id: item.id,
           type: item.userRole === 'host' ? 'meeting_hosted' : 'meeting_attended',
           title: item.title,
@@ -50,7 +59,7 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
     return () => {
       mounted = false;
     };
-  }, [initialActivities, refreshKey]);
+  }, [initialActivities, refreshKey, localRefreshTick]);
 
   const handleCopyCode = async (id: string, code?: string) => {
     if (!code) return;
@@ -81,7 +90,7 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
           </span>
         </div>
         <Link
-          to="/meetings"
+          to="/meetings/history"
           className="text-xs font-semibold text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] inline-flex items-center gap-1 transition-colors"
         >
           <span>History</span>
@@ -106,7 +115,7 @@ export const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({
               key={act.id}
               className="p-2.5 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0]/70 dark:border-[#2B3038] flex items-center justify-between gap-2.5"
             >
-              <Link to="/meetings" className="min-w-0 flex-1 group">
+              <Link to="/meetings/history" className="min-w-0 flex-1 group">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] group-hover:text-[#2F6F68] dark:group-hover:text-[#5FA399] truncate transition-colors">
                     {act.title}

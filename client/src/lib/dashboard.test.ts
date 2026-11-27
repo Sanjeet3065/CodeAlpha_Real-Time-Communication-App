@@ -165,5 +165,17 @@ describe('Dashboard Utilities & Data Contracts', () => {
       header.includes('suppressFocusOpenRef') && header.includes('[role="dialog"][aria-modal="true"]'),
       'DashboardHeader should guard modal focus restoration and Ctrl+K activation when dialogs are open'
     );
+
+    const meetingsPage = fs.readFileSync(path.resolve(libDir, '../pages/MeetingsPage.tsx'), 'utf8');
+    assert.ok(
+      activityWidget.includes('limit: 2') && activityWidget.includes('/meetings/history'),
+      'RecentActivityWidget should show at most 2 latest calls and redirect History to /meetings/history'
+    );
+    assert.ok(
+      meetingsPage.includes('/meetings/history') &&
+        meetingsPage.includes('deleteMeetingHistoryEntry') &&
+        meetingsPage.includes('deleteMeetingHistoryEntries'),
+      'MeetingsPage should sync Past History tab to /meetings/history and wire selective deletion'
+    );
   });
 });
