@@ -52,7 +52,7 @@ export const ReactionPicker: React.FC<ReactionPickerProps> = ({
       role="dialog"
       aria-label="Emoji reactions picker"
       data-element="reaction-picker"
-      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 p-1.5 rounded-2xl bg-[#1C1F24] border border-white/15 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 p-1.5 rounded-2xl bg-[#1C1F24] border border-white/15 shadow-2xl cly-animate-popover"
     >
       {ALLOWED_REACTIONS.map((emoji) => (
         <button

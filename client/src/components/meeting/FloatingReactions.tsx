@@ -17,7 +17,7 @@ export const FloatingReactions: React.FC<FloatingReactionsProps> = ({ reactions 
     <div
       aria-live="polite"
       aria-label="Real-time reactions overlay"
-      className="pointer-events-none fixed inset-x-0 bottom-24 top-16 z-25 overflow-hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-24 top-16 z-20 overflow-hidden"
     >
       <style>{`
         @keyframes connectlyFloatUp {

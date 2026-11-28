@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Video,
   Copy,
   Check,
   Lock,
@@ -10,6 +9,7 @@ import {
   WifiOff,
   Clock,
 } from 'lucide-react';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { buildMeetingJoinUrl } from '@/lib/meetingLink';
 import type { MeetingSummary } from '@/types/meeting';
 
@@ -19,6 +19,7 @@ interface MeetingHeaderProps {
   waitingCount: number;
   canManageWaitingRoom: boolean;
   isReconnecting: boolean;
+  liveKitStatus?: string;
   onToggleMobileSidebar: (tab: 'participants' | 'waiting') => void;
 }
 
@@ -28,6 +29,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
   waitingCount,
   canManageWaitingRoom,
   isReconnecting,
+  liveKitStatus,
   onToggleMobileSidebar,
 }) => {
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
@@ -45,12 +47,15 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#111316]/95 border-b border-white/10 px-3 sm:px-6 py-3">
+    <header
+      className="sticky top-0 z-30 bg-[#111316]/95 border-b border-white/10 px-3 sm:px-6 py-3"
+      data-livekit-status={liveKitStatus ?? 'idle'}
+    >
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
         {/* Left: Brand + Meeting Title + Code */}
         <div className="flex items-center gap-3 min-w-[175px] flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#2F6F68] text-white flex items-center justify-center flex-shrink-0">
-            <Video className="w-4 h-4" aria-hidden="true" />
+          <div className="flex-shrink-0">
+            <BrandMark />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

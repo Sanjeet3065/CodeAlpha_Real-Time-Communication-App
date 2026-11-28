@@ -228,7 +228,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           ) : (
             <SlidersHorizontal className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           )}
-          <span className="hidden xs:inline sm:inline">Devices</span>
+          <span className="hidden sm:inline">Devices</span>
         </button>
 
         {/* Phase 14 — Whiteboard Toggle Button (Desktop & Tablet) */}
@@ -247,7 +247,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             }`}
           >
             <PenTool className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-            <span className="hidden xs:inline sm:inline">Whiteboard</span>
+            <span className="hidden sm:inline">Whiteboard</span>
           </button>
         )}
 
@@ -266,7 +266,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           }`}
         >
           <MessageSquare className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-          <span className="hidden xs:inline sm:inline">Chat</span>
+          <span className="hidden sm:inline">Chat</span>
           {!isChatOpen && unreadChatCount > 0 && (
             <span
               data-badge="unread-chat"
@@ -293,11 +293,11 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             }`}
           >
             <FolderDown className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-            <span className="hidden xs:inline sm:inline">Files</span>
+            <span className="hidden sm:inline">Files</span>
             {filesCount > 0 && (
               <span
                 data-badge="files-count"
-                className="px-1.5 py-0.2 text-[10px] font-bold text-white bg-[#2F6F68] rounded-full border border-white/20"
+                className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-[#2F6F68] rounded-full border border-white/20"
               >
                 {filesCount}
               </span>
@@ -321,7 +321,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             }`}
           >
             <Smile className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-            <span className="hidden xs:inline sm:inline">React</span>
+            <span className="hidden sm:inline">React</span>
           </button>
           <ReactionPicker
             isOpen={isReactionsOpen}

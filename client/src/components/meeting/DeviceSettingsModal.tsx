@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
+import { ModalShell } from '@/components/ui/ModalShell';
 import type { DeviceInventorySnapshot } from '@/types/meeting';
 
 interface DeviceSettingsModalProps {

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ModalShell } from '@/components/ui/ModalShell';
 
 interface ConfirmActionDialogProps {
   isOpen: boolean;

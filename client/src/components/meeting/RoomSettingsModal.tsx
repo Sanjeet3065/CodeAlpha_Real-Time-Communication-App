@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Settings, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ModalShell } from '@/components/ui/ModalShell';
 import type { MeetingSummary, UpdateMeetingSettingsPayload } from '@/types/meeting';
 
 interface RoomSettingsModalProps {

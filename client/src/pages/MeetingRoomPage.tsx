@@ -12,6 +12,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { shouldIgnoreStudioShortcut } from '@/utils/studioShortcuts';
 import { MeetingHeader } from '@/components/meeting/MeetingHeader';
 import { ParticipantsPanel } from '@/components/meeting/ParticipantsPanel';
 import { WaitingRoomPanel } from '@/components/meeting/WaitingRoomPanel';
@@ -719,7 +720,7 @@ export const MeetingRoomPage: React.FC = () => {
   // Loading Screen
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#111316] text-white flex flex-col items-center justify-center p-6 text-center space-y-3">
+      <div className="h-[100dvh] bg-[#111316] text-white flex flex-col overflow-hidden items-center justify-center p-6 text-center space-y-3">
         <div className="w-8 h-8 border-2 border-[#5FA399] border-t-transparent rounded-full animate-spin" />
         <p className="font-display text-sm font-semibold">Entering meeting room...</p>
         <p className="text-xs text-slate-400">Synchronizing room permissions and participant roster.</p>
@@ -813,7 +814,7 @@ export const MeetingRoomPage: React.FC = () => {
           {activeSideTab !== 'chat' && chat.unreadCount > 0 && (
             <span
               data-badge="sidebar-unread-chat"
-              className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#C24D4D] text-white animate-pulse"
+              className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#C24D4D] text-white animate-pulse"
             >
               {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
             </span>
@@ -839,7 +840,7 @@ export const MeetingRoomPage: React.FC = () => {
             {files.files.length > 0 && (
               <span
                 data-badge="sidebar-files-count"
-                className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#2F6F68] text-white"
+                className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2F6F68] text-white"
               >
                 {files.files.length}
               </span>
@@ -912,7 +913,7 @@ export const MeetingRoomPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#111316] text-white flex flex-col">
+    <div className="h-[100dvh] bg-[#111316] text-white flex flex-col overflow-hidden">
       {/* Header */}
       <MeetingHeader
         meeting={meeting}
