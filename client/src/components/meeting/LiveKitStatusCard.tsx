@@ -51,7 +51,7 @@ function getStatusMeta(status: LiveKitConnectionSnapshot['status']) {
     case 'connected':
       return {
         label: 'Connected to LiveKit',
-        badgeClass: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/35',
+        badgeClass: 'bg-[#2F6F68]/25 text-[#5FA399] border-[#5FA399]/35',
         icon: <Wifi className="w-3.5 h-3.5" aria-hidden="true" />,
         description: 'LiveKit SFU signaling and multi-user audio/video transport are active.',
       };
@@ -109,11 +109,18 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
   const roleLabel =
     currentRole === 'host' ? 'Host' : currentRole === 'co-host' ? 'Co-Host' : 'Participant';
 
+  const isHealthyConnected =
+    livekit.status === 'connected' && !media.audioPlaybackBlocked && !media.mediaError;
+
   return (
     <section
       aria-label="LiveKit WebRTC transport and media status"
       data-livekit-status={livekit.status}
-      className="p-3.5 sm:p-4 rounded-2xl bg-[#1C1F24]/80 border border-white/10 space-y-3"
+      className={
+        isHealthyConnected
+          ? 'px-3 py-2 rounded-xl bg-[#1C1F24]/70 border border-white/10'
+          : 'p-3.5 sm:p-4 rounded-2xl bg-[#1C1F24]/80 border border-white/10 space-y-3'
+      }
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap">

@@ -38,7 +38,7 @@ export function useWhiteboard({
   const [elements, setElements] = useState<Map<string, WhiteboardElement>>(new Map());
   const [version, setVersion] = useState<number>(1);
   const [activeTool, setActiveTool] = useState<WhiteboardTool>('pen');
-  const [strokeColor, setStrokeColor] = useState<string>('#5FA399');
+  const [strokeColor, setStrokeColor] = useState<string>('#EDEFF2');
   const [fillColor, setFillColor] = useState<string | undefined>(undefined);
   const [strokeWidth, setStrokeWidth] = useState<number>(3);
   const [fontSize, setFontSize] = useState<number>(18);

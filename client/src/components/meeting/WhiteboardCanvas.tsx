@@ -460,11 +460,25 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
     currentUserId,
   ]);
 
-  // Request Animation Frame on state changes
-  useEffect(() => {
-    const animId = requestAnimationFrame(renderCanvas);
-    return () => cancelAnimationFrame(animId);
+  // Request Animation Frame coalescing so high-frequency pointermove events never lag
+  const rafIdRef = useRef<number | null>(null);
+  const scheduleRender = useCallback(() => {
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      renderCanvas();
+    });
   }, [renderCanvas]);
+
+  useEffect(() => {
+    scheduleRender();
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, [scheduleRender]);
 
   // Pointer Down Handler
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -561,11 +575,11 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       const lastPt = currentPointsRef.current[currentPointsRef.current.length - 1];
       if (!lastPt || Math.hypot(canvasPt.x - lastPt.x, canvasPt.y - lastPt.y) >= 1.0) {
         currentPointsRef.current.push(canvasPt);
-        renderCanvas();
+        scheduleRender();
       }
     } else if (['rect', 'circle', 'line', 'arrow'].includes(activeTool)) {
       currentPointsRef.current = [canvasPt];
-      renderCanvas();
+      scheduleRender();
     }
   };
 
