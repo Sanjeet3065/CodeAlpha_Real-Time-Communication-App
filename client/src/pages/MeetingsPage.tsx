@@ -28,12 +28,16 @@ import {
   Trash2,
   Check,
   Loader2,
+  Video,
+  KeyRound,
 } from 'lucide-react';
 import { schedulingApi } from '@/services/schedulingApi';
 import { ScheduleMeetingModal } from '@/components/dashboard/ScheduleMeetingModal';
 import { RescheduleModal } from '@/components/dashboard/RescheduleModal';
 import { CancelMeetingModal } from '@/components/dashboard/CancelMeetingModal';
 import { MeetingInvitationModal } from '@/components/dashboard/MeetingInvitationModal';
+import { InstantMeetingModal } from '@/components/dashboard/InstantMeetingModal';
+import { JoinMeetingModal } from '@/components/dashboard/JoinMeetingModal';
 import type {
   IScheduledMeeting,
   IMeetingHistoryItem,
@@ -113,6 +117,8 @@ export const MeetingsPage: React.FC = () => {
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isInstantModalOpen, setIsInstantModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [rescheduleMeeting, setRescheduleMeeting] = useState<IScheduledMeeting | null>(null);
   const [cancelMeeting, setCancelMeeting] = useState<IScheduledMeeting | null>(null);
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
@@ -276,55 +282,82 @@ export const MeetingsPage: React.FC = () => {
 
   return (
     <DashboardLayout
-      title="Meetings & Collaboration"
-      subtitle="Manage your upcoming collaboration sessions and review past meetings"
+      title="Meetings"
+      subtitle="Schedule, join, and review rooms"
     >
-      {/* Contextual Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2]">
-          View scheduled rooms, invitation links, and past attendance logs.
-        </p>
-
-        {/* Tab Switcher & Action */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center p-1 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl shadow-cly-sm">
+      {/* Top Toolbar: Tabs + Quick Actions */}
+      <Card className="p-3 sm:p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* Segmented Tab Switcher */}
+          <div className="inline-flex items-center p-1 bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl self-start">
             <button
               type="button"
               onClick={() => switchTab('scheduled')}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
                 activeTab === 'scheduled'
-                  ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                  ? 'bg-[#FAF9F6] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] shadow-cly-sm'
                   : 'text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE]'
               )}
             >
-              Upcoming & Scheduled
+              <span>Upcoming</span>
+              {upcomingMeetings.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-[#E2ECE9] dark:bg-[#2A3F3C] text-[#2F6F68] dark:text-[#7BC4B9]">
+                  {upcomingMeetings.length}
+                </span>
+              )}
             </button>
             <button
               type="button"
               onClick={() => switchTab('history')}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
                 activeTab === 'history'
-                  ? 'bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399]'
+                  ? 'bg-[#FAF9F6] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] shadow-cly-sm'
                   : 'text-[#555D66] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE]'
               )}
             >
-              Past History
+              <span>Past History</span>
+              {historyTotal > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-[#EAE8E1] dark:bg-[#24282E] text-[#555D66] dark:text-[#A3AAB2]">
+                  {historyTotal}
+                </span>
+              )}
             </button>
           </div>
 
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={() => setIsScheduleModalOpen(true)}
-            leftIcon={<Plus className="w-4 h-4" aria-hidden="true" />}
-          >
-            Schedule Meeting
-          </Button>
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsJoinModalOpen(true)}
+              leftIcon={<KeyRound className="w-3.5 h-3.5" aria-hidden="true" />}
+            >
+              Join
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsInstantModalOpen(true)}
+              leftIcon={<Video className="w-3.5 h-3.5" aria-hidden="true" />}
+            >
+              Instant
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setIsScheduleModalOpen(true)}
+              leftIcon={<Plus className="w-4 h-4" aria-hidden="true" />}
+            >
+              Schedule
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* ========================================================================= */}
       {/* TAB 1: UPCOMING & SCHEDULED MEETINGS                                      */}
@@ -348,24 +381,34 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : upcomingMeetings.length === 0 ? (
-            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
-              <div className="w-16 h-16 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-4">
-                <Calendar className="w-8 h-8" aria-hidden="true" />
+            <Card className="py-12 px-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-3.5">
+                <Calendar className="w-6 h-6" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
-                No Scheduled Meetings
+              <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+                No upcoming meetings
               </h3>
-              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
-                You do not have any upcoming meetings on your calendar. Schedule a session and invite participants.
+              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-sm mx-auto mb-5">
+                Schedule a room or start an instant session.
               </p>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsScheduleModalOpen(true)}
-                leftIcon={<Plus className="w-4 h-4" aria-hidden="true" />}
-              >
-                Schedule First Meeting
-              </Button>
+              <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setIsScheduleModalOpen(true)}
+                  leftIcon={<Plus className="w-4 h-4" aria-hidden="true" />}
+                >
+                  Schedule Meeting
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsInstantModalOpen(true)}
+                  leftIcon={<Video className="w-3.5 h-3.5" aria-hidden="true" />}
+                >
+                  Instant Meeting
+                </Button>
+              </div>
             </Card>
           ) : (
             <div className="space-y-3">
@@ -387,7 +430,7 @@ export const MeetingsPage: React.FC = () => {
                 return (
                   <Card
                     key={m.id}
-                    className="p-5 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40 transition-all"
+                    className="p-5 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] border-l-2 border-l-[#2F6F68] dark:border-l-[#5FA399] shadow-cly-sm rounded-2xl hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40 transition-all"
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       {/* Left Info */}
@@ -639,17 +682,17 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : historyMeetings.length === 0 ? (
-            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
-              <div className="w-16 h-16 rounded-2xl bg-[#F3F2EE] dark:bg-[#141619] text-[#636B74] dark:text-[#A3AAB2] flex items-center justify-center mb-4">
-                <History className="w-8 h-8" aria-hidden="true" />
+            <Card className="py-12 px-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#F3F2EE] dark:bg-[#141619] text-[#636B74] dark:text-[#A3AAB2] flex items-center justify-center mb-3.5">
+                <History className="w-6 h-6" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
-                No Meeting History Found
+              <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+                No past meetings
               </h3>
-              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-sm mx-auto mb-5">
                 {historySearchTerm || historyStatusFilter !== 'ALL' || historyRoleFilter !== 'ALL'
-                  ? 'No past sessions match your search or filter criteria.'
-                  : 'Meetings you host or participate in will appear here once ended or cancelled.'}
+                  ? 'No sessions match your current filters.'
+                  : 'Ended or cancelled sessions appear here.'}
               </p>
               {(historySearchTerm || historyStatusFilter !== 'ALL' || historyRoleFilter !== 'ALL') && (
                 <Button type="button" variant="outline" size="sm" onClick={resetHistoryFilters}>
@@ -1110,6 +1153,16 @@ export const MeetingsPage: React.FC = () => {
         isOpen={Boolean(invitationCode)}
         onClose={() => setInvitationCode(null)}
         meetingCode={invitationCode}
+      />
+
+      <InstantMeetingModal
+        isOpen={isInstantModalOpen}
+        onClose={() => setIsInstantModalOpen(false)}
+      />
+
+      <JoinMeetingModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
       />
     </DashboardLayout>
   );

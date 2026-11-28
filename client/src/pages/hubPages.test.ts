@@ -232,6 +232,8 @@ describe('Task 5 Hub Pages & Dashboard Shadow Contracts', () => {
       '@/components/dashboard/RescheduleModal': { RescheduleModal: () => null },
       '@/components/dashboard/CancelMeetingModal': { CancelMeetingModal: () => null },
       '@/components/dashboard/MeetingInvitationModal': { MeetingInvitationModal: () => null },
+      '@/components/dashboard/InstantMeetingModal': { InstantMeetingModal: () => null },
+      '@/components/dashboard/JoinMeetingModal': { JoinMeetingModal: () => null },
     }) as { MeetingsPage: React.FC };
 
     const html = renderWithMockDocument(React.createElement(MeetingsPage));
