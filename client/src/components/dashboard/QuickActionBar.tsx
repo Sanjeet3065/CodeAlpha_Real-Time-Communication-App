@@ -70,7 +70,7 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
       </div>
 
       {/* 2. Join with Code Card (Direct Input + Modal Trigger) */}
-      <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40">
+      <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-5 shadow-cly-sm flex flex-col justify-between transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center shrink-0">
@@ -117,7 +117,7 @@ export const QuickActionBar: React.FC<QuickActionBarProps> = ({
       </div>
 
       {/* 3. Schedule Meeting Card */}
-      <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40">
+      <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-5 shadow-cly-sm flex flex-col justify-between transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#2F6F68]/40 dark:hover:border-[#5FA399]/40">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-xl bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] border border-[#DDDAD0]/70 dark:border-[#2B3038] flex items-center justify-center shrink-0">

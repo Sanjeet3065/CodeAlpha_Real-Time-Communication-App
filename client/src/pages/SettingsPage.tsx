@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { StudioSwitch } from '@/components/ui/StudioSwitch';
 import { EditProfileModal } from '@/components/dashboard/EditProfileModal';
 import { useAuth } from '@/context/AuthContext';
 import { preferencesApi, resetClientSession } from '@/services/preferencesApi';
+import { cn } from '@/lib/utils';
+import { STUDIO_ALERT_WARNING_CLASS } from '@/lib/studioTokens';
 import {
   Mic,
   Bell,
   Sun,
-  ShieldCheck,
   User,
-  ArrowLeft,
   Check,
   Info,
-  Cloud,
   RefreshCw,
 } from 'lucide-react';
 
@@ -155,15 +154,15 @@ export const SettingsPage: React.FC = () => {
       }
     };
 
-    loadCloudPreferences();
+    void loadCloudPreferences();
     return () => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Auto-dismiss transient green cloud-sync confirmation after 5s;
-  // keep local-only warning banner visible so the user can explicitly retry sync.
+  // Auto-dismiss transient cloud-sync confirmation after 5s;
+  // keep local-only warning visible so the user can explicitly retry sync.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (isSaved && cloudSyncStatus === 'synced') {
@@ -258,27 +257,13 @@ export const SettingsPage: React.FC = () => {
       title="Account Settings"
       subtitle="Configure hardware join defaults, appearance, and notifications"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link
-              to="/dashboard"
-              className="text-xs text-[#2F6F68] dark:text-[#5FA399] hover:text-[#255A54] dark:hover:text-[#6EB2A8] flex items-center gap-1 font-medium transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Overview</span>
-            </Link>
-          </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE]">
-            Account Settings & Preferences
-          </h2>
-          <p className="text-xs sm:text-sm text-[#7C848D] dark:text-[#A3AAB2] mt-0.5">
-            Configure default room behaviors and account identity.
-          </p>
-        </div>
+      {/* Contextual Summary Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2]">
+          Configure default room behavior, theme, and account identity.
+        </p>
 
-        {/* Status Badge: Genuine reflection of email verification or active session */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {user?.isEmailVerified === true ? (
             <Badge variant="success">Verified Email</Badge>
           ) : user?.isEmailVerified === false ? (
@@ -293,158 +278,125 @@ export const SettingsPage: React.FC = () => {
         {/* Left Column: Preferences Form */}
         <div className="lg:col-span-8 space-y-6">
           <form onSubmit={handleSave} className="space-y-6">
-            {/* Audio & Video Defaults Card (Screen 22) */}
-            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+            {/* Audio & Video Defaults Card */}
+            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
               <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
-                <Mic className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
+                <Mic className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                 Audio & Video Meeting Defaults
               </h3>
-              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
+              <p className="text-xs text-[#555D66] dark:text-[#A3AAB2] mb-4">
                 These settings configure your default audio and camera state when entering pre-join lobbies.
               </p>
 
               <div className="space-y-4 divide-y divide-[#DDDAD0]/70 dark:divide-[#2B3038]">
-                <div className="flex items-center justify-between pt-3 first:pt-0">
-                  <div>
-                    <label
-                      htmlFor="setting-audio-muted"
-                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
-                    >
-                      Join with Microphone Muted
-                    </label>
-                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
-                      Recommended to prevent background audio disruption upon room admission.
-                    </p>
-                  </div>
-                  <input
-                    id="setting-audio-muted"
-                    type="checkbox"
-                    checked={audioMuted}
-                    onChange={(e) => setAudioMuted(e.target.checked)}
-                    aria-label="Join with microphone muted"
-                    className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
-                  />
-                </div>
+                <StudioSwitch
+                  mode="checkbox"
+                  id="setting-audio-muted"
+                  checked={audioMuted}
+                  onChange={setAudioMuted}
+                  label="Join with Microphone Muted"
+                  description="Recommended to prevent background audio disruption upon room admission."
+                />
 
-                <div className="flex items-center justify-between pt-3">
-                  <div>
-                    <label
-                      htmlFor="setting-video-off"
-                      className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
-                    >
-                      Join with Camera Off
-                    </label>
-                    <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
-                      Keep camera feeds off until manually enabled in the pre-join lobby.
-                    </p>
-                  </div>
-                  <input
-                    id="setting-video-off"
-                    type="checkbox"
-                    checked={videoOff}
-                    onChange={(e) => setVideoOff(e.target.checked)}
-                    aria-label="Join with camera off"
-                    className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
-                  />
-                </div>
+                <StudioSwitch
+                  mode="checkbox"
+                  id="setting-video-off"
+                  checked={videoOff}
+                  onChange={setVideoOff}
+                  label="Join with Camera Off"
+                  description="Keep camera feeds off until manually enabled in the pre-join lobby."
+                  className="pt-4"
+                />
               </div>
             </Card>
 
             {/* Notifications Card */}
-            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+            <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
               <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
+                <Bell className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                 Notification Audio & Alerts
               </h3>
-              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
+              <p className="text-xs text-[#555D66] dark:text-[#A3AAB2] mb-4">
                 Configure chimes and in-session notifications.
               </p>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <label
-                    htmlFor="setting-notification-sounds"
-                    className="text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] cursor-pointer"
-                  >
-                    Play Chimes on Participant Join & Leave
-                  </label>
-                  <p className="text-[11px] text-[#7C848D] dark:text-[#A3AAB2]">
-                    Audible tone when members enter or depart a room.
-                  </p>
-                </div>
-                <input
-                  id="setting-notification-sounds"
-                  type="checkbox"
-                  checked={notificationSounds}
-                  onChange={(e) => setNotificationSounds(e.target.checked)}
-                  aria-label="Play chimes on participant join and leave"
-                  className="w-4 h-4 rounded text-[#2F6F68] dark:text-[#5FA399] focus:ring-[#2F6F68] dark:focus:ring-[#5FA399] border-[#DDDAD0] dark:border-[#2B3038] cursor-pointer"
-                />
-              </div>
+              <StudioSwitch
+                mode="checkbox"
+                id="setting-notification-sounds"
+                checked={notificationSounds}
+                onChange={setNotificationSounds}
+                label="Play Chimes on Participant Join & Leave"
+                description="Audible tone when members enter or depart a room."
+              />
             </Card>
 
             {/* Appearance Card */}
             <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
               <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1 flex items-center gap-2">
-                <Sun className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
+                <Sun className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                 Interface Appearance
               </h3>
-              <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] mb-4">
+              <p className="text-xs text-[#555D66] dark:text-[#A3AAB2] mb-4">
                 Choose your matte workspace theme across Landing, Dashboard, and Pre-Join Lobby. Meeting theater stays low-glare dark matte for clear video contrast.
               </p>
               <ThemeToggle variant="segmented" />
             </Card>
 
-            {/* Save Button & Persistence Feedback */}
+            {/* Consolidated Save Button & Single Status Indicator */}
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <Button type="submit" variant="primary" size="sm" disabled={isSaving}>
                   {isSaving ? 'Saving...' : 'Save Preferences'}
                 </Button>
-                {isSaved && cloudSyncStatus === 'synced' && (
-                  <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5 animate-in fade-in">
-                    <Check className="w-4 h-4 text-emerald-600" />
-                    Synchronized to Cloud Database!
+
+                {isSaving && (
+                  <span
+                    role="status"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#EAE8E1] dark:bg-[#24282E] border border-[#DDDAD0] dark:border-[#2A2F37] text-[#555D66] dark:text-[#A3AAB2]"
+                  >
+                    <RefreshCw className="w-3 h-3 animate-spin" aria-hidden="true" />
+                    <span>Saving...</span>
                   </span>
                 )}
-                {isSaved && cloudSyncStatus === 'local-only' && (
-                  <span className="text-xs text-amber-700 font-semibold flex items-center gap-1.5 animate-in fade-in">
-                    <Info className="w-4 h-4 text-amber-600" />
-                    Saved locally only — not synced to cloud
+
+                {!isSaving && isSaved && cloudSyncStatus === 'synced' && (
+                  <span
+                    role="status"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] border border-[#2F6F68]/25 dark:border-[#5FA399]/30 text-[#2F6F68] dark:text-[#5FA399] cly-animate-fade"
+                  >
+                    <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Saved</span>
                   </span>
                 )}
               </div>
 
-              {isSaved && cloudSyncStatus === 'synced' && (
-                <div className="p-3 rounded-xl bg-[#E2ECE9]/60 dark:bg-[#1F302E]/60 border border-[#2F6F68]/30 dark:border-[#5FA399]/30 flex items-start gap-2.5 text-xs text-[#1F2428] dark:text-[#EAECEE] animate-in fade-in">
-                  <Cloud className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399] flex-shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">
-                    Preferences saved and synchronized to your account in the cloud database (with local browser profile fallback). Your pre-join audio and video defaults will persist across sessions and devices.
-                  </p>
-                </div>
-              )}
-
-              {isSaved && cloudSyncStatus === 'local-only' && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#1F2428] dark:text-[#EAECEE] animate-in fade-in">
-                  <div className="flex items-start gap-2.5">
-                    <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              {!isSaving && isSaved && cloudSyncStatus === 'local-only' && (
+                <div
+                  role="status"
+                  className={cn(
+                    'p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs cly-animate-fade',
+                    STUDIO_ALERT_WARNING_CLASS
+                  )}
+                >
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <Info className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <p className="leading-relaxed">
-                      Preferences were saved locally in this browser only because cloud synchronization could not be reached
-                      {cloudError ? ` (${cloudError})` : ''}. Changes will not sync automatically; click Retry Cloud Sync once your connection is restored.
+                      Saved locally — click Retry to sync.
+                      {cloudError ? ` (${cloudError})` : ''}
                     </p>
                   </div>
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
                     disabled={isSaving}
                     onClick={() => {
                       void persistPreferences();
                     }}
-                    className="flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                    leftIcon={<RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />}
+                    className="whitespace-nowrap shrink-0"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>{isSaving ? 'Retrying...' : 'Retry Cloud Sync'}</span>
+                    Retry
                   </Button>
                 </div>
               )}
@@ -454,10 +406,10 @@ export const SettingsPage: React.FC = () => {
 
         {/* Right Column: Identity Card */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl">
+          <Card className="p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-sm font-bold text-[#1F2428] dark:text-[#EAECEE] flex items-center gap-2">
-                <User className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" />
+                <User className="w-4 h-4 text-[#2F6F68] dark:text-[#5FA399]" aria-hidden="true" />
                 Account Identity
               </h3>
               <Button
@@ -472,7 +424,9 @@ export const SettingsPage: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Display Name</span>
+                <span className="text-[#555D66] dark:text-[#A3AAB2] block text-[11px]">
+                  Display Name
+                </span>
                 <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
                   {user?.firstName} {user?.lastName || ''}
                 </span>
@@ -480,41 +434,43 @@ export const SettingsPage: React.FC = () => {
 
               {user?.jobTitle && (
                 <div>
-                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Role / Title</span>
-                  <span className="font-medium text-[#1F2428] dark:text-[#EAECEE]">{user.jobTitle}</span>
+                  <span className="text-[#555D66] dark:text-[#A3AAB2] block text-[11px]">
+                    Role / Title
+                  </span>
+                  <span className="font-medium text-[#1F2428] dark:text-[#EAECEE]">
+                    {user.jobTitle}
+                  </span>
                 </div>
               )}
 
               <div>
-                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Email Address</span>
-                <span className="font-mono text-[#1F2428] dark:text-[#EAECEE]">{user?.email}</span>
+                <span className="text-[#555D66] dark:text-[#A3AAB2] block text-[11px]">
+                  Email Address
+                </span>
+                <span className="font-mono text-[#1F2428] dark:text-[#EAECEE]">
+                  {user?.email}
+                </span>
               </div>
 
               {user?.timeZone && (
                 <div>
-                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Time Zone</span>
+                  <span className="text-[#555D66] dark:text-[#A3AAB2] block text-[11px]">
+                    Time Zone
+                  </span>
                   <span className="text-[#1F2428] dark:text-[#EAECEE]">{user.timeZone}</span>
                 </div>
               )}
 
               {user?.bio && (
                 <div>
-                  <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">Bio</span>
-                  <p className="text-[#555D66] dark:text-[#A3AAB2] leading-relaxed">{user.bio}</p>
+                  <span className="text-[#555D66] dark:text-[#A3AAB2] block text-[11px]">
+                    Bio
+                  </span>
+                  <p className="text-[#555D66] dark:text-[#A3AAB2] leading-relaxed">
+                    {user.bio}
+                  </p>
                 </div>
               )}
-
-              <div>
-                <span className="text-[#7C848D] dark:text-[#A3AAB2] block text-[11px]">User Identifier</span>
-                <span className="font-mono text-[11px] text-[#7C848D] dark:text-[#A3AAB2] break-all">{user?.id}</span>
-              </div>
-
-              <div className="pt-2 border-t border-[#DDDAD0] dark:border-[#2B3038]">
-                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Argon2id + Dual Token Protection</span>
-                </div>
-              </div>
             </div>
           </Card>
         </div>

@@ -112,7 +112,7 @@ export const UpNextBanner: React.FC<UpNextBannerProps> = ({ refreshKey = 0 }) =>
   };
 
   return (
-    <div className="mb-5 p-4 rounded-2xl bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-xs">
+    <div className="mb-5 p-4 rounded-2xl bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-cly-sm">
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${

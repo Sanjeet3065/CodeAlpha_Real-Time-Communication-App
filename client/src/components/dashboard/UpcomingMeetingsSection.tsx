@@ -85,7 +85,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
   }, [fetchUpcoming, refreshKey]);
 
   return (
-    <Card className="p-5 sm:p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-xs rounded-2xl flex flex-col flex-1 h-full">
+    <Card className="p-5 sm:p-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl flex flex-col flex-1 h-full">
       {/* Section Header */}
       <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-[#DDDAD0]/80 dark:border-[#2B3038]">
         <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
@@ -253,7 +253,7 @@ export const UpcomingMeetingsSection: React.FC<UpcomingMeetingsSectionProps> = (
 
                       {activeMenuId === meeting.id && (
                         <div
-                          className="absolute right-0 top-full mt-1 w-36 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl shadow-lg z-20 py-1 text-xs animate-in fade-in-50"
+                          className="absolute right-0 top-full mt-1 w-36 bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-xl shadow-cly-lg z-20 py-1 text-xs cly-animate-popover"
                           onMouseLeave={() => setActiveMenuId(null)}
                         >
                           <button
