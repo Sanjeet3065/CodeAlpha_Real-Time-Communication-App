@@ -43,6 +43,37 @@
   }
 }
 
+@keyframes clyModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes clyPopoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes clyFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Reduced motion preference override */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -52,6 +83,12 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .cly-animate-modal,
+  .cly-animate-popover,
+  .cly-animate-fade {
+    animation: none !important;
   }
 }
 
@@ -71,5 +108,40 @@
 
   .font-mono {
     font-family: var(--cly-type-font-mono);
+  }
+
+  .cly-animate-modal {
+    animation: clyModalIn var(--cly-dur-fast) var(--cly-ease-default) both;
+  }
+
+  .cly-animate-popover {
+    animation: clyPopoverIn var(--cly-dur-fast) var(--cly-ease-default) both;
+  }
+
+  .cly-animate-fade {
+    animation: clyFadeIn var(--cly-dur-fast) var(--cly-ease-default) both;
+  }
+
+  .cly-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cly-border-strong) transparent;
+  }
+
+  .cly-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .cly-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .cly-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--cly-border-strong);
+    border-radius: 9999px;
+  }
+
+  .cly-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cly-text-muted);
   }
 }

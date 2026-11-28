@@ -31,9 +31,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs font-medium rounded-md min-h-[32px]',
+  sm: 'h-9 px-3 text-xs font-medium rounded-md min-h-[36px]',
   md: 'h-10 px-4 text-sm font-medium rounded-lg min-h-[40px]',
-  lg: 'h-12 px-6 text-base font-semibold rounded-lg min-h-[48px]',
+  lg: 'h-11 px-6 text-base font-semibold rounded-lg min-h-[44px]',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -64,7 +64,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           // Base button styles
           'relative inline-flex items-center justify-center font-medium transition-all duration-150 select-none outline-none',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF9F6] dark:focus-visible:ring-offset-[#111316]',
           'active:scale-[0.98]',
           // WCAG touch-target sizing safety on touch viewports (min 44x44px touch bounding box)
           'touch-manipulation',

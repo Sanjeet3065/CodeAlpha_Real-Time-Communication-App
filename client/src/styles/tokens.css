@@ -24,6 +24,9 @@
   --cly-surface-theater: #111316;
   --cly-surface-tile: #181B20;
   --cly-surface-dock: #1C1F24;
+  --cly-surface-theater-hover: #2B3038;
+  --cly-border-theater: #2A2F37;
+  --cly-text-theater-muted: #8D959E;
 
   /* Legacy alias variables mapped to active matte tokens */
   --cly-color-surface-canvas: var(--cly-surface-canvas);
@@ -41,7 +44,7 @@
   /* Text Colors */
   --cly-text-primary: #1F2428;
   --cly-text-secondary: #555D66;
-  --cly-text-muted: #7C848D;
+  --cly-text-muted: #636B74;
 
   /* Border Colors */
   --cly-border-subtle: #DDDAD0;
@@ -166,9 +169,9 @@ html.dark {
 
   --cly-text-primary: #EAECEE;
   --cly-text-secondary: #A3AAB2;
-  --cly-text-muted: #747C86;
+  --cly-text-muted: #8A929B;
 
-  --cly-border-subtle: #2B3038;
+  --cly-border-subtle: #2A2F37;
   --cly-border-strong: #3A404A;
   --cly-border-focus: #5FA399;
 
