@@ -20,6 +20,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { BrandMark } from '@/components/ui/BrandMark';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
 import { usePreJoinMediaPreview } from '@/hooks/usePreJoinMediaPreview';
@@ -274,8 +275,8 @@ export const PreJoinLobbyPage: React.FC = () => {
     : '';
 
   const userDisplayName = user
-    ? `${user.firstName} ${user.lastName}`.trim()
-    : 'Authenticated User';
+    ? `${user.firstName} ${user.lastName}`.trim() || user.email || 'You'
+    : 'Guest';
 
   const hasPermissionDenied =
     preview.cameraPermission === 'denied' || preview.micPermission === 'denied';
@@ -291,17 +292,7 @@ export const PreJoinLobbyPage: React.FC = () => {
             onClick={() => preview.releaseAllPreviewTracks()}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] flex items-center justify-center">
-              <Video className="w-4 h-4" aria-hidden="true" />
-            </div>
-            <div>
-              <span className="font-display font-bold text-sm tracking-tight text-[#1F2428] dark:text-[#EAECEE] block leading-none">
-                CONNECTLY
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider text-[#2F6F68] dark:text-[#5FA399] uppercase">
-                Pre-Join Lobby
-              </span>
-            </div>
+            <BrandMark />
           </Link>
 
           <div className="flex items-center gap-3">
@@ -322,14 +313,14 @@ export const PreJoinLobbyPage: React.FC = () => {
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-5xl">
           {isLoading ? (
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-10 text-center space-y-3 shadow-xs">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-10 text-center space-y-3 shadow-cly-sm">
               <div className="w-8 h-8 border-2 border-[#2F6F68] dark:border-[#5FA399] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm font-semibold text-[#1F2428] dark:text-[#EAECEE]">Loading meeting room details...</p>
               <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2]">Verifying room availability and admission rules.</p>
             </div>
           ) : loadError || !metadata ? (
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-8 max-w-lg mx-auto text-center space-y-4 shadow-cly-sm">
+              <div className="w-12 h-12 rounded-2xl bg-[#F6E6E6] dark:bg-[#342023] text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" aria-hidden="true" />
               </div>
               <div className="space-y-1">
@@ -355,12 +346,12 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
             </div>
           ) : waitingState === 'waiting' ? (
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-5 shadow-xs">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-5 shadow-cly-sm">
               <div className="w-14 h-14 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mx-auto">
                 <Clock className="w-7 h-7" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FAF3E4] dark:bg-[#262118] text-[#92600A] dark:text-[#D4A850]">
                   Waiting Room — Admission Pending
                 </span>
                 <h1 className="font-display text-xl font-bold text-[#1F2428] dark:text-[#EAECEE]">
@@ -392,8 +383,8 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
             </div>
           ) : waitingState === 'rejected' || waitingState === 'ended' ? (
-            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4 shadow-xs">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto">
+            <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] border border-[#DDDAD0] dark:border-[#2B3038] rounded-2xl p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4 shadow-cly-sm">
+              <div className="w-14 h-14 rounded-2xl bg-[#F6E6E6] dark:bg-[#342023] text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto">
                 <XCircle className="w-7 h-7" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
@@ -420,9 +411,7 @@ export const PreJoinLobbyPage: React.FC = () => {
               {/* Left Card: Real Local Pre-Join Camera & Microphone Preview (Unpublished) */}
               <div className="lg:col-span-7 bg-[#111316] text-white rounded-2xl border border-[#1C1F24] p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-md">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1C1F24] text-[#5FA399]">
-                    <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-                    Local Preview Only
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#1C1F24] text-[#5FA399]"><Shield className="w-3.5 h-3.5" aria-hidden="true" />Camera Preview
                   </span>
                   <span className="font-mono text-xs text-slate-400">
                     {metadata.meeting.meetingCode}
@@ -606,7 +595,7 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
 
               {/* Right Card: Meeting Details & Join Controls */}
-              <div className="lg:col-span-5 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] p-6 flex flex-col justify-between gap-5 shadow-xs">
+              <div className="lg:col-span-5 bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] p-6 flex flex-col justify-between gap-5 shadow-cly-sm">
                 <div className="space-y-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2F6F68] dark:text-[#5FA399]">
@@ -634,7 +623,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       Status: <strong className="font-mono">{metadata.meeting.status}</strong>
                     </span>
                     {metadata.meeting.isLocked && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F6E6E6] dark:bg-[#342023] border border-[#E8B4B4] dark:border-[#5A2C2C] text-xs font-semibold text-[#7A2B2B] dark:text-[#D46A6A]">
                         <Lock className="w-3.5 h-3.5" />
                         Locked
                       </span>
@@ -715,7 +704,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                   {!metadata.joinable ? (
                     <div
                       role="alert"
-                      className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2"
+                      className="p-3.5 rounded-xl bg-[#F6E6E6] dark:bg-[#342023] border border-[#E8B4B4] dark:border-[#5A2C2C] text-xs text-[#7A2B2B] dark:text-[#D46A6A] flex items-start gap-2"
                     >
                       <Lock className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
                       <p className="leading-relaxed">
@@ -723,7 +712,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                       </p>
                     </div>
                   ) : metadata.meeting.settings.waitingRoomEnabled && !metadata.isHost ? (
-                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                    <div className="p-3.5 rounded-xl bg-[#FAF3E4] dark:bg-[#262118] border border-[#E8C97A] dark:border-[#4A3A18] text-xs text-[#6B4A0A] dark:text-[#D4A850] flex items-start gap-2">
                       <Clock className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
                       <p className="leading-relaxed">
                         <strong>Waiting Room Enabled:</strong> You will enter the waiting room and
@@ -735,7 +724,7 @@ export const PreJoinLobbyPage: React.FC = () => {
                   {joinError && (
                     <div
                       role="alert"
-                      className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2"
+                      className="p-3 rounded-xl bg-[#F6E6E6] dark:bg-[#342023] border border-[#E8B4B4] dark:border-[#5A2C2C] text-xs text-[#7A2B2B] dark:text-[#D46A6A] flex items-start gap-2"
                     >
                       <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <span>{joinError}</span>

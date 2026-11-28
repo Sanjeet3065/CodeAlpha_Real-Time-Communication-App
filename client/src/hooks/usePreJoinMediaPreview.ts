@@ -12,6 +12,22 @@ import { useMediaDevices } from './useMediaDevices';
 import type { MediaPermissionState, PreJoinMediaChoice } from '@/types/meeting';
 
 /**
+ * Pure helper: converts a Web Audio analyser byte-frequency buffer (Uint8Array,
+ * where 128 = silence) into a 0–100 mic-level percentage.
+ * Safe to call in Node tests — no browser globals required.
+ */
+export function computeMicLevelPercent(dataArray: Uint8Array): number {
+  if (dataArray.length === 0) return 0;
+  let sumSquares = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const deviation = (dataArray[i] - 128) / 128; // normalize ±1 around silence
+    sumSquares += deviation * deviation;
+  }
+  const rms = Math.sqrt(sumSquares / dataArray.length);
+  return Math.min(100, Math.round(rms * 100 * 3)); // scale and clamp to 0–100
+}
+
+/**
  * Local-only media preview controller for PreJoinLobbyPage.
  *
  * Guarantees:
@@ -299,6 +315,68 @@ export function usePreJoinMediaPreview() {
     devices.selectedAudioOutputId,
   ]);
 
+  // ── Live mic level meter via AudioContext + AnalyserNode ──────────────────
+  const [micLevel, setMicLevel] = useState(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!micEnabled || !audioTrackRef.current) {
+      setMicLevel(0);
+      return;
+    }
+
+    let active = true;
+
+    const startAnalyser = async () => {
+      try {
+        const mediaStream = new MediaStream([audioTrackRef.current!.mediaStreamTrack]);
+        const AudioCtx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+        const ctx = new AudioCtx();
+        audioCtxRef.current = ctx;
+        const source = ctx.createMediaStreamSource(mediaStream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 1024;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          if (!active) return;
+          analyser.getByteTimeDomainData(dataArray);
+          setMicLevel(computeMicLevelPercent(dataArray));
+          rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+      } catch {
+        // AudioContext unsupported or permission denied — degrade gracefully
+        setMicLevel(0);
+      }
+    };
+
+    void startAnalyser();
+
+    return () => {
+      active = false;
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (audioCtxRef.current) {
+        try { void audioCtxRef.current.close(); } catch { /* ignore */ }
+        audioCtxRef.current = null;
+      }
+      analyserRef.current = null;
+      setMicLevel(0);
+    };
+  }, [micEnabled]);
+
+  /** Select the speaker (audio output) device by deviceId. */
+  const selectSpeakerDevice = useCallback(
+    (deviceId: string) => {
+      setSelectedDeviceId('audiooutput', deviceId);
+    },
+    [setSelectedDeviceId]
+  );
+
   return {
     videoTrack,
     micEnabled,
@@ -311,11 +389,13 @@ export function usePreJoinMediaPreview() {
     isInitializing,
     isBusyMic,
     isBusyCamera,
+    micLevel,
     devices,
     toggleMic,
     toggleCamera,
     selectMicDevice,
     selectCameraDevice,
+    selectSpeakerDevice,
     retryPermissions,
     refreshDevices,
     releaseAllPreviewTracks,
