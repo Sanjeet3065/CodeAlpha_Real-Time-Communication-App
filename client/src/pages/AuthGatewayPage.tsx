@@ -432,7 +432,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
         {/* LEFT COLUMN: Editorial Video Studio Visual + Subtle Animation + Text */}
         <section
           aria-label="Connectly Workspace Preview"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
+          className="order-2 lg:order-1 lg:col-span-6 px-5 sm:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col justify-center border-t lg:border-t-0 lg:border-r border-[#DDDAD0]/80 dark:border-[#2B3038]/80"
         >
           <div className="w-full max-w-xl mx-auto space-y-4">
             <motion.div
@@ -559,7 +559,7 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
         {/* RIGHT COLUMN: Sign In / Create Account Workspace */}
         <main
           id="main-content"
-          className="lg:col-span-6 px-5 sm:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col justify-center outline-none"
+          className="order-1 lg:order-2 lg:col-span-6 px-4 sm:px-8 lg:px-10 xl:px-12 py-5 sm:py-6 lg:py-8 flex flex-col justify-center outline-none"
         >
           <div className="w-full max-w-[500px] mx-auto">
             <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-lg p-6 sm:p-7">

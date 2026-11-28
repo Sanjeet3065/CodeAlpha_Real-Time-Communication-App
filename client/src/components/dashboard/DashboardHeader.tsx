@@ -371,7 +371,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-5 xl:px-8 flex items-center justify-between gap-2 sm:gap-3 xl:gap-5">
+      <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-2.5 sm:px-5 xl:px-8 flex items-center justify-between gap-1.5 sm:gap-3 xl:gap-5">
         {/* Left Zone: Mobile Menu Trigger & Workspace Title */}
         <div className="flex items-center gap-2.5 min-w-0 lg:max-w-[220px] xl:max-w-[280px]">
           <button

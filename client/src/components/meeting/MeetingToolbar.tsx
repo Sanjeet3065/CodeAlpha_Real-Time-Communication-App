@@ -137,7 +137,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
       aria-label="Meeting controls"
       className="shrink-0 relative z-30 px-2.5 sm:px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#111316] border-t border-white/10"
     >
-      <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5 overflow-x-auto">
+      <div className="max-w-7xl mx-auto flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-1.5 overflow-x-auto">
         {/* Microphone Mute / Unmute */}
         <button
           type="button"
@@ -160,7 +160,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           ) : (
             <MicOff className="w-4 h-4 text-[#D46A6A]" aria-hidden="true" />
           )}
-          <span>{isMicEnabled ? 'Mute' : 'Unmute'}</span>
+          <span className="hidden sm:inline">{isMicEnabled ? 'Mute' : 'Unmute'}</span>
         </button>
 
         {/* Camera On / Off */}
@@ -185,7 +185,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           ) : (
             <VideoOff className="w-4 h-4 text-[#D46A6A]" aria-hidden="true" />
           )}
-          <span>{isCameraEnabled ? 'Stop Video' : 'Start Video'}</span>
+          <span className="hidden sm:inline">{isCameraEnabled ? 'Stop Video' : 'Start Video'}</span>
         </button>
 
         {/* Screen Share Start / Stop (Desktop & Tablet) */}
@@ -590,10 +590,11 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           data-control="leave-meeting"
           onClick={onRequestLeave}
           title="Leave meeting"
-          className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-white/40"
+          aria-label="Leave meeting"
+          className="inline-flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-w-[40px] min-h-[40px] rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-white/40"
         >
           <LogOut className="w-4 h-4" aria-hidden="true" />
-          <span>Leave</span>
+          <span className="hidden sm:inline">Leave</span>
         </button>
 
         {/* Host End Meeting for All */}
@@ -603,10 +604,11 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             data-control="end-meeting"
             onClick={onRequestEndMeeting}
             title="End meeting for all participants"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#C24D4D] hover:bg-[#A63D3D] text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
+            aria-label="End meeting for all"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-w-[40px] min-h-[40px] rounded-lg text-xs font-semibold bg-[#C24D4D] hover:bg-[#A63D3D] text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
           >
             <PhoneOff className="w-4 h-4" aria-hidden="true" />
-            <span>End<span className="hidden xl:inline"> for All</span></span>
+            <span className="hidden sm:inline">End<span className="hidden xl:inline"> for All</span></span>
           </button>
         )}
       </div>

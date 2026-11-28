@@ -48,18 +48,18 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
 
   return (
     <header
-      className="sticky top-0 z-30 bg-[#111316]/95 border-b border-white/10 px-3 sm:px-6 py-3"
+      className="sticky top-0 z-30 bg-[#111316]/95 border-b border-white/10 px-3 sm:px-6 py-2 sm:py-3 shrink-0"
       data-livekit-status={liveKitStatus ?? 'idle'}
     >
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Brand + Meeting Title + Code */}
-        <div className="flex items-center gap-3 min-w-[175px] flex-1">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
           <div className="flex-shrink-0">
             <BrandMark />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-sm sm:text-base font-bold text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h1 className="font-display text-sm sm:text-base font-bold text-white truncate max-w-[130px] sm:max-w-xs md:max-w-md">
                 {meeting.title}
               </h1>
               {meeting.isLocked && (
@@ -108,7 +108,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
         </div>
 
         {/* Right: Invite Copy + Status Pills + Mobile Panel Buttons */}
-        <div className="flex items-center flex-wrap gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           <span className="sr-only" aria-live="polite">
             {copied === 'code'
               ? 'Meeting code copied to clipboard.'
@@ -119,18 +119,18 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({
           <button
             type="button"
             onClick={() => copyText(invitationLink, 'link')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+            aria-label="Copy invitation link"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] rounded-xl bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             {copied === 'link' ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Link Copied</span>
+                <Check className="w-3.5 h-3.5 text-[#5FA399]" />
+                <span className="hidden sm:inline">Link Copied</span>
               </>
             ) : (
               <>
                 <LinkIcon className="w-3.5 h-3.5 text-[#5FA399]" />
                 <span className="hidden sm:inline">Copy Invite Link</span>
-                <span className="sm:hidden">Invite</span>
               </>
             )}
           </button>
