@@ -37,6 +37,7 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [metadata, setMetadata] = useState<MeetingMetadataResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const tryAnotherFocusTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,8 +45,19 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
       setError(null);
       setMetadata(null);
       setIsVerifying(false);
+    } else if (tryAnotherFocusTimerRef.current !== null) {
+      window.clearTimeout(tryAnotherFocusTimerRef.current);
+      tryAnotherFocusTimerRef.current = null;
     }
   }, [isOpen, initialCode]);
+
+  useEffect(() => {
+    return () => {
+      if (tryAnotherFocusTimerRef.current !== null) {
+        window.clearTimeout(tryAnotherFocusTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +102,7 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
       icon={<Hash className="w-4 h-4" aria-hidden="true" />}
       size="sm"
       closeLabel="Close join meeting dialog"
-      initialFocusRef={!metadata ? inputRef : undefined}
+      initialFocusRef={inputRef}
     >
       {!metadata ? (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -208,6 +220,13 @@ export const JoinMeetingModal: React.FC<JoinMeetingModalProps> = ({
               onClick={() => {
                 setMetadata(null);
                 setError(null);
+                if (tryAnotherFocusTimerRef.current !== null) {
+                  window.clearTimeout(tryAnotherFocusTimerRef.current);
+                }
+                tryAnotherFocusTimerRef.current = window.setTimeout(() => {
+                  tryAnotherFocusTimerRef.current = null;
+                  inputRef.current?.focus();
+                }, 0);
               }}
             >
               Try Another Code

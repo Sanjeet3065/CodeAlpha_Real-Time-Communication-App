@@ -108,7 +108,7 @@ export const InstantMeetingModal: React.FC<InstantMeetingModalProps> = ({
       icon={<Zap className="w-4 h-4" aria-hidden="true" />}
       size="sm"
       closeLabel="Close instant meeting modal"
-      initialFocusRef={!createdMeeting ? titleInputRef : undefined}
+      initialFocusRef={titleInputRef}
     >
       {!createdMeeting ? (
         <form onSubmit={handleCreate} className="space-y-4">

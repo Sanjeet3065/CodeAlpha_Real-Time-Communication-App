@@ -94,13 +94,15 @@ export const AccountMenu: React.FC = () => {
   }, [isOpen, getMenuItems]);
 
   const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      pendingFocusEdgeRef.current = 'first';
-      setIsOpen(true);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      pendingFocusEdgeRef.current = 'last';
+      const edge: 'first' | 'last' = e.key === 'ArrowUp' ? 'last' : 'first';
+      if (isOpen) {
+        const items = getMenuItems();
+        items[edge === 'last' ? items.length - 1 : 0]?.focus();
+        return;
+      }
+      pendingFocusEdgeRef.current = edge;
       setIsOpen(true);
     }
   };

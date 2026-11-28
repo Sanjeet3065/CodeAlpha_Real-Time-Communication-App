@@ -180,7 +180,7 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     assert.ok(html.includes('aria-describedby="phase-modal-desc"'));
   });
 
-  it('EditProfileModal delegates dialog chrome to ModalShell while preserving wasOpenRef and authApi calls', () => {
+  it('EditProfileModal delegates dialog chrome to ModalShell while preserving wasOpenRef, authApi calls, and unconditional initialFocusRef', () => {
     const filePath = path.join(DASHBOARD_DIR, 'EditProfileModal.tsx');
     const source = fs.readFileSync(filePath, 'utf8');
 
@@ -188,12 +188,20 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     assert.ok(source.includes('wasOpenRef'), 'EditProfileModal must preserve wasOpenRef state guard');
     assert.ok(source.includes('titleId="edit-profile-modal-title"'), 'EditProfileModal must preserve titleId');
     assert.ok(source.includes('initialTab'), 'EditProfileModal must preserve initialTab prop');
+    assert.ok(
+      source.includes('initialFocusRef={firstInputRef}'),
+      'EditProfileModal must pass unconditional initialFocusRef={firstInputRef} to avoid ModalShell lock teardown on tab switch'
+    );
+    assert.ok(
+      !/initialFocusRef=\{[^}]*\?/.test(source),
+      'EditProfileModal must not conditionally toggle initialFocusRef'
+    );
     for (const forbidden of FORBIDDEN_CLASSES) {
       assert.ok(!source.includes(forbidden), `EditProfileModal.tsx must not contain "${forbidden}"`);
     }
   });
 
-  it('InstantMeetingModal wraps in ModalShell, preserves DOM IDs and [10, 25, 60] capacity pills', () => {
+  it('InstantMeetingModal wraps in ModalShell with unconditional initialFocusRef, preserved DOM IDs, and [10, 25, 60] capacity pills', () => {
     const filePath = path.join(DASHBOARD_DIR, 'InstantMeetingModal.tsx');
     const source = fs.readFileSync(filePath, 'utf8');
 
@@ -202,6 +210,14 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     assert.ok(source.includes('id="instant-meeting-name"'), 'InstantMeetingModal must preserve #instant-meeting-name');
     assert.ok(source.includes('instant-waiting-room'), 'InstantMeetingModal must preserve #instant-waiting-room');
     assert.ok(source.includes('[10, 25, 60]'), 'InstantMeetingModal must preserve [10, 25, 60] capacity pills');
+    assert.ok(
+      source.includes('initialFocusRef={titleInputRef}'),
+      'InstantMeetingModal must pass unconditional initialFocusRef={titleInputRef} to avoid ModalShell lock teardown on room creation'
+    );
+    assert.ok(
+      !/initialFocusRef=\{[^}]*\?/.test(source),
+      'InstantMeetingModal must not conditionally toggle initialFocusRef'
+    );
     for (const forbidden of FORBIDDEN_CLASSES) {
       assert.ok(!source.includes(forbidden), `InstantMeetingModal.tsx must not contain "${forbidden}"`);
     }
@@ -227,13 +243,25 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     assert.ok(html.includes('>10<') && html.includes('>25<') && html.includes('>60<'));
   });
 
-  it('JoinMeetingModal wraps in ModalShell, preserves #join-meeting-code-input and #join-code-error, and uses dark-safe alerts', () => {
+  it('JoinMeetingModal wraps in ModalShell with unconditional initialFocusRef, refocuses input on Try Another Code, and uses dark-safe alerts', () => {
     const filePath = path.join(DASHBOARD_DIR, 'JoinMeetingModal.tsx');
     const source = fs.readFileSync(filePath, 'utf8');
 
     assert.ok(source.includes('<ModalShell'), 'JoinMeetingModal must wrap content in <ModalShell');
     assert.ok(source.includes('id="join-meeting-code-input"'), 'JoinMeetingModal must preserve #join-meeting-code-input');
     assert.ok(source.includes('id="join-code-error"'), 'JoinMeetingModal must preserve #join-code-error');
+    assert.ok(
+      source.includes('initialFocusRef={inputRef}'),
+      'JoinMeetingModal must pass unconditional initialFocusRef={inputRef} to avoid ModalShell lock teardown on metadata step'
+    );
+    assert.ok(
+      !/initialFocusRef=\{[^}]*\?/.test(source),
+      'JoinMeetingModal must not conditionally toggle initialFocusRef'
+    );
+    assert.ok(
+      /setMetadata\(null\)[\s\S]*?inputRef\.current\?\.focus\(\)/.test(source),
+      'JoinMeetingModal must focus inputRef.current when resetting via Try Another Code'
+    );
     assert.ok(!source.includes('bg-amber-50'), 'JoinMeetingModal must not use light-only bg-amber-50');
     for (const forbidden of FORBIDDEN_CLASSES) {
       assert.ok(!source.includes(forbidden), `JoinMeetingModal.tsx must not contain "${forbidden}"`);
@@ -290,7 +318,7 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     }
   });
 
-  it('AccountMenu supports ArrowDown/ArrowUp/Home/End/Escape menuitem keyboard nav and crisp fallback', () => {
+  it('AccountMenu supports ArrowDown/ArrowUp/Home/End/Escape menuitem keyboard nav (both closed and open trigger) and crisp fallback', () => {
     const filePath = path.join(DASHBOARD_DIR, 'AccountMenu.tsx');
     const source = fs.readFileSync(filePath, 'utf8');
 
@@ -302,6 +330,10 @@ describe('Task 3 Header Overlays & Core Dialogs Contracts', () => {
     assert.ok(!source.includes('Authenticated User'), 'AccountMenu must remove "Authenticated User" jargon');
     assert.ok(!source.includes('emerald-'), 'AccountMenu must use Stone & Carbon Matte tokens instead of emerald-');
     assert.ok(!source.includes('bg-amber-50'), 'AccountMenu must not use light-only bg-amber-50');
+    assert.ok(
+      /handleTriggerKeyDown[\s\S]*?if \(isOpen\)[\s\S]*?getMenuItems\(\)[\s\S]*?\.focus\(\)/.test(source),
+      'AccountMenu handleTriggerKeyDown must immediately focus first/last menuitem when menu is already open'
+    );
     for (const keyName of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape']) {
       assert.ok(source.includes(`'${keyName}'`), `AccountMenu must handle ${keyName} keyboard navigation`);
     }

@@ -231,7 +231,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       icon={<UserIcon className="w-4 h-4" aria-hidden="true" />}
       size="md"
       closeLabel="Close edit profile modal"
-      initialFocusRef={activeTab === 'profile' ? firstInputRef : undefined}
+      initialFocusRef={firstInputRef}
       bodyClassName="p-0 flex flex-col overflow-hidden"
     >
       {/* Switcher Tabs */}
