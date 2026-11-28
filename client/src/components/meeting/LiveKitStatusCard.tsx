@@ -118,7 +118,7 @@ export const LiveKitStatusCard: React.FC<LiveKitStatusCardProps> = ({
       data-livekit-status={livekit.status}
       className={
         isHealthyConnected
-          ? 'px-3 py-2 rounded-xl bg-[#1C1F24]/70 border border-white/10'
+          ? 'sr-only'
           : 'p-3.5 sm:p-4 rounded-2xl bg-[#1C1F24]/80 border border-white/10 space-y-3'
       }
     >

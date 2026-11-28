@@ -751,12 +751,12 @@ export const MeetingRoomPage: React.FC = () => {
   if (!meeting || !self) return null;
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Tabs */}
       <div
         role="tablist"
         aria-label="Room management sections"
-        className="flex items-center border-b border-white/10 px-3 pt-3 gap-1"
+        className="flex items-center border-b border-white/10 px-2 pt-2.5 gap-0.5 shrink-0"
       >
         <button
           type="button"
@@ -764,13 +764,13 @@ export const MeetingRoomPage: React.FC = () => {
           data-tab="participants"
           aria-selected={activeSideTab === 'participants'}
           onClick={() => setActiveSideTab('participants')}
-          className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
+          className={`flex-1 pb-2.5 px-1.5 text-[11px] font-semibold border-b-2 transition-colors flex items-center justify-center gap-1 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
             activeSideTab === 'participants'
               ? 'border-[#5FA399] text-white'
               : 'border-transparent text-slate-300 hover:text-white'
           }`}
         >
-          <Users className="w-3.5 h-3.5" aria-hidden="true" />
+          <Users className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           <span>People ({participants.length})</span>
         </button>
 
@@ -781,13 +781,13 @@ export const MeetingRoomPage: React.FC = () => {
             data-tab="waiting"
             aria-selected={activeSideTab === 'waiting'}
             onClick={() => setActiveSideTab('waiting')}
-            className={`flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
+            className={`flex-1 pb-2.5 px-1.5 text-[11px] font-semibold border-b-2 transition-colors flex items-center justify-center gap-1 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
               activeSideTab === 'waiting'
                 ? 'border-[#5FA399] text-white'
                 : 'border-transparent text-slate-300 hover:text-white'
             }`}
           >
-            <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+            <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span>Waiting ({waitingList.length})</span>
           </button>
         )}
@@ -799,18 +799,18 @@ export const MeetingRoomPage: React.FC = () => {
           data-tab="chat"
           aria-selected={activeSideTab === 'chat'}
           onClick={() => setActiveSideTab('chat')}
-          className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
+          className={`relative flex-1 pb-2.5 px-1.5 text-[11px] font-semibold border-b-2 transition-colors flex items-center justify-center gap-1 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
             activeSideTab === 'chat'
               ? 'border-[#5FA399] text-white'
               : 'border-transparent text-slate-300 hover:text-white'
           }`}
         >
-          <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+          <MessageSquare className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           <span>Chat</span>
           {activeSideTab !== 'chat' && chat.unreadCount > 0 && (
             <span
               data-badge="sidebar-unread-chat"
-              className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#C24D4D] text-white animate-pulse"
+              className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#C24D4D] text-white"
             >
               {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
             </span>
@@ -825,18 +825,18 @@ export const MeetingRoomPage: React.FC = () => {
             data-tab="files"
             aria-selected={activeSideTab === 'files'}
             onClick={() => setActiveSideTab('files')}
-            className={`relative flex-1 pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
+            className={`relative flex-1 pb-2.5 px-1.5 text-[11px] font-semibold border-b-2 transition-colors flex items-center justify-center gap-1 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] rounded-t ${
               activeSideTab === 'files'
                 ? 'border-[#5FA399] text-white'
                 : 'border-transparent text-slate-300 hover:text-white'
             }`}
           >
-            <FolderDown className="w-3.5 h-3.5" aria-hidden="true" />
+            <FolderDown className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span>Files</span>
             {files.files.length > 0 && (
               <span
                 data-badge="sidebar-files-count"
-                className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2F6F68] text-white"
+                className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2F6F68] text-white"
               >
                 {files.files.length}
               </span>
@@ -846,7 +846,7 @@ export const MeetingRoomPage: React.FC = () => {
       </div>
 
       {/* Panel Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {activeSideTab === 'files' && isFileSharingEnabled ? (
           <FilesPanel
             files={files.files}
@@ -986,9 +986,9 @@ export const MeetingRoomPage: React.FC = () => {
       )}
 
       {/* Main Content Area + Desktop Sidebar */}
-      <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto">
+      <div className="flex-1 min-h-0 flex overflow-hidden max-w-7xl w-full mx-auto">
         {/* Main Video Conference & Room Stage */}
-        <main className="flex-1 overflow-y-auto p-3.5 sm:p-5 lg:p-6 space-y-4 pb-28 sm:pb-24">
+        <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-3">
           {/* Remote Participant Audio Tracks (Strictly Remote Only — Zero Feedback Loop) */}
           <RemoteAudioRenderer
             participants={media.participants}
@@ -1055,10 +1055,10 @@ export const MeetingRoomPage: React.FC = () => {
           <FloatingReactions reactions={chat.activeReactions} />
         </main>
 
-        {/* Desktop Right Sidebar (Participants + Waiting Room) */}
+        {/* Desktop Right Sidebar (Participants, Waiting Room, Chat, Files) */}
         <aside
           aria-label="Room management panels"
-          className="hidden lg:flex lg:w-80 xl:w-96 flex-col border-l border-white/10 bg-[#1C1F24]/55"
+          className="hidden lg:flex lg:w-[340px] xl:w-[370px] shrink-0 min-h-0 flex-col border-l border-white/10 bg-[#1C1F24]/55"
         >
           {sidebarContent}
         </aside>

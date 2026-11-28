@@ -135,9 +135,9 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
   return (
     <footer
       aria-label="Meeting controls"
-      className="fixed bottom-0 inset-x-0 z-30 px-2.5 sm:px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] bg-[#111316]/95 border-t border-white/10"
+      className="shrink-0 relative z-30 px-2.5 sm:px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#111316] border-t border-white/10"
     >
-      <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+      <div className="max-w-7xl mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5 overflow-x-auto">
         {/* Microphone Mute / Unmute */}
         <button
           type="button"
@@ -147,7 +147,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           title={isMicEnabled ? 'Mute microphone' : 'Unmute microphone'}
           disabled={!isLiveKitConnected || isTogglingMic}
           onClick={onToggleMic}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
             isMicEnabled
               ? 'bg-[#1C1F24] border-white/15 text-white hover:bg-[#2B3038]'
               : 'bg-[#C24D4D]/25 border-[#C24D4D]/50 text-[#D46A6A] hover:bg-[#C24D4D]/35'
@@ -172,7 +172,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           title={isCameraEnabled ? 'Turn off camera' : 'Turn on camera'}
           disabled={!isLiveKitConnected || isTogglingCamera}
           onClick={onToggleCamera}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
             isCameraEnabled
               ? 'bg-[#1C1F24] border-white/15 text-white hover:bg-[#2B3038]'
               : 'bg-[#C24D4D]/25 border-[#C24D4D]/50 text-[#D46A6A] hover:bg-[#C24D4D]/35'
@@ -198,7 +198,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
           disabled={!isLiveKitConnected || isTogglingScreenShare}
           onClick={onToggleScreenShare}
-          className={`hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50 disabled:cursor-not-allowed ${
             isScreenSharing
               ? 'bg-[#2F6F68] border-[#5FA399]/40 text-white hover:bg-[#255A54]'
               : 'bg-[#1C1F24] border-white/15 text-white hover:bg-[#2B3038]'
@@ -211,7 +211,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           ) : (
             <Monitor className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           )}
-          <span>{isScreenSharing ? 'Stop Sharing' : 'Share Screen'}</span>
+          <span>{isScreenSharing ? 'Stop' : 'Share'}</span>
         </button>
 
         {/* Audio / Video Devices (Desktop & Tablet) */}
@@ -221,14 +221,14 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           aria-label="Audio and video device settings"
           title="Select microphone, camera, and speaker"
           onClick={onOpenDevices}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
         >
           {isSwitchingDevice ? (
             <Loader2 className="w-4 h-4 animate-spin text-[#5FA399]" aria-hidden="true" />
           ) : (
             <SlidersHorizontal className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           )}
-          <span className="hidden sm:inline">Devices</span>
+          <span className="hidden lg:inline">Devices</span>
         </button>
 
         {/* Phase 14 — Whiteboard Toggle Button (Desktop & Tablet) */}
@@ -240,14 +240,14 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             title={isWhiteboardOpen ? 'Close Whiteboard (W)' : 'Open Whiteboard (W)'}
             aria-pressed={isWhiteboardOpen}
             onClick={onToggleWhiteboard}
-            className={`hidden sm:inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
+            className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               isWhiteboardOpen
                 ? 'bg-[#2F6F68] border-[#5FA399]/40 text-white hover:bg-[#255A54]'
                 : 'bg-[#1C1F24] border-white/10 text-white hover:bg-[#2B3038]'
             }`}
           >
             <PenTool className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-            <span className="hidden sm:inline">Whiteboard</span>
+            <span className="hidden sm:inline">Board</span>
           </button>
         )}
 
@@ -259,7 +259,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           title={isChatOpen ? 'Close chat' : 'Open chat'}
           aria-pressed={isChatOpen}
           onClick={onToggleChat}
-          className={`relative inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
+          className={`relative inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
             isChatOpen
               ? 'bg-[#2F6F68] border-[#5FA399]/40 text-white hover:bg-[#255A54]'
               : 'bg-[#1C1F24] border-white/10 text-white hover:bg-[#2B3038]'
@@ -286,7 +286,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             title={isFilesOpen ? 'Close files' : 'Open files'}
             aria-pressed={isFilesOpen}
             onClick={onToggleFiles}
-            className={`hidden sm:inline-flex relative items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
+            className={`hidden sm:inline-flex relative items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               isFilesOpen
                 ? 'bg-[#2F6F68] border-[#5FA399]/40 text-white hover:bg-[#255A54]'
                 : 'bg-[#1C1F24] border-white/10 text-white hover:bg-[#2B3038]'
@@ -314,7 +314,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             title="Send reaction"
             aria-pressed={isReactionsOpen}
             onClick={onToggleReactions}
-            className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
+            className={`inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               isReactionsOpen
                 ? 'bg-[#2F6F68] border-[#5FA399]/40 text-white hover:bg-[#255A54]'
                 : 'bg-[#1C1F24] border-white/10 text-white hover:bg-[#2B3038]'
@@ -536,14 +536,15 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             disabled={isTogglingLock}
             onClick={onToggleLock}
             title={isLocked ? 'Unlock meeting' : 'Lock meeting'}
-            className={`hidden sm:inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
+            aria-label={isLocked ? 'Unlock meeting' : 'Lock meeting'}
+            className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399] ${
               isLocked
                 ? 'bg-[#C24D4D]/20 border-[#C24D4D]/40 text-[#D46A6A] hover:bg-[#C24D4D]/30'
                 : 'bg-[#1C1F24] border-white/10 text-white hover:bg-[#2B3038]'
             }`}
           >
             {isLocked ? <Unlock className="w-4 h-4" aria-hidden="true" /> : <Lock className="w-4 h-4" aria-hidden="true" />}
-            <span className="hidden sm:inline">{isLocked ? 'Unlock' : 'Lock'}</span>
+            <span className="hidden xl:inline">{isLocked ? 'Unlock' : 'Lock'}</span>
           </button>
         )}
 
@@ -551,7 +552,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
         <button
           type="button"
           onClick={onOpenMobileParticipants}
-          className="hidden sm:inline-flex lg:hidden items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+          className="hidden sm:inline-flex lg:hidden items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
         >
           <Users className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           <span>People ({participantCount})</span>
@@ -562,7 +563,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           <button
             type="button"
             onClick={onOpenMobileWaiting}
-            className="hidden sm:inline-flex lg:hidden items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+            className="hidden sm:inline-flex lg:hidden items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <Clock className="w-4 h-4 text-amber-300" aria-hidden="true" />
             <span>Waiting ({waitingCount})</span>
@@ -575,10 +576,11 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             type="button"
             onClick={onOpenRoomSettings}
             title="Host room settings"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+            aria-label="Host room settings"
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#1C1F24] hover:bg-[#2B3038] border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
           >
             <Settings className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
-            <span className="hidden md:inline">Room Settings</span>
+            <span className="hidden xl:inline">Settings</span>
           </button>
         )}
 
@@ -588,7 +590,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
           data-control="leave-meeting"
           onClick={onRequestLeave}
           title="Leave meeting"
-          className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
+          className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-white/40"
         >
           <LogOut className="w-4 h-4" aria-hidden="true" />
           <span>Leave</span>
@@ -601,10 +603,10 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             data-control="end-meeting"
             onClick={onRequestEndMeeting}
             title="End meeting for all participants"
-            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-[#C24D4D] hover:bg-[#A63D3D] text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] rounded-lg text-xs font-semibold bg-[#C24D4D] hover:bg-[#A63D3D] text-white transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
           >
             <PhoneOff className="w-4 h-4" aria-hidden="true" />
-            <span>End for All</span>
+            <span>End<span className="hidden xl:inline"> for All</span></span>
           </button>
         )}
       </div>

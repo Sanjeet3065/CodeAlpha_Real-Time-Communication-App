@@ -40,7 +40,6 @@ export const VideoConferenceGrid: React.FC<VideoConferenceGridProps> = ({
   admittedParticipants,
   livekitParticipants,
   currentUserId,
-  maxParticipants,
   isLiveKitConnected,
   screenShares,
   onStopSharing,
@@ -115,50 +114,37 @@ export const VideoConferenceGrid: React.FC<VideoConferenceGridProps> = ({
       data-screenshare-active={Boolean(activeShare)}
       className="space-y-3"
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="font-display text-sm font-bold text-slate-100">
-            Live Stage ({mergedTiles.length}{' '}
-            {mergedTiles.length === 1 ? 'Participant' : 'Participants'})
-          </h2>
-          {totalPages > 1 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
-              Page {safePage + 1} of {totalPages}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1 bg-slate-800/80 rounded-lg p-0.5 border border-slate-700">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                disabled={safePage === 0}
-                aria-label="Previous participant page"
-                className="p-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-[11px] text-slate-300 px-1 font-mono">
-                {safePage * MAX_TILES_PER_PAGE + 1}-
-                {Math.min((safePage + 1) * MAX_TILES_PER_PAGE, mergedTiles.length)} of {mergedTiles.length}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={safePage >= totalPages - 1}
-                aria-label="Next participant page"
-                className="p-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          <span className="text-[11px] text-slate-300 font-mono">
-            Capacity: {mergedTiles.length}/{maxParticipants}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
+            Page {safePage + 1} of {totalPages}
           </span>
+          <div className="flex items-center gap-1 bg-[#1C1F24] rounded-lg p-0.5 border border-white/10">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+              aria-label="Previous participant page"
+              className="p-1 rounded text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[11px] text-slate-300 px-1 font-mono">
+              {safePage * MAX_TILES_PER_PAGE + 1}-
+              {Math.min((safePage + 1) * MAX_TILES_PER_PAGE, mergedTiles.length)} of {mergedTiles.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safePage >= totalPages - 1}
+              aria-label="Next participant page"
+              className="p-1 rounded text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {activeShare ? (
         <div className="space-y-4" data-screenshare-active-container="true">
