@@ -57,26 +57,28 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
           {description}
         </p>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-          <button
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5 pt-1">
+          <Button
             ref={cancelBtnRef}
             type="button"
+            variant="outline"
+            size="md"
             disabled={isLoading}
             onClick={onCancel}
-            className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl text-xs font-semibold text-slate-200 bg-white/10 hover:bg-white/15 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+            className="w-full sm:w-auto min-h-[42px] h-[42px] px-4 rounded-lg text-xs sm:text-sm font-semibold border-white/15 bg-white/10 text-slate-100 hover:bg-white/15 hover:text-white dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:hover:bg-white/15"
           >
             {cancelLabel}
-          </button>
+          </Button>
           <Button
             type="button"
-            variant="primary"
-            size="sm"
+            variant={variant === 'danger' ? 'destructive' : 'primary'}
+            size="md"
             disabled={isLoading}
             onClick={onConfirm}
             className={
               variant === 'danger'
-                ? '!bg-[#C24D4D] hover:!bg-[#A63D3D] text-white border-transparent'
-                : ''
+                ? 'w-full sm:w-auto min-h-[42px] h-[42px] px-4 rounded-lg text-xs sm:text-sm font-semibold !bg-[#C24D4D] hover:!bg-[#A63D3D] !text-[#FAF9F6] dark:!text-[#FAF9F6] border border-transparent'
+                : 'w-full sm:w-auto min-h-[42px] h-[42px] px-4 rounded-lg text-xs sm:text-sm font-semibold !bg-[#2F6F68] hover:!bg-[#255A54] !text-[#FAF9F6] dark:!text-[#FAF9F6] border border-transparent'
             }
           >
             {isLoading ? 'Processing...' : confirmLabel}

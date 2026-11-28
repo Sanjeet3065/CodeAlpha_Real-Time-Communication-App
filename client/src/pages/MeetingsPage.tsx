@@ -589,10 +589,10 @@ export const MeetingsPage: React.FC = () => {
           )}
 
           {/* History Filters Toolbar */}
-          <Card className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
+          <Card className="p-3.5 sm:p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 items-center">
               {/* Search Bar */}
-              <div className="relative">
+              <div className="col-span-2 sm:col-span-1 relative">
                 <Search
                   className="w-4 h-4 text-[#636B74] dark:text-[#A3AAB2] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
@@ -608,7 +608,7 @@ export const MeetingsPage: React.FC = () => {
               </div>
 
               {/* Status Filter */}
-              <div>
+              <div className="col-span-1">
                 <select
                   value={historyStatusFilter}
                   onChange={(e) => setHistoryStatusFilter(e.target.value as HistoryStatusFilter)}
@@ -627,7 +627,7 @@ export const MeetingsPage: React.FC = () => {
               </div>
 
               {/* Role Filter */}
-              <div>
+              <div className="col-span-1">
                 <select
                   value={historyRoleFilter}
                   onChange={(e) => setHistoryRoleFilter(e.target.value as HistoryRoleFilter)}
@@ -644,7 +644,7 @@ export const MeetingsPage: React.FC = () => {
               </div>
 
               {/* Sort Order */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <select
                   value={historySortOrder}
                   onChange={(e) => setHistorySortOrder(e.target.value as 'desc' | 'asc')}
@@ -699,7 +699,7 @@ export const MeetingsPage: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#555D66] dark:text-[#A3AAB2] px-1">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-[#555D66] dark:text-[#A3AAB2] px-1">
                 <div className="flex items-center gap-2.5">
                   <button
                     type="button"
@@ -837,13 +837,14 @@ export const MeetingsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="shrink-0 flex items-center gap-2 pl-7 sm:pl-0">
+                      <div className="w-full sm:w-auto shrink-0 flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#DDDAD0]/70 dark:border-[#2B3038]">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => void handleOpenHistoryDetails(item.id)}
                           leftIcon={<Eye className="w-3.5 h-3.5" aria-hidden="true" />}
+                          className="flex-1 sm:flex-initial justify-center"
                         >
                           View Details
                         </Button>

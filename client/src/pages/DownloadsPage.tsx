@@ -196,10 +196,10 @@ export const DownloadsPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <Card className="p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+      <Card className="p-3.5 sm:p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-12 gap-2.5 sm:gap-3">
           {/* Search Input */}
-          <div className="sm:col-span-6 relative">
+          <div className="col-span-2 sm:col-span-6 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#636B74] dark:text-[#A3AAB2]">
               <Search className="w-4 h-4" aria-hidden="true" />
             </div>
@@ -465,8 +465,8 @@ export const DownloadsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-[11px] text-[#555D66] dark:text-[#A3AAB2]">
-                    <div className="min-w-0 space-y-0.5">
+                  <div className="space-y-2.5 text-[11px] text-[#555D66] dark:text-[#A3AAB2]">
+                    <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-1.5 text-[#1F2428] dark:text-[#EAECEE]">
                         <Video className="w-3.5 h-3.5 text-[#2F6F68] dark:text-[#5FA399] shrink-0" aria-hidden="true" />
                         <span className="truncate font-medium">{file.associatedMeetingName}</span>
@@ -481,13 +481,13 @@ export const DownloadsPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 pt-2.5 border-t border-[#DDDAD0]/70 dark:border-[#2B3038]">
                       <button
                         type="button"
                         onClick={() => void handleDownload(file)}
                         disabled={downloadingId === file.id}
                         aria-label={`Save ${file.name} to device`}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors shrink-0 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors disabled:opacity-50"
                       >
                         {downloadingId === file.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
@@ -500,7 +500,7 @@ export const DownloadsPage: React.FC = () => {
                         type="button"
                         onClick={() => setPendingDeleteFile(file)}
                         aria-label={`Delete ${file.name} from downloads`}
-                        className="inline-flex items-center justify-center p-2 min-h-[36px] rounded-lg text-[#555D66] dark:text-[#A3AAB2] hover:text-[#C24D4D] dark:hover:text-[#D46A6A] hover:bg-[#F6E6E6] dark:hover:bg-[#332022] transition-colors"
+                        className="inline-flex items-center justify-center min-w-[38px] min-h-[38px] p-2 rounded-lg border border-[#DDDAD0] dark:border-[#2B3038] text-[#555D66] dark:text-[#A3AAB2] hover:text-[#C24D4D] dark:hover:text-[#D46A6A] hover:bg-[#F6E6E6] dark:hover:bg-[#332022] transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>

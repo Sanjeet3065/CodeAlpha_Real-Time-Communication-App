@@ -416,7 +416,7 @@ export const PreJoinLobbyPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Left Card: Real Local Pre-Join Camera & Microphone Preview (Unpublished) */}
               <div className="lg:col-span-7 bg-[#111316] text-white rounded-2xl border border-[#2B3038] p-4 sm:p-5 flex flex-col gap-4 shadow-cly-md">
                 {/* Live Camera Preview Stage OR Honest Avatar Fallback */}
@@ -727,6 +727,30 @@ export const PreJoinLobbyPage: React.FC = () => {
                           ? 'Invitation link copied to clipboard.'
                           : ''}
                     </span>
+                  </div>
+
+                  {/* Balanced Room Summary Panel */}
+                  <div className="rounded-xl bg-[#F3F2EE] dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2B3038] p-3.5 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[#646D77] dark:text-[#A3AAB2]">Entry Policy</span>
+                      <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE]">
+                        {metadata.meeting.settings.waitingRoomEnabled
+                          ? 'Waiting Room'
+                          : 'Direct Entry'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[#646D77] dark:text-[#A3AAB2]">Room Capacity</span>
+                      <span className="font-semibold text-[#1F2428] dark:text-[#EAECEE] font-mono">
+                        {metadata.meeting.activeParticipantCount} / {metadata.meeting.maxParticipants}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[#646D77] dark:text-[#A3AAB2]">Your Role</span>
+                      <span className="font-semibold text-[#2F6F68] dark:text-[#5FA399]">
+                        {metadata.isHost ? 'Host (Full Controls)' : 'Participant'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Waiting Room Explanation or Block Notice */}

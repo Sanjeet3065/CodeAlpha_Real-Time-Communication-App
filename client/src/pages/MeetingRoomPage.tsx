@@ -988,7 +988,7 @@ export const MeetingRoomPage: React.FC = () => {
       {/* Main Content Area + Desktop Sidebar */}
       <div className="flex-1 min-h-0 flex overflow-hidden max-w-7xl w-full mx-auto">
         {/* Main Video Conference & Room Stage */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-3">
+        <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-5 flex flex-col gap-3">
           {/* Remote Participant Audio Tracks (Strictly Remote Only — Zero Feedback Loop) */}
           <RemoteAudioRenderer
             participants={media.participants}
@@ -1040,15 +1040,17 @@ export const MeetingRoomPage: React.FC = () => {
               onClose={() => setIsWhiteboardOpen(false)}
             />
           ) : (
-            <VideoConferenceGrid
-              admittedParticipants={participants}
-              livekitParticipants={media.participants}
-              currentUserId={self.userId}
-              maxParticipants={meeting.maxParticipants}
-              isLiveKitConnected={livekit.status === 'connected'}
-              screenShares={media.screenShares}
-              onStopSharing={() => void toggleScreenShare()}
-            />
+            <div className="my-auto w-full">
+              <VideoConferenceGrid
+                admittedParticipants={participants}
+                livekitParticipants={media.participants}
+                currentUserId={self.userId}
+                maxParticipants={meeting.maxParticipants}
+                isLiveKitConnected={livekit.status === 'connected'}
+                screenShares={media.screenShares}
+                onStopSharing={() => void toggleScreenShare()}
+              />
+            </div>
           )}
 
           {/* Phase 12 — Real-Time Floating Emoji Reactions */}
