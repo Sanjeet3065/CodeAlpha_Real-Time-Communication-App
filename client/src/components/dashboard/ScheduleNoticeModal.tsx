@@ -9,7 +9,7 @@ interface ScheduleNoticeModalProps {
 }
 
 /**
- * Phase 16: Upgraded from placeholder notice modal to production-ready ScheduleMeetingModal.
+ * Wrapper preserving the ScheduleNoticeModal export for dashboard schedule triggers.
  */
 export const ScheduleNoticeModal: React.FC<ScheduleNoticeModalProps> = ({
   isOpen,

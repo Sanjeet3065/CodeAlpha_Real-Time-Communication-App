@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { ModalShell } from '@/components/ui/ModalShell';
 import { Button } from '@/components/ui/Button';
 import { schedulingApi } from '@/services/schedulingApi';
+import { cn } from '@/lib/utils';
+import { STUDIO_ALERT_DANGER_CLASS } from '@/lib/studioTokens';
 import type { IScheduledMeeting } from '@/types/scheduling';
 
 interface CancelMeetingModalProps {
@@ -17,66 +20,20 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
   meeting,
   onCancelled,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const prevFocusRef = useRef<HTMLElement | null>(null);
+  const keepButtonRef = useRef<HTMLButtonElement>(null);
   const [reason, setReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      prevFocusRef.current = document.activeElement as HTMLElement | null;
-      document.body.style.overflow = 'hidden';
-      const timer = setTimeout(() => {
-        const keepBtn = modalRef.current?.querySelector<HTMLButtonElement>('button[data-keep="true"]');
-        keepBtn?.focus();
-      }, 40);
-      return () => clearTimeout(timer);
-    } else {
-      document.body.style.overflow = '';
-      if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-        prevFocusRef.current.focus();
-      }
+      setReason('');
+      setErrorMessage(null);
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
-        onClose();
-        return;
-      }
-
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusables = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last?.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first?.focus();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
-
-  if (!isOpen || !meeting) return null;
+  }, [isOpen, meeting?.id]);
 
   const handleConfirmCancel = async () => {
+    if (!meeting) return;
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -91,56 +48,42 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cancel-meeting-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isLoading) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
+    <ModalShell
+      variant="danger"
+      isOpen={Boolean(isOpen && meeting)}
+      onClose={onClose}
+      title="Cancel Meeting"
+      titleId="cancel-meeting-title"
+      icon={<AlertTriangle className="w-4 h-4" aria-hidden="true" />}
+      size="sm"
+      className="max-w-md"
+      closeLabel="Close cancellation dialog"
+      disableClose={isLoading}
+      initialFocusRef={keepButtonRef}
     >
-      <div
-        ref={modalRef}
-        className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-rose-50/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <h2 id="cancel-meeting-title" className="font-display text-base font-bold text-rose-950">
-              Cancel Scheduled Session
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close cancellation dialog"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-4">
+      {meeting && (
+        <div className="space-y-4">
           {errorMessage && (
-            <div role="alert" aria-live="assertive" className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className={cn('p-3 text-xs', STUDIO_ALERT_DANGER_CLASS)}
+            >
               {errorMessage}
             </div>
           )}
 
-          <p className="text-xs text-[#7C848D] dark:text-[#A3AAB2] leading-relaxed">
-            Are you sure you want to cancel <strong>"{meeting.title}"</strong>?
-            All invited participants will be notified and this room will no longer be joinable.
-            Historical records will remain preserved.
-          </p>
+          <div className={cn('p-3.5 text-xs leading-relaxed', STUDIO_ALERT_DANGER_CLASS)}>
+            Cancel <strong>&ldquo;{meeting.title}&rdquo;</strong>? Invited participants will be
+            notified and this room will close. Past records stay preserved.
+          </div>
 
           <div>
-            <label htmlFor="cancel-reason-input" className="block text-xs font-medium text-[#1F2428] dark:text-[#EAECEE] mb-1">
-              Cancellation Reason (Optional)
+            <label
+              htmlFor="cancel-reason-input"
+              className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
+            >
+              Reason <span className="font-normal text-[#555D66] dark:text-[#A3AAB2]">(Optional)</span>
             </label>
             <textarea
               id="cancel-reason-input"
@@ -148,13 +91,14 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               maxLength={240}
               rows={2}
-              placeholder="e.g. Rescheduling for next sprint, project milestone met early"
-              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-[#1F2428] dark:text-[#EAECEE]"
+              placeholder="Optional note for participants..."
+              className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#141619] border border-[#DDDAD0] dark:border-[#2A2F37] text-[#1F2428] dark:text-[#EDEFF2] placeholder:text-[#636B74] dark:placeholder:text-[#8A929B] focus:outline-none focus:ring-2 focus:ring-[#C24D4D]/40 dark:focus:ring-[#D46A6A]/40 focus:border-[#C24D4D] dark:focus:border-[#D46A6A] transition-colors"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-2.5 pt-1">
             <Button
+              ref={keepButtonRef}
               type="button"
               variant="outline"
               size="sm"
@@ -165,18 +109,22 @@ export const CancelMeetingModal: React.FC<CancelMeetingModalProps> = ({
             >
               Keep Meeting
             </Button>
-            <button
+            <Button
               type="button"
+              variant="destructive"
+              size="sm"
               onClick={handleConfirmCancel}
               disabled={isLoading}
-              className="px-4 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition-colors focus:ring-2 focus:ring-rose-500/40 disabled:opacity-50 flex items-center gap-2"
+              className="min-h-[44px]"
+              leftIcon={
+                isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : undefined
+              }
             >
-              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              {isLoading ? 'Cancelling...' : 'Confirm Cancellation'}
-            </button>
+              {isLoading ? 'Cancelling...' : 'Cancel Meeting'}
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </ModalShell>
   );
 };

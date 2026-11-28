@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { ModalShell } from '@/components/ui/ModalShell';
 import { Button } from '@/components/ui/Button';
 import { schedulingApi } from '@/services/schedulingApi';
 import { zonedDateTimeToUtc } from '@/utils/timezone';
+import { cn } from '@/lib/utils';
+import {
+  STUDIO_INPUT_CLASS,
+  STUDIO_ALERT_DANGER_CLASS,
+  STUDIO_ALERT_WARNING_CLASS,
+} from '@/lib/studioTokens';
 import type { IScheduledMeeting } from '@/types/scheduling';
 
 interface RescheduleModalProps {
@@ -28,14 +35,27 @@ const COMMON_TIMEZONES = [
   'Australia/Sydney',
 ];
 
+const PICKER_INPUT_CLASS = cn(
+  STUDIO_INPUT_CLASS,
+  'bg-white dark:bg-[#141619] text-[#1F2428] dark:text-[#EDEFF2] border-[#DDDAD0] dark:border-[#2A2F37] [color-scheme:light] dark:[color-scheme:dark]'
+);
+
+function getDefaultTomorrowDate(): string {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const yyyy = tomorrow.getFullYear();
+  const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const dd = String(tomorrow.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export const RescheduleModal: React.FC<RescheduleModalProps> = ({
   isOpen,
   onClose,
   meeting,
   onRescheduled,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const prevFocusRef = useRef<HTMLElement | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('14:00');
   const [durationMinutes, setDurationMinutes] = useState(60);
@@ -47,72 +67,17 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
 
   useEffect(() => {
     if (isOpen && meeting) {
-      prevFocusRef.current = document.activeElement as HTMLElement | null;
-      document.body.style.overflow = 'hidden';
       setTimeZone(meeting.scheduledTimeZone || 'UTC');
       setDurationMinutes(meeting.durationMinutes || 60);
-
-      // Default date to tomorrow
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const yyyy = tomorrow.getFullYear();
-      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-      const dd = String(tomorrow.getDate()).padStart(2, '0');
-      setNewDate(`${yyyy}-${mm}-${dd}`);
+      setNewDate(getDefaultTomorrowDate());
+      setNewTime('14:00');
       setErrorMessage(null);
       setAmbiguousOptions(null);
       setDstOccurrence('earlier');
-
-      const timer = setTimeout(() => {
-        const firstInput = modalRef.current?.querySelector<HTMLInputElement>('input[type="date"]');
-        firstInput?.focus();
-      }, 40);
-      return () => clearTimeout(timer);
-    } else {
-      document.body.style.overflow = '';
-      if (prevFocusRef.current && typeof prevFocusRef.current.focus === 'function') {
-        prevFocusRef.current.focus();
-      }
     }
   }, [isOpen, meeting]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) {
-        onClose();
-        return;
-      }
-
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusables = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last?.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first?.focus();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
-
-  if (!isOpen || !meeting) return null;
-
-  const previousDateFormatted = meeting.scheduledStartAt
+  const previousDateFormatted = meeting?.scheduledStartAt
     ? new Date(meeting.scheduledStartAt).toLocaleString([], {
         dateStyle: 'medium',
         timeStyle: 'short',
@@ -121,43 +86,39 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!meeting) return;
     setErrorMessage(null);
 
     if (!newDate || !newTime) {
-      setErrorMessage('Please provide both date and time.');
+      setErrorMessage('Provide both a date and time.');
       return;
     }
 
     try {
       setIsLoading(true);
 
-      // Construct UTC ISO string using date, time, and target timeZone without local browser bias (DEF-16-03)
       let parsedUtc: ReturnType<typeof zonedDateTimeToUtc>;
       try {
         parsedUtc = zonedDateTimeToUtc(newDate, newTime, timeZone, dstOccurrence);
       } catch {
         setErrorMessage('Invalid date or time value.');
-        setIsLoading(false);
         return;
       }
 
       if (parsedUtc.isAmbiguous && !ambiguousOptions) {
         setAmbiguousOptions(parsedUtc.ambiguousInstants || []);
-        setIsLoading(false);
         return;
       }
 
       if (!parsedUtc.isExact) {
         setErrorMessage(
-          `The selected time does not exist in time zone "${timeZone}" due to a daylight saving time transition. Please choose a different time.`
+          `${newTime} does not exist in "${timeZone}" due to a daylight saving time shift. Choose a different time.`
         );
-        setIsLoading(false);
         return;
       }
 
       if (parsedUtc.utcDate.getTime() < Date.now() - 60_000) {
         setErrorMessage('Cannot reschedule a meeting to a past time.');
-        setIsLoading(false);
         return;
       }
 
@@ -176,65 +137,71 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
     }
   };
 
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="reschedule-meeting-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isLoading) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141619]/65 animate-in fade-in duration-150"
-    >
-      <div
-        ref={modalRef}
-        className="w-full max-w-md bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl shadow-xl border border-[#DDDAD0] dark:border-[#2B3038] overflow-hidden"
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#DDDAD0] dark:border-[#2B3038] bg-[#F3F2EE] dark:bg-[#141619]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <h2 id="reschedule-meeting-title" className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE]">
-              Reschedule Meeting
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close reschedule dialog"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-[#7C848D] dark:text-[#A3AAB2] hover:text-[#1F2428] dark:hover:text-[#EAECEE] hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#2F6F68] dark:focus:ring-[#5FA399]"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+  const dstOptions = ambiguousOptions
+    ? ([
+        {
+          key: 'earlier',
+          label: 'First occurrence',
+          tzName: 'Daylight Time',
+          utcTime: ambiguousOptions[0]?.slice(11, 16),
+        },
+        {
+          key: 'later',
+          label: 'Second occurrence',
+          tzName: 'Standard Time',
+          utcTime: ambiguousOptions[1]?.slice(11, 16),
+        },
+      ] as const)
+    : [];
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+  return (
+    <ModalShell
+      isOpen={Boolean(isOpen && meeting)}
+      onClose={onClose}
+      title="Reschedule Meeting"
+      titleId="reschedule-meeting-title"
+      icon={<Calendar className="w-4 h-4" aria-hidden="true" />}
+      size="sm"
+      className="max-w-md"
+      closeLabel="Close reschedule dialog"
+      disableClose={isLoading}
+      initialFocusRef={dateInputRef}
+    >
+      {meeting && (
+        <form onSubmit={handleSubmit} className="space-y-4">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
+            <div
+              role="alert"
+              className={cn('p-3 text-xs flex items-start gap-2', STUDIO_ALERT_DANGER_CLASS)}
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Current Schedule Summary */}
-          <div className="p-3 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] text-xs">
-            <span className="font-bold text-[#7C848D] dark:text-[#A3AAB2] block uppercase text-[10px] tracking-wider mb-0.5">
+          <div className="p-3.5 bg-[#F3F2EE] dark:bg-[#141619] rounded-xl border border-[#DDDAD0] dark:border-[#2A2F37] text-xs space-y-0.5">
+            <span className="font-semibold text-[#555D66] dark:text-[#A3AAB2] block uppercase text-[10px] tracking-wider">
               Current Schedule
             </span>
             <p className="font-bold text-[#1F2428] dark:text-[#EAECEE]">{meeting.title}</p>
-            <p className="text-[#7C848D] dark:text-[#A3AAB2]">
+            <p className="text-[#555D66] dark:text-[#A3AAB2]">
               {previousDateFormatted} ({meeting.scheduledTimeZone || 'UTC'})
             </p>
           </div>
 
           {/* New Date and Time */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+              <label
+                htmlFor="reschedule-date"
+                className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
+              >
                 New Date *
               </label>
               <input
+                ref={dateInputRef}
+                id="reschedule-date"
                 type="date"
                 value={newDate}
                 onChange={(e) => {
@@ -243,14 +210,18 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   setErrorMessage(null);
                 }}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                className={PICKER_INPUT_CLASS}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+              <label
+                htmlFor="reschedule-time"
+                className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
+              >
                 New Time *
               </label>
               <input
+                id="reschedule-time"
                 type="time"
                 value={newTime}
                 onChange={(e) => {
@@ -259,62 +230,66 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   setErrorMessage(null);
                 }}
                 required
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                className={PICKER_INPUT_CLASS}
               />
             </div>
           </div>
 
           {/* Ambiguous Daylight Saving Time Selection Notice (DEF-16-03) */}
           {ambiguousOptions && (
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+            <div
+              role="region"
+              aria-label="Daylight saving time occurrence"
+              className={cn('p-3.5 text-xs space-y-2.5', STUDIO_ALERT_WARNING_CLASS)}
+            >
               <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="font-bold">Daylight Saving Time Transition Notice</p>
-                  <p className="mt-0.5 text-amber-800 leading-relaxed">
-                    The wall-clock time <strong>{newTime}</strong> occurs twice on {newDate} in{' '}
-                    <strong>{timeZone}</strong> because clocks fall back 1 hour. Please choose which
-                    occurrence you want:
+                  <p className="font-bold">Daylight Saving Time Overlap</p>
+                  <p className="mt-0.5 leading-relaxed opacity-90">
+                    <strong>{newTime}</strong> occurs twice on {newDate} in{' '}
+                    <strong>{timeZone}</strong>. Choose which occurrence to schedule:
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 pt-1 pl-6">
-                <button
-                  type="button"
-                  onClick={() => setDstOccurrence('earlier')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                    dstOccurrence === 'earlier'
-                      ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
-                      : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
-                  }`}
-                >
-                  First occurrence (Daylight Time / {ambiguousOptions[0]?.slice(11, 16)} UTC)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDstOccurrence('later')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                    dstOccurrence === 'later'
-                      ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399] shadow-sm'
-                      : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2B3038] hover:bg-gray-50'
-                  }`}
-                >
-                  Second occurrence (Standard Time / {ambiguousOptions[1]?.slice(11, 16)} UTC)
-                </button>
+              <div className="flex flex-wrap gap-2 pl-6">
+                {dstOptions.map((opt) => {
+                  const selected = dstOccurrence === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setDstOccurrence(opt.key)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]',
+                        selected
+                          ? 'bg-[#2F6F68] dark:bg-[#5FA399] text-[#FAF9F6] dark:text-[#141619] border-[#2F6F68] dark:border-[#5FA399]'
+                          : 'bg-[#FAF9F6] dark:bg-[#1C1F24] text-[#1F2428] dark:text-[#EAECEE] border-[#DDDAD0] dark:border-[#2A2F37] hover:bg-[#EAE8E1] dark:hover:bg-[#24282E]'
+                      )}
+                    >
+                      {opt.label} ({opt.tzName} / {opt.utcTime} UTC)
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Duration & Time Zone Row */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+              <label
+                htmlFor="reschedule-duration"
+                className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
+              >
                 Duration
               </label>
               <select
+                id="reschedule-duration"
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30"
+                className={PICKER_INPUT_CLASS}
               >
                 <option value={15}>15 minutes</option>
                 <option value={30}>30 minutes</option>
@@ -325,17 +300,21 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
-                Time Zone (IANA)
+              <label
+                htmlFor="reschedule-timezone"
+                className="block text-xs font-semibold text-[#1F2428] dark:text-[#EAECEE] mb-1.5"
+              >
+                Time Zone
               </label>
               <select
+                id="reschedule-timezone"
                 value={timeZone}
                 onChange={(e) => {
                   setTimeZone(e.target.value);
                   setAmbiguousOptions(null);
                   setErrorMessage(null);
                 }}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#DDDAD0] dark:border-[#2B3038] bg-[#FAF9F6] dark:bg-[#1C1F24] focus:outline-none focus:ring-2 focus:ring-[#2F6F68]/30 dark:focus:ring-[#5FA399]/30 text-[#1F2428] dark:text-[#EAECEE]"
+                className={PICKER_INPUT_CLASS}
               >
                 {!COMMON_TIMEZONES.includes(timeZone) && (
                   <option value={timeZone}>{timeZone} (Original)</option>
@@ -349,7 +328,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-3">
+          <div className="flex justify-end gap-2.5 pt-2">
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
@@ -358,13 +337,15 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
               variant="primary"
               size="sm"
               disabled={isLoading}
-              leftIcon={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+              leftIcon={
+                isLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : undefined
+              }
             >
               {isLoading ? 'Rescheduling...' : 'Confirm New Time'}
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      )}
+    </ModalShell>
   );
 };
