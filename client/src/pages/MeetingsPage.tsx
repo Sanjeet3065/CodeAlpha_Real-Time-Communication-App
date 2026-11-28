@@ -281,10 +281,7 @@ export const MeetingsPage: React.FC = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Meetings"
-      subtitle="Schedule, join, and review rooms"
-    >
+    <DashboardLayout title="Meetings">
       {/* Top Toolbar: Tabs + Quick Actions */}
       <Card className="p-3 sm:p-4 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

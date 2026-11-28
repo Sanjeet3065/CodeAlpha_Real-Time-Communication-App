@@ -154,10 +154,7 @@ export const DownloadsPage: React.FC = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Downloads & Shared Files"
-      subtitle="Centralized repository of files and media exchanged during meetings"
-    >
+    <DashboardLayout title="Downloads & Shared Files">
       {/* Contextual Summary Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2]">

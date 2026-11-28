@@ -373,7 +373,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <>
       <header className="h-16 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md border-b border-[#DDDAD0] dark:border-[#2B3038] sticky top-0 z-30 px-3 sm:px-5 xl:px-8 flex items-center justify-between gap-2 sm:gap-3 xl:gap-5">
         {/* Left Zone: Mobile Menu Trigger & Workspace Title */}
-        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 lg:max-w-[175px] xl:max-w-[230px]">
+        <div className="flex items-center gap-2.5 min-w-0 lg:max-w-[220px] xl:max-w-[280px]">
           <button
             type="button"
             onClick={onOpenMobileMenu}
@@ -383,12 +383,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Menu className="w-4 h-4" />
           </button>
 
-          <div className="flex flex-col min-w-0">
-            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] leading-tight truncate">
+          <div className="flex flex-col justify-center min-w-0">
+            <h1 className="font-display text-base sm:text-lg font-bold tracking-tight text-[#1F2428] dark:text-[#EAECEE] leading-none truncate">
               {title}
             </h1>
             {subtitle && (
-              <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate mt-0.5">
+              <p className="hidden xl:block text-[11px] text-[#7C848D] dark:text-[#A3AAB2] leading-tight truncate mt-1">
                 {subtitle}
               </p>
             )}

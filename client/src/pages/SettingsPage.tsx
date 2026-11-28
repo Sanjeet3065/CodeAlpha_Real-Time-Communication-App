@@ -253,10 +253,7 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Account Settings"
-      subtitle="Configure hardware join defaults, appearance, and notifications"
-    >
+    <DashboardLayout title="Account Settings">
       {/* Contextual Summary Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2]">
