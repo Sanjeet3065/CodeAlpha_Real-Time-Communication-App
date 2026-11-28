@@ -87,11 +87,11 @@ export class ChatRedisService {
   }
 
   /**
-   * Returns whether multi-instance / production mode requires distributed enforcement.
+   * Returns whether multi-instance mode requires distributed Redis enforcement.
+   * Single-instance deployments without REDIS_URL fall back cleanly to in-memory rate-limiting/idempotency.
    */
   public isDistributedRequired(): boolean {
     return (
-      env.NODE_ENV === 'production' ||
       env.SOCKET_IO_MULTI_INSTANCE === 'true' ||
       env.SOCKET_IO_ADAPTER === 'redis'
     );
