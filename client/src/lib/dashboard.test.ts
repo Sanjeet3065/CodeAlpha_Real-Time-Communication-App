@@ -141,7 +141,7 @@ describe('Dashboard Utilities & Data Contracts', () => {
     assert.ok(studioWidget.includes('preferencesApi.updatePreferences'), 'PreCallStudioWidget should sync join defaults to backend preferences');
     assert.ok(studioWidget.includes('preferencesApi.getPreferences'), 'PreCallStudioWidget should hydrate fieldVersions via getPreferences on mount');
     assert.ok(studioWidget.includes('stopStudioTest') && studioWidget.includes('testSessionSeqRef'), 'PreCallStudioWidget should cancel/stop tracks safely including mid-prompt unmount');
-    assert.ok(editProfileModal.includes('createPortal') && editProfileModal.includes('wasOpenRef'), 'EditProfileModal should portal to document.body and preserve open tab/feedback state across user updates');
+    assert.ok(editProfileModal.includes('<ModalShell') && editProfileModal.includes('wasOpenRef'), 'EditProfileModal should use ModalShell and preserve open tab/feedback state across user updates');
 
     const header = fs.readFileSync(path.resolve(libDir, '../components/dashboard/DashboardHeader.tsx'), 'utf8');
     const themeToggle = fs.readFileSync(path.resolve(libDir, '../components/ui/ThemeToggle.tsx'), 'utf8');
@@ -153,7 +153,7 @@ describe('Dashboard Utilities & Data Contracts', () => {
     );
     assert.ok(!header.includes('Search meetings, files, and actions...'), 'DashboardHeader should replace outdated placeholder copy');
     assert.ok(themeToggle.includes("'dock'"), 'ThemeToggle should provide a borderless dock variant for the header utility bar');
-    assert.ok(helpModal.includes('dark:bg-emerald-950'), 'HelpModal security note should include dark-mode contrast styles');
+    assert.ok(helpModal.includes('dark:bg-[#1F302E]'), 'HelpModal security note should include pine matte dark-mode contrast styles');
     assert.ok(!notifications.includes('ring-white'), 'NotificationsPopover unread badge should use dark-compatible ring color');
     assert.ok(
       header.includes('aria-controls="header-command-listbox"') &&
