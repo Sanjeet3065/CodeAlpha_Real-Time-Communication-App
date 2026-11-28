@@ -24,7 +24,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   variant = 'compact',
   className,
 }) => {
-  const { mode, resolvedTheme, setMode, cycleMode } = useTheme();
+  const { mode, setMode, cycleMode } = useTheme();
 
   if (variant === 'segmented') {
     return (
@@ -64,7 +64,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   }
 
   const activeMeta = MODE_OPTIONS.find((item) => item.id === mode) || MODE_OPTIONS[2];
-  const ActiveIcon = mode === 'system' ? (resolvedTheme === 'dark' ? Moon : Sun) : activeMeta.icon;
+  const ActiveIcon = activeMeta.icon;
 
   if (variant === 'dock') {
     return (
