@@ -378,14 +378,14 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : upcomingMeetings.length === 0 ? (
-            <Card className="py-12 px-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-3.5">
-                <Calendar className="w-6 h-6" aria-hidden="true" />
+            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
+              <div className="w-16 h-16 rounded-2xl bg-[#E2ECE9] dark:bg-[#1F302E] text-[#2F6F68] dark:text-[#5FA399] flex items-center justify-center mb-4">
+                <Calendar className="w-8 h-8" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 No upcoming meetings
               </h3>
-              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-sm mx-auto mb-5">
+              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
                 Schedule a room or start an instant session.
               </p>
               <div className="flex items-center justify-center gap-2.5 flex-wrap">
@@ -679,14 +679,14 @@ export const MeetingsPage: React.FC = () => {
               </Button>
             </Card>
           ) : historyMeetings.length === 0 ? (
-            <Card className="py-12 px-6 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#F3F2EE] dark:bg-[#141619] text-[#636B74] dark:text-[#A3AAB2] flex items-center justify-center mb-3.5">
-                <History className="w-6 h-6" aria-hidden="true" />
+            <Card className="p-12 bg-[#FAF9F6] dark:bg-[#1C1F24] border-[#DDDAD0] dark:border-[#2B3038] shadow-cly-sm rounded-2xl text-center flex flex-col items-center justify-center min-h-[380px]">
+              <div className="w-16 h-16 rounded-2xl bg-[#F3F2EE] dark:bg-[#141619] text-[#636B74] dark:text-[#A3AAB2] flex items-center justify-center mb-4">
+                <History className="w-8 h-8" aria-hidden="true" />
               </div>
-              <h3 className="font-display text-base font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
+              <h3 className="font-display text-base sm:text-lg font-bold text-[#1F2428] dark:text-[#EAECEE] mb-1">
                 No past meetings
               </h3>
-              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-sm mx-auto mb-5">
+              <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] max-w-md mx-auto mb-6 leading-relaxed">
                 {historySearchTerm || historyStatusFilter !== 'ALL' || historyRoleFilter !== 'ALL'
                   ? 'No sessions match your current filters.'
                   : 'Ended or cancelled sessions appear here.'}
