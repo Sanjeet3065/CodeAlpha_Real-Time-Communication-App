@@ -53,3 +53,6 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Isolated Git Worktrees
+.worktrees/
