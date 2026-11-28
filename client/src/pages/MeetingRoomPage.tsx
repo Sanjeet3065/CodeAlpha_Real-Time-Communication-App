@@ -156,11 +156,7 @@ export const MeetingRoomPage: React.FC = () => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable
-      ) {
+      if (shouldIgnoreStudioShortcut(e.target, false) || target?.isContentEditable) {
         return;
       }
       if (e.key === 'w' || e.key === 'W') {
@@ -965,7 +961,7 @@ export const MeetingRoomPage: React.FC = () => {
           role="alert"
           aria-live="assertive"
           data-audio-blocked-banner="true"
-          className="fixed top-16 inset-x-4 sm:inset-x-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl bg-amber-950/95 border-2 border-amber-400 shadow-2xl flex items-center justify-between gap-3 text-amber-100 animate-in slide-in-from-top duration-200"
+          className="fixed top-16 inset-x-4 sm:inset-x-auto sm:right-6 sm:max-w-md z-40 p-3.5 rounded-2xl bg-amber-950/95 border-2 border-amber-400 shadow-2xl flex items-center justify-between gap-3 text-amber-100"
         >
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0">

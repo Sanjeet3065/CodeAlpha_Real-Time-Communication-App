@@ -21,6 +21,7 @@ export interface ParticipantVideoTileProps {
   isSpeaking: boolean;
   videoTrack: AttachableMediaTrack | null;
   aspectClassName: string;
+  compact?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -135,7 +136,7 @@ const ParticipantVideoTileInner: React.FC<ParticipantVideoTileProps> = ({
           <span
             role="status"
             aria-label={`${displayName} is speaking`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2F6F68] text-white text-[10px] font-semibold shadow-xs"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2F6F68] text-white text-[10px] font-semibold shadow-cly-sm"
           >
             <Volume2 className="w-3 h-3" aria-hidden="true" />
             <span>Speaking</span>
@@ -146,7 +147,7 @@ const ParticipantVideoTileInner: React.FC<ParticipantVideoTileProps> = ({
       {/* Bottom Overlay: Nameplate + Accessible Non-Color-Only Mic/Camera State */}
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#111316]/90 via-[#111316]/55 to-transparent px-3 pt-6 pb-2.5 flex items-center justify-between gap-2">
         <div className="min-w-0 flex items-center gap-1.5">
-          <span className="font-display text-xs sm:text-sm font-semibold text-white truncate drop-shadow-xs">
+          <span className="font-display text-xs sm:text-sm font-semibold text-white truncate">
             {displayName}
           </span>
           {isLocal && (

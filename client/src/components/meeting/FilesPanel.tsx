@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import type { SharedFile, FileUploadProgress } from '@/types/files';
 import type { ParticipantRole } from '@/types/meeting';
+import { ConfirmActionDialog } from './ConfirmActionDialog';
+import { FILE_TONE_CLASSES, getFileToneKey } from '@/lib/studioTokens';
 
 interface FilesPanelProps {
   files: SharedFile[];
@@ -59,35 +61,36 @@ function formatTime(isoString: string): string {
 
 function getFileIcon(extension: string) {
   const ext = extension.toLowerCase();
+  const tone = FILE_TONE_CLASSES[getFileToneKey(ext)];
+  const cls = `w-5 h-5 ${tone.iconColor}`;
   switch (ext) {
     case 'pdf':
-      return <FileText className="w-5 h-5 text-red-500" />;
+    case 'docx':
+    case 'doc':
+      return <FileText className={cls} />;
     case 'png':
     case 'jpg':
     case 'jpeg':
     case 'gif':
     case 'webp':
-      return <ImageIcon className="w-5 h-5 text-emerald-500" />;
+      return <ImageIcon className={cls} />;
     case 'xlsx':
     case 'xls':
     case 'csv':
-      return <FileSpreadsheet className="w-5 h-5 text-green-600" />;
-    case 'docx':
-    case 'doc':
-      return <FileText className="w-5 h-5 text-blue-500" />;
+      return <FileSpreadsheet className={cls} />;
     case 'zip':
     case 'tar':
     case 'gz':
     case '7z':
-      return <FileArchive className="w-5 h-5 text-amber-500" />;
+      return <FileArchive className={cls} />;
     case 'json':
     case 'js':
     case 'ts':
     case 'html':
     case 'css':
-      return <FileCode className="w-5 h-5 text-purple-500" />;
+      return <FileCode className={cls} />;
     default:
-      return <FileText className="w-5 h-5 text-[#5FA399]" />;
+      return <FileText className={cls} />;
   }
 }
 
@@ -112,6 +115,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteFileId, setPendingDeleteFileId] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
 
@@ -257,7 +261,6 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
   };
 
   const handleDelete = async (fileId: string) => {
-    if (!window.confirm('Are you sure you want to delete this shared file?')) return;
     try {
       setDeletingId(fileId);
       await onDeleteFile(fileId);
@@ -476,7 +479,9 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
               className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all flex items-center justify-between gap-2.5 group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${FILE_TONE_CLASSES[getFileToneKey(file.extension)].iconWrap}`}
+                >
                   {getFileIcon(file.extension)}
                 </div>
                 <div className="min-w-0">
@@ -538,7 +543,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
                   <button
                     type="button"
                     data-action="delete-file"
-                    onClick={() => handleDelete(file.id)}
+                    onClick={() => setPendingDeleteFileId(file.id)}
                     disabled={deletingId === file.id}
                     aria-label={`Delete ${file.originalFilename}`}
                     title="Delete file"
@@ -556,6 +561,24 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {pendingDeleteFileId && (
+        <ConfirmActionDialog
+          isOpen={!!pendingDeleteFileId}
+          title="Delete file?"
+          description="This shared file will be permanently removed for everyone in the meeting."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={() => {
+            const id = pendingDeleteFileId;
+            setPendingDeleteFileId(null);
+            void handleDelete(id);
+          }}
+          onCancel={() => setPendingDeleteFileId(null)}
+        />
+      )}
 
       {/* Safe Preview Modal */}
       {previewFile && (

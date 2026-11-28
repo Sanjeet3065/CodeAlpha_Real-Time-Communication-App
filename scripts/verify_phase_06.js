@@ -287,7 +287,7 @@ async function main() {
     `);
     await sleep(400);
     const notifText = await evaluate(`document.querySelector('div[role="region"][aria-label="Notifications"]')?.innerText || ''`);
-    const hasHonestNotifEmpty = notifText.includes('No New Notifications') && notifText.includes('0 Unread');
+    const hasHonestNotifEmpty = notifText.includes('All caught up') && notifText.includes('0 unread');
     console.log(`[Control Audit] Notifications honest empty state: ${hasHonestNotifEmpty ? 'PASS' : 'FAIL'}`);
     await evaluate(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
     await sleep(300);
@@ -353,7 +353,7 @@ async function main() {
     await captureScreenshot('downloads_empty_state.png');
     await captureScreenshot('downloads_screen.png');
     const downloadsText = await evaluate(`document.body.innerText`);
-    const hasDownloadsEmpty = downloadsText.includes('No Files Downloaded or Shared Yet');
+    const hasDownloadsEmpty = downloadsText.includes('No shared files yet');
     console.log(`[Navigation Test] /downloads Screen 23 rendered: ${hasDownloadsEmpty ? 'PASS' : 'FAIL'}`);
 
     // Navigate to /settings via Sidebar link

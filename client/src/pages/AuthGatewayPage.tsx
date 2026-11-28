@@ -355,6 +355,14 @@ export const AuthGatewayPage: React.FC<AuthGatewayPageProps> = ({ initialMode = 
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F3F2EE] dark:bg-[#141619] text-[#1F2428] dark:text-[#EAECEE] selection:bg-[#E2ECE9] selection:text-[#2F6F68] dark:selection:bg-[#1F302E] dark:selection:text-[#5FA399]">
+      {/* Skip to main form — visually hidden until focused */}
+      <a
+        href="#main-auth-form"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-[#FAF9F6] dark:focus:bg-[#1C1F24] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#2F6F68] dark:focus:text-[#5FA399] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F68] dark:focus-visible:ring-[#5FA399]"
+      >
+        Skip to form
+      </a>
+
       {/* Unified Top Bar: Brand Left + Theme & Auth Status Right */}
       <header className="sticky top-0 z-30 w-full border-b border-[#DDDAD0]/80 dark:border-[#2B3038]/85 bg-[#FAF9F6]/95 dark:bg-[#1C1F24]/95 backdrop-blur-md">
         <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">

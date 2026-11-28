@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Settings, Shield, AlertCircle } from 'lucide-react';
+import { Settings, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ModalShell } from '@/components/ui/ModalShell';
 import type { MeetingSummary, UpdateMeetingSettingsPayload } from '@/types/meeting';
@@ -26,7 +26,6 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
   const [allowCoHostAdmit, setAllowCoHostAdmit] = useState(meeting.settings.allowCoHostAdmit);
   const [allowCoHostRemove, setAllowCoHostRemove] = useState(meeting.settings.allowCoHostRemove);
   const [allowCoHostLock, setAllowCoHostLock] = useState(meeting.settings.allowCoHostLock);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,41 +37,6 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
       setAllowCoHostLock(meeting.settings.allowCoHostLock);
     }
   }, [isOpen, meeting]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const prevFocus = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
-    const timer = setTimeout(() => titleInputRef.current?.focus(), 40);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isSaving) {
-        onClose();
-      } else if (e.key === 'Tab' && dialogRef.current) {
-        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-      prevFocus?.focus?.();
-    };
-  }, [isOpen, isSaving, onClose]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,40 +51,23 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="room-settings-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSaving) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 "
-    >
-      <div
-        ref={dialogRef}
-        className="w-full max-w-md rounded-2xl bg-[#1C1F24] border border-white/15 shadow-2xl overflow-hidden text-white max-h-[90vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#2F6F68]/20 text-[#5FA399] flex items-center justify-center">
-              <Settings className="w-4 h-4" aria-hidden="true" />
-            </div>
-            <h2 id="room-settings-title" className="font-display text-base font-bold text-white">
-              Host Room Settings
-            </h2>
-          </div>
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={onClose}
-            aria-label="Close room settings"
-            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Host Room Settings"
+      titleId="room-settings-title"
+      size="sm"
+      variant="theater"
+      closeLabel="Close room settings"
+      disableClose={isSaving}
+      initialFocusRef={titleInputRef}
+      icon={
+        <div className="w-8 h-8 rounded-lg bg-[#2F6F68]/20 text-[#5FA399] flex items-center justify-center">
+          <Settings className="w-4 h-4" aria-hidden="true" />
         </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="room-title-input" className="block text-xs font-semibold text-slate-200 mb-1.5">
               Meeting Title
@@ -234,7 +181,6 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

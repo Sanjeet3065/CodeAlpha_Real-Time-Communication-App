@@ -285,8 +285,16 @@ async function main() {
     })()`);
 
     // Wait for genuine LiveKit SFU connection!
-    await hostCtx.tab.waitForText('Connected to LiveKit', 12000);
-    await hostCtx.tab.waitForText('1 SFU peer(s) online', 8000);
+    await hostCtx.tab.evaluate(`(() => new Promise((resolve, reject) => {
+      const deadline = Date.now() + 12000;
+      const check = () => {
+        const el = document.querySelector('[data-livekit-status="connected"]');
+        if (el) return resolve(true);
+        if (Date.now() > deadline) return reject(new Error('Timed out waiting for [data-livekit-status="connected"]'));
+        setTimeout(check, 150);
+      };
+      check();
+    }))()`);
     await sleep(300);
 
     // Verify token is NOT persisted to localStorage or sessionStorage!

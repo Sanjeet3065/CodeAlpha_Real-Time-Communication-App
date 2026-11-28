@@ -47,7 +47,7 @@ const PRESET_COLORS = [
   { name: 'Teal', hex: '#06B6D4' },
   { name: 'Blue', hex: '#3B82F6' },
   { name: 'Purple', hex: '#8B5CF6' },
-  { name: 'Deep Slate', hex: '#1E293B' },
+  { name: 'Chalk', hex: '#EDEFF2' },
 ];
 
 const STROKE_WIDTHS = [

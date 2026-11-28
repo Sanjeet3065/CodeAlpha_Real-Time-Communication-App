@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
+import { BrandMark } from '@/components/ui/BrandMark';
 
 export interface ErrorFallbackProps {
   error?: Error | null;
@@ -23,6 +24,9 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
     >
       <Container size="sm">
         <div className="bg-[#FAF9F6] dark:bg-[#1C1F24] rounded-2xl border border-[#DDDAD0] dark:border-[#2B3038] p-8 shadow-cly-md text-center">
+          <div className="flex justify-center mb-4">
+            <BrandMark />
+          </div>
           <div className="w-14 h-14 rounded-full bg-[#F6E6E6] dark:bg-[#342023] text-[#C24D4D] dark:text-[#D46A6A] flex items-center justify-center mx-auto mb-5">
             <AlertTriangle className="w-7 h-7" aria-hidden="true" />
           </div>

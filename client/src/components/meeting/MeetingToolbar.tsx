@@ -353,7 +353,7 @@ export const MeetingToolbar: React.FC<MeetingToolbarProps> = ({
             <div
               role="menu"
               aria-label="Additional meeting controls"
-              className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 bg-[#1C1F24] border border-white/15 rounded-2xl shadow-2xl space-y-1 z-50 text-white animate-in fade-in zoom-in-95 duration-100"
+              className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 bg-[#1C1F24] border border-white/15 rounded-2xl shadow-2xl space-y-1 z-50 text-white"
             >
               <button
                 type="button"

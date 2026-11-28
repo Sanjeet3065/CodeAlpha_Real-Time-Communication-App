@@ -143,7 +143,7 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
           {/* Live Collaborators Count */}
           <span
             data-badge="collaborators-count"
-            className="hidden xs:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#2F6F68]/25 text-[#5FA399] border border-[#5FA399]/30"
+            className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#2F6F68]/25 text-[#5FA399] border border-[#5FA399]/30"
           >
             <Users className="w-3 h-3" />
             <span>{activeCollaboratorCount} collaborating</span>
@@ -214,7 +214,7 @@ export const WhiteboardStage: React.FC<WhiteboardStageProps> = ({
         <div
           aria-label="Active participants video strip"
           data-video-strip="compact"
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#1C1F24]/50 border-b border-white/10 overflow-x-auto z-10 shrink-0 scrollbar-thin"
+          className="flex items-center gap-2 px-3 py-1.5 bg-[#1C1F24]/50 border-b border-white/10 overflow-x-auto z-10 shrink-0"
         >
           {compactTiles.map((tile) => (
             <div

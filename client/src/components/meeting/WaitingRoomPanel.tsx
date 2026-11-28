@@ -93,6 +93,7 @@ export const WaitingRoomPanel: React.FC<WaitingRoomPanelProps> = ({
                 type="button"
                 disabled={isBusy}
                 onClick={() => onAdmit(entry.userId)}
+                aria-label={`Admit ${entry.displayName}`}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2F6F68] hover:bg-[#255A54] disabled:opacity-50 text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
               >
                 <Check className="w-3.5 h-3.5" />
@@ -102,6 +103,7 @@ export const WaitingRoomPanel: React.FC<WaitingRoomPanelProps> = ({
                 type="button"
                 disabled={isBusy}
                 onClick={() => onReject(entry.userId)}
+                aria-label={`Reject ${entry.displayName}`}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-[#C24D4D]/25 hover:text-[#D46A6A] disabled:opacity-50 text-xs font-semibold text-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-[#C24D4D]"
               >
                 <X className="w-3.5 h-3.5" />

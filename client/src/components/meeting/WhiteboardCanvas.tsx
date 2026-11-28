@@ -313,7 +313,7 @@ export const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       const sel = elements.get(selectedElementId)!;
       if (!sel.isDeleted) {
         ctx.save();
-        ctx.strokeStyle = '#2F6F68';
+        ctx.strokeStyle = '#5FA399';
         ctx.lineWidth = 1.5 / zoom;
         ctx.setLineDash([4 / zoom, 4 / zoom]);
 

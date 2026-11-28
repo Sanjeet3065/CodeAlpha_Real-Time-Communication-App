@@ -107,10 +107,10 @@ export const ScreenShareView: React.FC<ScreenShareViewProps> = ({
       data-screenshare-owner={screenShare.participantIdentity}
       data-is-local={screenShare.isLocal ? 'true' : 'false'}
       data-is-local-share={screenShare.isLocal ? 'true' : 'false'}
-      className={`relative w-full h-full flex flex-col items-center justify-center bg-[#181B20] rounded-2xl overflow-hidden border border-white/10 shadow-2xl ${className}`}
+      className={`relative w-full h-full flex flex-col bg-[#181B20] rounded-2xl overflow-hidden border border-white/10 shadow-2xl ${className}`}
     >
       {/* Top Banner: Sharer Identity + Controls */}
-      <div className="absolute top-3 inset-x-3 z-20 flex items-center justify-between pointer-events-none">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/10 flex-shrink-0">
         <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111316]/90 border border-white/15 text-white shadow-lg text-xs font-medium">
           <Monitor className="w-4 h-4 text-[#5FA399]" aria-hidden="true" />
           <span data-screenshare-owner-label="true" className="font-semibold text-white">

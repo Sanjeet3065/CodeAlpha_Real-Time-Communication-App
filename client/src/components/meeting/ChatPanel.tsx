@@ -152,7 +152,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       <div
         ref={scrollContainerRef}
         data-element="chat-messages-container"
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin scrollbar-thumb-white/15"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
       >
         {/* Load older messages button */}
         {hasMore && (
@@ -211,12 +211,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 </span>
 
                 {isHost && (
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-300">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/30 text-amber-300">
                     Host
                   </span>
                 )}
                 {isCoHost && (
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/20 border border-sky-500/30 text-sky-300">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/20 border border-sky-500/30 text-sky-300">
                     Co-Host
                   </span>
                 )}

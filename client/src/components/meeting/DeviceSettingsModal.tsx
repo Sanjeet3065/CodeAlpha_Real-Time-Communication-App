@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
-  X,
   Mic,
   Video,
   Volume2,
@@ -36,103 +35,52 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
   onRefreshDevices,
   onClose,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const closeBtnRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const prevFocus = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
-    const timer = setTimeout(() => closeBtnRef.current?.focus(), 30);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusables = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last?.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first?.focus();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      clearTimeout(timer);
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
-      prevFocus?.focus?.();
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  const refreshBtnRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="device-settings-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4"
-    >
-      <div
-        ref={modalRef}
-        className="w-full max-w-md rounded-2xl bg-[#1C1F24] border border-white/15 shadow-xl text-white overflow-hidden"
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <h2 id="device-settings-title" className="font-display text-base font-bold text-white">
-              Audio &amp; Video Devices
-            </h2>
-            {isSwitching && (
-              <Loader2 className="w-4 h-4 animate-spin text-[#5FA399]" aria-label="Switching device" />
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onRefreshDevices}
-              disabled={devices.isEnumerating}
-              aria-label="Refresh device list"
-              title="Refresh devices"
-              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${devices.isEnumerating ? 'animate-spin' : ''}`}
-                aria-hidden="true"
-              />
-            </button>
-            <button
-              ref={closeBtnRef}
-              type="button"
-              onClick={onClose}
-              aria-label="Close device settings"
-              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
-          </div>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Audio & Video Devices"
+      titleId="device-settings-title"
+      size="sm"
+      variant="theater"
+      closeLabel="Close device settings"
+      initialFocusRef={refreshBtnRef}
+      headerActions={
+        <div className="flex items-center gap-1.5">
+          {isSwitching && (
+            <Loader2 className="w-4 h-4 animate-spin text-[#5FA399]" aria-label="Switching device" />
+          )}
+          <button
+            ref={refreshBtnRef}
+            type="button"
+            onClick={onRefreshDevices}
+            disabled={devices.isEnumerating}
+            aria-label="Refresh device list"
+            title="Refresh devices"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5FA399] disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${devices.isEnumerating ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
         </div>
-
-        <div className="p-5 space-y-4">
+      }
+      footer={
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-[#2F6F68] hover:bg-[#255A54] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
+          >
+            Done
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
           {mediaError && (
             <div
               role="alert"
@@ -254,17 +202,6 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
             )}
           </div>
         </div>
-
-        <div className="px-5 py-3.5 bg-[#111316]/50 border-t border-white/10 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-[#2F6F68] hover:bg-[#255A54] text-xs font-semibold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#5FA399]"
-          >
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

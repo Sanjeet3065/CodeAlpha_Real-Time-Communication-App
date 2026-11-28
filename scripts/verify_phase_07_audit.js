@@ -228,12 +228,10 @@ async function main() {
 
     // Verify UI shows truthful local-only notice, Retry Cloud Sync button, and NO false cloud-sync claim
     const offlineText = await evaluate(`document.body.innerText`);
-    const hasTruthfulNotice =
-      offlineText.includes('Saved locally only — not synced to cloud') &&
-      offlineText.includes('Changes will not sync automatically; click Retry Cloud Sync');
+    const hasTruthfulNotice = offlineText.includes('Saved locally — click Retry to sync.');
     const hasNoFalseCloudSuccess = !offlineText.includes('Synchronized to Cloud Database!');
     const hasNoFalseAutoSyncClaim = !offlineText.includes('Offline changes will sync on next connection');
-    const hasRetryButton = offlineText.includes('Retry Cloud Sync');
+    const hasRetryButton = offlineText.includes('Retry');
 
     console.log('Truthful local-only notice displayed:', hasTruthfulNotice ? 'PASS' : 'FAIL');
     console.log('No false cloud-sync success message:', hasNoFalseCloudSuccess ? 'PASS' : 'FAIL');

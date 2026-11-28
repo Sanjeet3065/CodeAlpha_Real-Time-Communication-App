@@ -76,7 +76,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#141619]/65 transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-[#141619]/65 transition-opacity duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -84,7 +84,7 @@ export const MobileNavigationDrawer: React.FC<MobileNavigationDrawerProps> = ({
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className="fixed inset-y-0 left-0 w-72 bg-[#FAF9F6] dark:bg-[#1C1F24] shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200"
+        className="fixed inset-y-0 left-0 w-72 bg-[#FAF9F6] dark:bg-[#1C1F24] shadow-2xl flex flex-col z-10 duration-200"
       >
         <div className="absolute top-4 right-3 z-10">
           <button

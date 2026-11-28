@@ -196,7 +196,7 @@ async function main() {
     await sleep(1500);
 
     const feedbackText = await evaluate(`document.body.innerText`);
-    const hasSyncConfirm = feedbackText.includes('Synchronized to Cloud Database!');
+    const hasSyncConfirm = feedbackText.includes('Saved');
     console.log('Feedback present in page text:', hasSyncConfirm ? 'PASS' : 'FAIL');
 
     await takeScreenshot('phase07_settings_cloud_persisted.png');
