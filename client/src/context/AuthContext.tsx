@@ -28,22 +28,69 @@ export interface AuthContextType {
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const UI_USER_CACHE_KEY = 'cly_ui_user_cache';
+
+function readCachedUiUser(): User | null {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null;
+    const raw = window.sessionStorage.getItem(UI_USER_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as User;
+    if (!parsed || typeof parsed.id !== 'string' || typeof parsed.email !== 'string') {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedUiUser(user: User | null): void {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    if (!user) {
+      window.sessionStorage.removeItem(UI_USER_CACHE_KEY);
+      return;
+    }
+    const safeSummary: User = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      avatarUrl: user.avatarUrl ?? null,
+      avatarColor: user.avatarColor,
+      isEmailVerified: user.isEmailVerified,
+      preferences: user.preferences,
+    };
+    window.sessionStorage.setItem(UI_USER_CACHE_KEY, JSON.stringify(safeSummary));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => readCachedUiUser());
+  const [isLoading, setIsLoading] = useState<boolean>(() => readCachedUiUser() === null);
+
+  const setUserAndCache = useCallback((nextUser: User | null) => {
+    setUser(nextUser);
+    writeCachedUiUser(nextUser);
+  }, []);
 
   const initAuth = useCallback(async () => {
     try {
       const response = await authApi.refresh();
       if (response && response.user) {
-        setUser(response.user);
+        setUserAndCache(response.user);
+      } else {
+        setUserAndCache(null);
       }
     } catch {
-      setUser(null);
+      setUserAndCache(null);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setUserAndCache]);
 
   useEffect(() => {
     initAuth();
@@ -51,12 +98,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (data: LoginData): Promise<void> => {
     const response = await authApi.login(data);
-    setUser(response.user);
+    setUserAndCache(response.user);
   };
 
   const loginWithGoogle = async (data: GoogleAuthData): Promise<void> => {
     const response = await authApi.googleLogin(data);
-    setUser(response.user);
+    setUserAndCache(response.user);
   };
 
   const register = async (
@@ -78,28 +125,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch {
         // Ignore storage errors
       }
-      setUser(null);
+      setUserAndCache(null);
     }
   };
 
   const refreshUser = async (): Promise<void> => {
     try {
       const profile = await authApi.getMe();
-      setUser(profile);
+      setUserAndCache(profile);
     } catch (err) {
       console.error('[AuthContext] Failed to refresh profile:', err);
     }
   };
 
-  const updateUser = useCallback((updated: User): void => {
-    setUser(updated);
-  }, []);
+  const updateUser = useCallback(
+    (updated: User): void => {
+      setUserAndCache(updated);
+    },
+    [setUserAndCache]
+  );
 
   const updateUserPreferences = useCallback(
     (prefs: { defaultAudioMuted?: boolean; defaultVideoOff?: boolean }): void => {
       setUser((prev) => {
         if (!prev) return prev;
-        return {
+        const next: User = {
           ...prev,
           preferences: {
             defaultAudioMuted:
@@ -111,6 +161,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             notificationSounds: prev.preferences?.notificationSounds ?? true,
           },
         };
+        writeCachedUiUser(next);
+        return next;
       });
     },
     []

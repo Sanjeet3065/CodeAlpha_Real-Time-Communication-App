@@ -313,4 +313,15 @@ export const fileApi = {
     const parsed = await parseFileResponse<{ files: ISharedFileItem[] }>(res);
     return parsed.files || [];
   },
+
+  /**
+   * Remove a saved file from the authenticated user's Downloads list.
+   */
+  async removeUserSharedFile(fileId: string): Promise<{ success: boolean; fileId: string }> {
+    const encodedId = encodeURIComponent(fileId);
+    const res = await fetchWithAuth(`${API_BASE_URL}/users/me/shared-files/${encodedId}`, {
+      method: 'DELETE',
+    });
+    return parseFileResponse<{ success: boolean; fileId: string }>(res);
+  },
 };

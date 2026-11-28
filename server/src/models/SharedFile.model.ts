@@ -29,6 +29,8 @@ export interface ISharedFile extends Document {
   isDeleted: boolean;
   deletedAt?: Date | null;
   deletedBy?: Types.ObjectId | null;
+  savedByUserIds?: Types.ObjectId[];
+  removedFromDownloadsByUserIds?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -187,6 +189,17 @@ const SharedFileSchema = new Schema<ISharedFile>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+    },
+    savedByUserIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
+      index: true,
+    },
+    removedFromDownloadsByUserIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
     },
   },
   {

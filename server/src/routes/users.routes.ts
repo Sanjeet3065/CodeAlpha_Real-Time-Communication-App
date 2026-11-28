@@ -7,7 +7,7 @@ import {
   getPreferences,
   updatePreferences,
 } from '../controllers/user.controller.js';
-import { getUserSharedFiles } from '../controllers/file.controller.js';
+import { getUserSharedFiles, removeUserSavedFile } from '../controllers/file.controller.js';
 import {
   listNotificationsHandler,
   markNotificationReadHandler,
@@ -63,8 +63,9 @@ usersRouter.patch(
   asyncHandler(updatePreferences)
 );
 
-// Phase 13 — Files shared across user meetings (for Dashboard & Downloads page)
+// Phase 13 — Files saved/downloaded across user meetings (for Dashboard & Downloads page)
 usersRouter.get('/me/shared-files', requireAuth, requireFileSharingEnabled, asyncHandler(getUserSharedFiles));
+usersRouter.delete('/me/shared-files/:fileId', requireAuth, requireFileSharingEnabled, asyncHandler(removeUserSavedFile));
 
 // Phase 16 — User In-App Notifications
 usersRouter.get('/me/notifications', requireAuth, asyncHandler(listNotificationsHandler));

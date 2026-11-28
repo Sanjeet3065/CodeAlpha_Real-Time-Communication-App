@@ -693,6 +693,18 @@ export class FileService {
       throw new NotFoundError('File not found or no longer available.', 'FILE_NOT_FOUND');
     }
 
+    // Record that this user downloaded/saved the file from the meeting so it appears in their Downloads hub
+    const userObjId = new Types.ObjectId(userId);
+    await SharedFile.updateOne(
+      { _id: file._id },
+      {
+        $addToSet: { savedByUserIds: userObjId },
+        $pull: { removedFromDownloadsByUserIds: userObjId },
+      }
+    ).catch(() => {
+      // Non-fatal: do not block the file stream if tracking update encounters a transient issue
+    });
+
     const fileDto = toSharedFileDto(file, {
       meetingCode: meeting.meetingCode,
       meetingTitle: meeting.title,
@@ -800,18 +812,24 @@ export class FileService {
   }
 
   /**
-   * Retrieves all available files shared in meetings attended by the user.
-   * Integrates seamlessly with the Phase 06 User Dashboard & Downloads page!
+   * Retrieves files shared in meetings attended by the user.
+   * When savedOnly=true (Dashboard Downloads page), returns only files the user explicitly saved/downloaded
+   * and has not removed from their Downloads list.
    */
-  public async getUserSharedFiles(userId: string): Promise<any[]> {
+  public async getUserSharedFiles(
+    userId: string,
+    options: { savedOnly?: boolean } = {}
+  ): Promise<any[]> {
     this.assertFileSharingEnabled();
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestError('Invalid user identifier.', 'INVALID_IDENTIFIER');
     }
 
+    const userObjId = new Types.ObjectId(userId);
+
     // Find all meetings where the user was an admitted participant
     const memberships = await MeetingParticipant.find({
-      userId: new Types.ObjectId(userId),
+      userId: userObjId,
       admissionStatus: 'ADMITTED',
     }).select('meetingId');
 
@@ -831,11 +849,18 @@ export class FileService {
       meetingMap.set(m._id.toString(), { title: m.title, code: m.meetingCode });
     }
 
-    const files = await SharedFile.find({
+    const query: Record<string, unknown> = {
       meetingId: { $in: meetingIds },
       isDeleted: false,
       status: 'AVAILABLE',
-    })
+    };
+
+    if (options.savedOnly) {
+      query.savedByUserIds = userObjId;
+      query.removedFromDownloadsByUserIds = { $ne: userObjId };
+    }
+
+    const files = await SharedFile.find(query)
       .sort({ createdAt: -1 })
       .limit(100);
 
@@ -858,6 +883,36 @@ export class FileService {
         mimeType: f.mimeType,
       };
     });
+  }
+
+  /**
+   * Removes a saved file from the authenticated user's Downloads & Shared Files list
+   * without deleting the file for other meeting participants.
+   */
+  public async removeUserSavedFile(
+    userId: string,
+    fileId: string
+  ): Promise<{ success: boolean; fileId: string }> {
+    this.assertFileSharingEnabled();
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(fileId)) {
+      throw new BadRequestError('Invalid identifier.', 'INVALID_IDENTIFIER');
+    }
+
+    const userObjId = new Types.ObjectId(userId);
+    const updated = await SharedFile.findOneAndUpdate(
+      { _id: new Types.ObjectId(fileId), isDeleted: false },
+      {
+        $pull: { savedByUserIds: userObjId },
+        $addToSet: { removedFromDownloadsByUserIds: userObjId },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      throw new NotFoundError('File not found.', 'FILE_NOT_FOUND');
+    }
+
+    return { success: true, fileId };
   }
 }
 

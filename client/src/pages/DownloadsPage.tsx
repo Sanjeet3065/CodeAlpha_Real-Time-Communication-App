@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ModalShell } from '@/components/ui/ModalShell';
 import { cn } from '@/lib/utils';
 import {
   FILE_TONE_CLASSES,
@@ -26,6 +27,7 @@ import {
   AlertCircle,
   RefreshCw,
   X,
+  Trash2,
 } from 'lucide-react';
 import type { ISharedFileItem } from '@/types/dashboard';
 import { fileApi } from '@/services/fileApi';
@@ -68,6 +70,9 @@ export const DownloadsPage: React.FC = () => {
   const [selectedMeeting, setSelectedMeeting] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [pendingDeleteFile, setPendingDeleteFile] = useState<ISharedFileItem | null>(null);
+  const [isDeletingFile, setIsDeletingFile] = useState(false);
+  const cancelDeleteBtnRef = useRef<HTMLButtonElement>(null);
   const mountedRef = useRef(true);
 
   const fetchSharedFiles = useCallback(async () => {
@@ -149,6 +154,28 @@ export const DownloadsPage: React.FC = () => {
     } finally {
       if (mountedRef.current) {
         setDownloadingId(null);
+      }
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!pendingDeleteFile) return;
+    try {
+      setIsDeletingFile(true);
+      setDownloadError(null);
+      await fileApi.removeUserSharedFile(pendingDeleteFile.id);
+      if (mountedRef.current) {
+        setFiles((prev) => prev.filter((f) => f.id !== pendingDeleteFile.id));
+        setPendingDeleteFile(null);
+      }
+    } catch (err: unknown) {
+      if (mountedRef.current) {
+        setDownloadError(err instanceof Error ? err.message : 'Unable to remove file from downloads.');
+        setPendingDeleteFile(null);
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsDeletingFile(false);
       }
     }
   };
@@ -366,21 +393,33 @@ export const DownloadsPage: React.FC = () => {
                         })}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          data-action="download-file"
-                          onClick={() => void handleDownload(file)}
-                          disabled={downloadingId === file.id}
-                          aria-label={`Download ${file.name}`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors disabled:opacity-50"
-                        >
-                          {downloadingId === file.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                          )}
-                          <span>Download</span>
-                        </button>
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            data-action="download-file"
+                            onClick={() => void handleDownload(file)}
+                            disabled={downloadingId === file.id}
+                            aria-label={`Save ${file.name} to device`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors disabled:opacity-50"
+                          >
+                            {downloadingId === file.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                            )}
+                            <span>Save to Device</span>
+                          </button>
+                          <button
+                            type="button"
+                            data-action="remove-saved-file"
+                            onClick={() => setPendingDeleteFile(file)}
+                            aria-label={`Delete ${file.name} from downloads`}
+                            title="Delete from Downloads"
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg text-[#555D66] dark:text-[#A3AAB2] hover:text-[#C24D4D] dark:hover:text-[#D46A6A] hover:bg-[#F6E6E6] dark:hover:bg-[#332022] transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -442,20 +481,30 @@ export const DownloadsPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => void handleDownload(file)}
-                      disabled={downloadingId === file.id}
-                      aria-label={`Download ${file.name}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors shrink-0 disabled:opacity-50"
-                    >
-                      {downloadingId === file.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                      )}
-                      <span>Download</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => void handleDownload(file)}
+                        disabled={downloadingId === file.id}
+                        aria-label={`Save ${file.name} to device`}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[36px] rounded-lg text-xs font-semibold bg-[#E2ECE9] dark:bg-[#1F302E] hover:bg-[#D2E1DC] dark:hover:bg-[#273C39] text-[#2F6F68] dark:text-[#5FA399] transition-colors shrink-0 disabled:opacity-50"
+                      >
+                        {downloadingId === file.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                        )}
+                        <span>Save to Device</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteFile(file)}
+                        aria-label={`Delete ${file.name} from downloads`}
+                        className="inline-flex items-center justify-center p-2 min-h-[36px] rounded-lg text-[#555D66] dark:text-[#A3AAB2] hover:text-[#C24D4D] dark:hover:text-[#D46A6A] hover:bg-[#F6E6E6] dark:hover:bg-[#332022] transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -505,6 +554,50 @@ export const DownloadsPage: React.FC = () => {
           </Button>
         </Card>
       )}
+
+      {/* Remove from Downloads Confirmation Modal */}
+      <ModalShell
+        isOpen={Boolean(pendingDeleteFile)}
+        onClose={() => {
+          if (!isDeletingFile) setPendingDeleteFile(null);
+        }}
+        title="Delete from Downloads?"
+        titleId="remove-download-modal-title"
+        size="sm"
+        variant="danger"
+        disableClose={isDeletingFile}
+        initialFocusRef={cancelDeleteBtnRef}
+        closeLabel="Cancel remove download"
+        footer={
+          <div className="flex items-center justify-end gap-2.5">
+            <Button
+              ref={cancelDeleteBtnRef}
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isDeletingFile}
+              onClick={() => setPendingDeleteFile(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={isDeletingFile}
+              onClick={() => void handleConfirmRemove()}
+            >
+              {isDeletingFile ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        }
+      >
+        {pendingDeleteFile && (
+          <p className="text-xs sm:text-sm text-[#555D66] dark:text-[#A3AAB2] leading-relaxed">
+            Remove <strong className="text-[#1F2428] dark:text-[#EAECEE]">{pendingDeleteFile.name}</strong> from your Downloads list? You can save it to your device first before deleting.
+          </p>
+        )}
+      </ModalShell>
     </DashboardLayout>
   );
 };

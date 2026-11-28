@@ -139,10 +139,20 @@ export async function deleteMeetingFile(req: Request, res: Response): Promise<vo
 }
 
 /**
- * Retrieves all files shared across meetings attended by the user
+ * Retrieves files saved/downloaded by the user from meetings
  */
 export async function getUserSharedFiles(req: Request, res: Response): Promise<void> {
   const userId = requireUserId(req);
-  const files = await fileService.getUserSharedFiles(userId);
+  const files = await fileService.getUserSharedFiles(userId, { savedOnly: true });
   sendSuccess(res, { files }, 200);
+}
+
+/**
+ * Removes a file from the authenticated user's Downloads list
+ */
+export async function removeUserSavedFile(req: Request, res: Response): Promise<void> {
+  const userId = requireUserId(req);
+  const fileId = req.params.fileId;
+  const result = await fileService.removeUserSavedFile(userId, fileId);
+  sendSuccess(res, result, 200, { message: 'Removed from downloads.' });
 }

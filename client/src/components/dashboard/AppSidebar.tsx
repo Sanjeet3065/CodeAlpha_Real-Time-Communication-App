@@ -28,6 +28,28 @@ const navigationItems: NavItem[] = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
+const prefetchedRoutes = new Set<string>();
+function prefetchRouteChunk(href: string) {
+  if (prefetchedRoutes.has(href)) return;
+  prefetchedRoutes.add(href);
+  switch (href) {
+    case '/dashboard':
+      void import('@/pages/DashboardPage');
+      break;
+    case '/meetings':
+      void import('@/pages/MeetingsPage');
+      break;
+    case '/downloads':
+      void import('@/pages/DownloadsPage');
+      break;
+    case '/settings':
+      void import('@/pages/SettingsPage');
+      break;
+    default:
+      break;
+  }
+}
+
 export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className = '' }) => {
   const { user } = useAuth();
 
@@ -76,6 +98,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onCloseMobile, className
                 key={item.name}
                 to={item.href}
                 onClick={onCloseMobile}
+                onMouseEnter={() => prefetchRouteChunk(item.href)}
+                onFocus={() => prefetchRouteChunk(item.href)}
                 end={item.href === '/dashboard'}
                 className={({ isActive }) =>
                   `flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
